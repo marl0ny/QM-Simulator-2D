@@ -1,5 +1,5 @@
 # Quantum Mechanics in 2D
-This WebGL program simulates the quantum mechanics of a single particle trapped inside a 2D box, 
+This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simulates the quantum mechanics of a single particle trapped inside a 2D box, 
 where within the box the user is capable of redrawing new potential barriers. 
 
 The simulation uses a method described in page 690 of An Introduction to Computer Simulation Methods
