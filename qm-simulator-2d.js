@@ -4,40 +4,6 @@ gl.getExtension('OES_texture_float');
 gl.getExtension('OES_texture_float_linear');
 
 
-function makeSHOImage(w, h, a) {
-    let image = new Float32Array(w*h*4);
-    for (let i = 0; i < h; i++) {
-        for (let j = 0; j < w; j++) {
-            image[4*w*i + j*4] = a*(((i - h/2)/h)**2 +
-                                    ((j - w/2)/w)**2);
-        }
-    }
-    return image;
-}
-
-
-function makeDoubleSlitImage(imageW, imageH, slitSpecs) {
-    let image = new Float32Array(imageW*imageH*4);
-    ({y, w, x1, x2, spacing, h} = slitSpecs);
-    for (let i = 0; i < imageH; i++) {
-        for (let j = 0; j < imageW; j++) {
-            if (i/imageH <= (y + w/2) &&
-                i/imageH >= (y - w/2) &&
-                (j/imageW <= x1 - spacing/2 ||
-                 (j/imageW >= x1 + spacing/2 &&
-                  j/imageW <= x2 - spacing/2
-                 ) || j/imageW >= x2 + spacing/2
-                )) {
-                    image[4*imageW*i + j*4] = h;
-            } else {
-                image[4*imageW*i + j*4] = 0.0;
-            }
-        }
-    }
-    return image;
-}
-
-
 let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
 let realTimeStepShader = makeShader(gl.FRAGMENT_SHADER, realTimeStepFragmentSource);
 let realTimeStepProgram = makeProgram(vShader, realTimeStepShader);
@@ -72,14 +38,17 @@ let controls = {
     py: 0.0,
     probabilityDistribution: false,
     displayOutline: false,
+    mouseMode: 'new ψ(x, y)',
     presetPotentials: 'SHO',
-    mouseMode: 'new ψ(x, y)'
+    useTextureCoordinates: true,
+    enterPotential: 'V(x, y)',
+    // measurePosition: ev => console.log('clicked')
     };
 // gui.add(controls, 'realImaginary').name('complex phase');
 // |ψ(x, y)|²
 // let folderView = gui.addFolder('View Mode');
-gui.add(controls, 'probabilityDistribution').name('show probability density');
-let iter = gui.add(controls, 'speed', 0, 12);
+gui.add(controls, 'probabilityDistribution').name('Show Probability Density');
+let iter = gui.add(controls, 'speed', 0, 12).name('Speed');
 iter.stepValue = 1.0;
 // let folderInit = gui.addFolder('Initial Wavefunction')
 
@@ -88,16 +57,17 @@ iter.stepValue = 1.0;
 // Question by Adi Shavit (https://stackoverflow.com/users/135862/adi-shavit)
 // Answer (https://stackoverflow.com/a/31000465)
 // by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
+gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)']).name('Mouse');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit']).name('Preset Potential');
-gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)']).name('mouse');
+let moreControlsFolder = gui.addFolder('More Controls');
+let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
+textEditPotential.add(controls, 'useTextureCoordinates').name('Use Tex Coordinates');
+textEditPotential.add(controls, 'enterPotential').name('Enter Potential V(x, y)');
+// gui.add(controls, 'measurePosition', 1).name('Measure position');
 
 
-let doubleSlitImage = makeDoubleSlitImage(pixelWidth, pixelHeight, 
-    {y: 0.45, w: 0.01, x1: 0.46, x2: 0.54, 
-        spacing: 0.02, h: 50.0});
-let shoImage = makeSHOImage(pixelWidth, pixelHeight, 50.0);
-
-new Promise(() => setTimeout(main, 500));
+// new Promise(() => setTimeout(main, 500));
+main();
 function main() {
 
     let draw = () => gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
@@ -114,13 +84,15 @@ function main() {
     let nullTexNumber = 7;
 
     let potentialFrame = new Frame(pixelWidth, pixelHeight, 6);
-    potentialFrame.currentPotential = controls.presetPotentials;
+    potentialFrame.presetPotentials = controls.presetPotentials;
+    potentialFrame.enterPotential = controls.enterPotential;
+    potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
     initializePotential('SHO');
 
 
     let bx = 0; let by = 0;
     let mouseUse = false;
-    let justReleased = false;
+    let mouseAction = false;
 
     function initializePotential(type) {
         gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
@@ -135,10 +107,11 @@ function main() {
                                       spacing: 0.02, a: 50.0};
             potentialFrame.setFloatUniforms(doubleSlitUniforms);
             potentialFrame.setIntUniforms({potentialType: 2});
-            justReleased = true;
+            mouseAction = true;
             bx = pixelWidth/2;
             by = pixelHeight*0.75;
             controls.py = 40.0;
+            controls.px = 0.0;
             // controls.mouseMode = 'new ψ(x, y)';
         } else {
             potentialFrame.setFloatUniforms({a: 0.0});
@@ -155,7 +128,7 @@ function main() {
         gl.bindTexture(gl.TEXTURE_2D, potentialFrame.frameTexture);
         storeFrame.setFloatUniforms({bx: bx/canvas.width, 
                                      by: 1.0 - by/canvas.height,
-                                     v2: 10.0});
+                                     v2: 30.0});
         storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber});
         draw();
         unbind();
@@ -233,7 +206,7 @@ function main() {
         viewFrame.setIntUniforms({tex1: swapFrames[t-1].frameNumber,
                                   tex2: swapFrames[t-2].frameNumber,
                                   tex3: swapFrames[t-3].frameNumber,
-                                  tex4: potentialFrame.frameNumber,
+                                  texV: potentialFrame.frameNumber,
                                   displayMode: (controls.probabilityDistribution)? 1: 0});
         draw();
         unbind();
@@ -242,19 +215,48 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
 
-    function animate() {
+    function onPotentialChange() {
         if (controls.presetPotentials !== potentialFrame.presetPotentials) {
             potentialFrame.presetPotentials = controls.presetPotentials;
             initializePotential(controls.presetPotentials);
+            return;
         }
-        if (justReleased) {
+        if ((controls.enterPotential !== potentialFrame.enterPotential) ||
+           (controls.useTextureCoordinates !== 
+            potentialFrame.useTextureCoordinates)) {
+            potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
+            potentialFrame.enterPotential = controls.enterPotential;
+            gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
+            let expr = potentialFrame.enterPotential;
+            expr = replaceIntsToFloats(expr);
+            let shader = createFunctionShader(expr, []);
+            if (shader === null) {
+                return;
+            }
+            let program = makeProgram(vShader, shader);
+            potentialFrame.useProgram(program);
+            potentialFrame.bind();
+            // gl.bindTexture(gl.TEXTURE_2D, potentialFrame.frameTexture);
+            if (controls.useTextureCoordinates) {
+                potentialFrame.setFloatUniforms({xScale: 1.0, yScale: 1.0});
+            } else {
+                potentialFrame.setFloatUniforms({xScale: width, yScale: height});
+            }
+            draw();
+            unbind();
+        }
+    }
+
+    function animate() {
+        onPotentialChange();
+        if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
                 copyNewWaveToFrames();
             } else {
                 reshapePotential();
             }
-            justReleased = false;
+            mouseAction = false;
         }
         for (let i = 0; i < controls.speed; i++) {
             timeStepWave();
@@ -264,22 +266,24 @@ function main() {
         requestAnimationFrame(animate);
     }
 
-    let mousePos = function(ev) {
-        let prevBx = bx;
-        let prevBy = by;
-        bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
-        by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-        controls.px = parseInt(bx - prevBx);
-        if (Math.abs(controls.px) > 60.0) {
-            controls.px = Math.sign(controls.px)*60.0;
-        }
-        controls.py = -parseInt(by - prevBy);
-        if (Math.abs(controls.py) > 60.0) {
-            controls.py = Math.sign(controls.py)*60.0;
+    let mousePos = function(ev, mode) {
+        if (mode == 'move') {
+            let prevBx = bx;
+            let prevBy = by;
+            bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
+            by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            controls.px = parseInt(bx - prevBx);
+            if (Math.abs(controls.px) > 60.0) {
+                controls.px = Math.sign(controls.px)*60.0;
+            }
+            controls.py = -parseInt(by - prevBy);
+            if (Math.abs(controls.py) > 60.0) {
+                controls.py = Math.sign(controls.py)*60.0;
+            }
         }
         if (mouseUse) {
             if (bx < canvas.width && by < canvas.height && 
-                bx >= 0 && by >= 0) justReleased = true;
+                bx >= 0 && by >= 0) mouseAction = true;
         }
     }
 
@@ -294,9 +298,12 @@ function main() {
     document.addEventListener("touchstart", ev => touchReleaseWave(ev));
     document.addEventListener("touchmove", ev => touchReleaseWave(ev));   
     document.addEventListener("touchevent", ev => touchReleaseWave(ev));
-    document.addEventListener("mouseup", () => mouseUse = false);
+    document.addEventListener("mouseup", ev => {
+        mousePos(ev, 'up');
+        mouseUse = false;
+    });
     document.addEventListener("mousedown", () => mouseUse = true);
-    document.addEventListener("mousemove", ev => mousePos(ev));
+    document.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 
     animate();
 }

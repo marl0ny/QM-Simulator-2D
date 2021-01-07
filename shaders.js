@@ -25,8 +25,8 @@ void main() {
     vec2 xy = fragTexCoord.xy;
     float initialV = texture2D(tex1, fragTexCoord).r;
     if ((xy.x - bx)*(xy.x - bx) < 0.0001 && (xy.y - by)*(xy.y - by) < 0.0001
-         && initialV < 40.0) {
-        gl_FragColor = vec4(initialV + v2, 0.0, 0.0, 1.0);
+         && initialV < v2) {
+        gl_FragColor = vec4(v2, 0.0, 0.0, 1.0);
     } else {
         gl_FragColor = vec4(initialV, 0.0, 0.0, 1.0);
     }
@@ -147,7 +147,7 @@ varying highp vec2 fragTexCoord;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
-uniform sampler2D tex4;
+uniform sampler2D texV;
 uniform int displayMode;
 
 
@@ -185,10 +185,13 @@ void main () {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
-    vec4 col4 = texture2D(tex4, fragTexCoord)/(50.0*2.0);
+    vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*2.0);
     float probDensity = col1.g*col3.g + col2.r*col2.r;
+    float re = col2.r;
+    float im = (col3.g + col1.g)/2.0;
     if (displayMode == 0) {
-    gl_FragColor = vec4(probDensity*complexToColour(col3.r, col3.g)/4.0 + vec3(col4.r, col4.r, col4.r),
+    gl_FragColor = vec4(probDensity*complexToColour(re, im)/4.0 + 
+                        vec3(col4.r, col4.r, col4.r),
                         1.0);
     } else {
         gl_FragColor = vec4(probDensity + col4.r, probDensity + col4.r, 
