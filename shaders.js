@@ -91,21 +91,16 @@ uniform sampler2D texV;
 
 void main () {
     float dr2 = dx*dx + dy*dy;
-    if (fragTexCoord.x > dx/w && fragTexCoord.x < 1.0 - dx/w &&
-        fragTexCoord.y > dy/h && fragTexCoord.y < 1.0 - dy/h) {
-        float v = texture2D(texV, fragTexCoord).r;
-        float rePsi = texture2D(texPsi, fragTexCoord).r;
-        float imPsi = texture2D(texPsi, fragTexCoord).g;
-        float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
-        float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
-        float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
-        float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
-        float div2ImPsi = (u + d + l + r - 4.0*imPsi)/dr2;
-        float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + v*imPsi;
-        gl_FragColor = vec4(rePsi + hamiltonImPsi*dt, imPsi, 0.0, 1.0);
-    } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
-    }
+    float v = texture2D(texV, fragTexCoord).r;
+    float rePsi = texture2D(texPsi, fragTexCoord).r;
+    float imPsi = texture2D(texPsi, fragTexCoord).g;
+    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
+    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
+    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
+    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
+    float div2ImPsi = (u + d + l + r - 4.0*imPsi)/dr2;
+    float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + v*imPsi;
+    gl_FragColor = vec4(rePsi + hamiltonImPsi*dt, imPsi, 0.0, 1.0);
 }`;
 
 
@@ -226,21 +221,16 @@ uniform sampler2D texV;
 
 void main () {
     float dr2 = dx*dx + dy*dy;
-    if (fragTexCoord.x > dx/w && fragTexCoord.x < 1.0 - dx/w &&
-        fragTexCoord.y > dy/h && fragTexCoord.y < 1.0 - dy/h) {
-        float v = texture2D(texV, fragTexCoord).r;
-        float rePsi = texture2D(texPsi, fragTexCoord).r;
-        float imPsi = texture2D(texPsi, fragTexCoord).g;
-        float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
-        float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
-        float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
-        float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
-        float div2RePsi = (u + d + l + r - 4.0*rePsi)/dr2;
-        float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + v*rePsi;
-        gl_FragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt, 0.0, 1.0);
-    } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
-    }
+    float v = texture2D(texV, fragTexCoord).r;
+    float rePsi = texture2D(texPsi, fragTexCoord).r;
+    float imPsi = texture2D(texPsi, fragTexCoord).g;
+    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
+    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
+    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
+    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
+    float div2RePsi = (u + d + l + r - 4.0*rePsi)/dr2;
+    float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + v*rePsi;
+    gl_FragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt, 0.0, 1.0);
 }`;
 
 
