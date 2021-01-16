@@ -26,9 +26,9 @@ void main() {
     float initialV = texture2D(tex1, fragTexCoord).r;
     if ((xy.x - bx)*(xy.x - bx) < 0.0001 && (xy.y - by)*(xy.y - by) < 0.0001
          && initialV < v2) {
-        gl_FragColor = vec4(v2, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(v2, (initialV + v2)/2.0, 0.0, 1.0);
     } else {
-        gl_FragColor = vec4(initialV, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(initialV, initialV, 0.0, 1.0);
     }
 }
 `;
@@ -68,7 +68,20 @@ void main() {
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
     } else if (potentialType == 3) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+         if (y <= (y0 + w/2.0) &&
+            y >= (y0 - w/2.0) &&
+            (x <= x1 - spacing/2.0 ||
+             x >= x1 + spacing/2.0)) {
+            gl_FragColor = vec4(a, 0.0, 0.0, 1.0); 
+        } else {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        }
+    } else if (potentialType == 4) {
+        float u = 10.0*(x - 0.5);        
+        float v = 10.0*(y - 0.5);
+        float oneOverR = 1.0/sqrt(u*u + v*v);
+        float val = (oneOverR < 50.0)? oneOverR: 50.0;
+        gl_FragColor = vec4(val, 0.0, 0.0, 1.0); 
     } else {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
@@ -85,22 +98,23 @@ uniform float w;
 uniform float h;
 uniform float m;
 uniform float hbar;
+uniform float rScaleV;
 uniform sampler2D texPsi;
 uniform sampler2D texV;
 
 
 void main () {
-    float dr2 = dx*dx + dy*dy;
-    float v = texture2D(texV, fragTexCoord).r;
+    float V = rScaleV*texture2D(texV, fragTexCoord).r;
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
     float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
     float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
     float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
     float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
-    float div2ImPsi = (u + d + l + r - 4.0*imPsi)/dr2;
-    float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + v*imPsi;
-    gl_FragColor = vec4(rePsi + hamiltonImPsi*dt, imPsi, 0.0, 1.0);
+    // float div2ImPsi = (u + d - 2.0*imPsi)/(dy*dy) + (l + r - 2.0*imPsi)/(dx*dx);
+    float div2ImPsi = (u + d + l + r - 4.0*imPsi)/(dx*dx);
+    float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
+    gl_FragColor = vec4(rePsi + hamiltonImPsi*dt/hbar, imPsi, 0.0, 1.0);
 }`;
 
 
@@ -181,7 +195,7 @@ void main () {
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
     vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*2.0);
-    float probDensity = col1.g*col3.g + col2.r*col2.r;
+    float probDensity = (col1.g*col3.g + col2.r*col2.r);
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
     if (displayMode == 0) {
@@ -189,8 +203,9 @@ void main () {
                         vec3(col4.r, col4.r, col4.r),
                         1.0);
     } else {
-        gl_FragColor = vec4(probDensity + col4.r, probDensity + col4.r, 
-                            probDensity + col4.r, 1.0);
+        gl_FragColor = vec4(probDensity/4.0 + col4.r, 
+                            probDensity/4.0 + col4.r, 
+                            probDensity/4.0 + col4.r, 1.0);
     }
 }`;
 
@@ -220,17 +235,17 @@ uniform sampler2D texV;
 
 
 void main () {
-    float dr2 = dx*dx + dy*dy;
-    float v = texture2D(texV, fragTexCoord).r;
+    float V = texture2D(texV, fragTexCoord).r;
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
     float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
     float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
     float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
     float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
-    float div2RePsi = (u + d + l + r - 4.0*rePsi)/dr2;
-    float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + v*rePsi;
-    gl_FragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt, 0.0, 1.0);
+    // float div2RePsi = (u + d - 2.0*rePsi)/(dy*dy) + (l + r - 2.0*rePsi)/(dx*dx);
+    float div2RePsi = (u + d + l + r - 4.0*rePsi)/(dx*dx);
+    float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;
+    gl_FragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt/hbar, 0.0, 1.0);
 }`;
 
 

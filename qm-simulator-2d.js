@@ -1,7 +1,3 @@
-let canvas = document.getElementById("sketch-canvas");
-let gl = canvas.getContext("webgl");
-gl.getExtension('OES_texture_float');
-gl.getExtension('OES_texture_float_linear');
 
 
 let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
@@ -23,8 +19,14 @@ let copyToProgram = makeProgram(vShader, copyToShader);
 
 let canvasStyleWidth = parseInt(canvas.style.width);
 let canvasStyleHeight = parseInt(canvas.style.height);
-canvasStyleWidth = parseInt(window.innerHeight*0.95);
-canvasStyleHeight = parseInt(window.innerHeight*0.95);
+let windowScale = 0.96;
+if (window.innerHeight < window.innerWidth) {
+    canvasStyleWidth = parseInt(window.innerHeight*windowScale);
+    canvasStyleHeight = parseInt(window.innerHeight*windowScale);
+} else {
+    canvasStyleWidth = parseInt(window.innerWidth*windowScale);
+    canvasStyleHeight = parseInt(window.innerWidth*windowScale);
+}
 canvas.style.width = `${canvasStyleWidth}px`;
 canvas.style.height = `${canvasStyleHeight}px`;
 let scale = {w: canvasStyleWidth/canvas.width, 
@@ -36,34 +38,30 @@ let controls = {
     speed: 6, 
     px: 0.0,
     py: 0.0,
-    probabilityDistribution: false,
+    colourPhase: true,
     displayOutline: false,
     mouseMode: 'new ψ(x, y)',
     presetPotentials: 'SHO',
     useTextureCoordinates: true,
     enterPotential: 'V(x, y)',
-    // measurePosition: ev => console.log('clicked')
     };
-// gui.add(controls, 'realImaginary').name('complex phase');
-// |ψ(x, y)|²
-// let folderView = gui.addFolder('View Mode');
-gui.add(controls, 'probabilityDistribution').name('Show Probability Density');
+gui.add(controls, 'colourPhase').name('Colour Phase');
 let iter = gui.add(controls, 'speed', 0, 12).name('Speed');
-iter.stepValue = 1.0;
-// let folderInit = gui.addFolder('Initial Wavefunction')
+iter.step(1.0);
 
 // How to do dropdowns in dat.gui:
 // https://stackoverflow.com/questions/30372761/
 // Question by Adi Shavit (https://stackoverflow.com/users/135862/adi-shavit)
 // Answer (https://stackoverflow.com/a/31000465)
 // by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
-gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)']).name('Mouse');
-gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit']).name('Preset Potential');
+let mouseMode = gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)']).name('Mouse');
+gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit', 
+                                       'Single Slit', '1/r']).name('Preset Potential');
 let moreControlsFolder = gui.addFolder('More Controls');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
 textEditPotential.add(controls, 'useTextureCoordinates').name('Use Tex Coordinates');
 textEditPotential.add(controls, 'enterPotential').name('Enter Potential V(x, y)');
-// gui.add(controls, 'measurePosition', 1).name('Measure position');
+let rScaleV = 1.0;
 
 
 // new Promise(() => setTimeout(main, 500));
@@ -112,7 +110,22 @@ function main() {
             by = pixelHeight*0.75;
             controls.py = 40.0;
             controls.px = 0.0;
-            // controls.mouseMode = 'new ψ(x, y)';
+            controls.mouseMode = 'new ψ(x, y)';
+            mouseMode.updateDisplay(); 
+        } else if (type == 'Single Slit') {
+            let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5, x2: 0.54, 
+            spacing: 0.02, a: 50.0};
+            potentialFrame.setFloatUniforms(singleSlitUniforms);
+            potentialFrame.setIntUniforms({potentialType: 3});
+            mouseAction = true;
+            bx = pixelWidth/2;
+            by = pixelHeight*0.75;
+            controls.py = 40.0;
+            controls.px = 0.0;
+            controls.mouseMode = 'new ψ(x, y)';
+            mouseMode.updateDisplay();
+        } else if (type == '1/r') {
+            potentialFrame.setIntUniforms({potentialType: 4});
         } else {
             potentialFrame.setFloatUniforms({a: 0.0});
             potentialFrame.setIntUniforms({potentialType: 3});
@@ -139,52 +152,35 @@ function main() {
                                        tex2: nullTexNumber});
         draw();
         unbind();
+        // rScaleV = 0.5;
     }
 
     function createNewWave() {
-        gl.activeTexture(gl.TEXTURE0);
-        swapFrames[t].useProgram(initialWaveProgram);
-        swapFrames[t].bind();
-        gl.bindTexture(gl.TEXTURE_2D, makeTexture(null, pixelWidth, pixelHeight));
-        swapFrames[t].setFloatUniforms({dx: 1.0/pixelWidth, dy: 1.0/pixelHeight,
+        gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
+        swapFrames[t-3].useProgram(initialWaveProgram);
+        swapFrames[t-3].bind();
+        swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth, dy: 1.0/pixelHeight,
                                             px: controls.px, py: controls.py,
                                             bx: bx/canvas.width, 
                                             by: 1.0 - by/canvas.height});
         draw();
         unbind();
-        gl.activeTexture(gl.TEXTURE0 + swapFrames[t].frameNumber);
-        gl.bindTexture(gl.TEXTURE_2D, swapFrames[t].frameTexture);
-        storeFrame.useProgram(copyToProgram);
-        storeFrame.bind();
-        storeFrame.setIntUniforms({tex1: swapFrames[t].frameNumber, 
-                                   tex2: nullTexNumber});
+        swapFrames[t-2].useProgram(imagTimeStepProgram);
+        swapFrames[t-2].bind();
+        swapFrames[t-2].setFloatUniforms({dx: width/pixelWidth, dy: height/pixelHeight, 
+            dt: 0.005, w: width, h: height, m: 2.0, hbar: 1.0});
+        swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
+            texV: potentialFrame.frameNumber});
         draw();
         unbind();
-    }
-
-    function copyNewWaveToFrames() {
-        for (let k = 0; k < swapFrames.length - 1; k++) {
-            swapFrames[t].useProgram(copyToProgram);
-            swapFrames[t].bind();
-            swapFrames[t].setIntUniforms({// tex1: swapFrames[k].frameNumber, 
-                                          tex1: nullTexNumber, 
-                                          tex2: nullTexNumber});
-            draw();
-            unbind();
-            swapFrames[k].useProgram(copyToProgram);
-            swapFrames[k].bind();
-            swapFrames[k].setIntUniforms({tex1: storeFrame.frameNumber, 
-                                            tex2: swapFrames[t].frameNumber});
-            draw();
-            unbind();
-        }
     }
 
     function timeStepWave() {
         swapFrames[t-1].useProgram(realTimeStepProgram);
         swapFrames[t-1].bind();
         swapFrames[t-1].setFloatUniforms({dx: width/pixelWidth, dy: height/pixelHeight, 
-                                        dt: 0.01, w: width, h: height, m: 1.0, hbar: 1.0});
+                                        dt: 0.01, w: width, h: height, m: 2.0, hbar: 1.0, 
+                                        rScaleV: rScaleV});
         swapFrames[t-1].setIntUniforms({texPsi: swapFrames[t-2].frameNumber,
                                         texV: potentialFrame.frameNumber});
         draw();
@@ -192,7 +188,7 @@ function main() {
         swapFrames[t].useProgram(imagTimeStepProgram);
         swapFrames[t].bind();
         swapFrames[t].setFloatUniforms({dx: width/pixelWidth, dy: height/pixelHeight, 
-                                        dt: 0.01, w: width, h: height, m: 1.0, hbar: 1.0});
+                                        dt: 0.01, w: width, h: height, m: 2.0, hbar: 1.0});
         swapFrames[t].setIntUniforms({texPsi: swapFrames[t-1].frameNumber,
                                       texV: potentialFrame.frameNumber});
         draw();
@@ -203,11 +199,12 @@ function main() {
         gl.activeTexture(gl.TEXTURE0);
         viewFrame.useProgram(displayProgram);
         viewFrame.bind();
-        viewFrame.setIntUniforms({tex1: swapFrames[t-1].frameNumber,
-                                  tex2: swapFrames[t-2].frameNumber,
-                                  tex3: swapFrames[t-3].frameNumber,
+        // [2, 3, 0, 1]
+        viewFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
+                                  tex2: swapFrames[t-3].frameNumber,
+                                  tex3: swapFrames[t-2].frameNumber,
                                   texV: potentialFrame.frameNumber,
-                                  displayMode: (controls.probabilityDistribution)? 1: 0});
+                                  displayMode: (controls.colourPhase)? 0: 1});
         draw();
         unbind();
     }
@@ -219,6 +216,7 @@ function main() {
         if (controls.presetPotentials !== potentialFrame.presetPotentials) {
             potentialFrame.presetPotentials = controls.presetPotentials;
             initializePotential(controls.presetPotentials);
+            // rScaleV = 0.5;
             return;
         }
         if ((controls.enterPotential !== potentialFrame.enterPotential) ||
@@ -244,6 +242,7 @@ function main() {
             }
             draw();
             unbind();
+            // rScaleV = 0.5;
         }
     }
 
@@ -252,7 +251,6 @@ function main() {
         if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
-                copyNewWaveToFrames();
             } else {
                 reshapePotential();
             }
@@ -260,6 +258,7 @@ function main() {
         }
         for (let i = 0; i < controls.speed; i++) {
             timeStepWave();
+            rScaleV = 1.0;
             swap();
         }
         display();
@@ -287,23 +286,52 @@ function main() {
         }
     }
 
-    let touchReleaseWave = function(ev) {
+    let touchReleaseWave = function(ev, mode) {
         let touches = ev.changedTouches;
-        if (touches.length >= 1) {
-            bx = Math.floor((touches[0].pageX - canvas.offsetLeft));
-            by = Math.floor((touches[0].pageY - canvas.offsetTop));
+        let n = touches.length;
+        if (n !== 0) {
+            if (mode == 'move') {
+                let prevBx = bx;
+                let prevBy = by;
+                bx = Math.floor((touches[n-1].pageX - canvas.offsetLeft));
+                by = Math.floor((touches[n-1].pageY - canvas.offsetTop));
+                controls.px = parseInt(bx - prevBx);
+                if (Math.abs(controls.px) > 60.0) {
+                    controls.px = Math.sign(controls.px)*60.0;
+                }
+                controls.py = -parseInt(by - prevBy);
+                if (Math.abs(controls.py) > 60.0) {
+                    controls.py = Math.sign(controls.py)*60.0;
+                }
+            }
+            if (bx < canvas.width && by < canvas.height && 
+                bx >= 0 && by >= 0) {mouseAction = true; }
         }
     }
-
-    document.addEventListener("touchstart", ev => touchReleaseWave(ev));
-    document.addEventListener("touchmove", ev => touchReleaseWave(ev));   
-    document.addEventListener("touchevent", ev => touchReleaseWave(ev));
-    document.addEventListener("mouseup", ev => {
+    canvas.addEventListener("touchstart", ev => touchReleaseWave(ev, 'start'));
+    canvas.addEventListener("touchmove", ev => touchReleaseWave(ev, 'move'));   
+    // document.addEventListener("touchevent", ev => touchReleaseWave(ev, "start"));
+    canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
         mouseUse = false;
     });
-    document.addEventListener("mousedown", () => mouseUse = true);
-    document.addEventListener("mousemove", ev => mousePos(ev, 'move'));
+    canvas.addEventListener("mousedown", () => mouseUse = true);
+    canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
+    window.addEventListener("orientationchange", ev => {
+        canvasStyleWidth = parseInt(canvas.style.width);
+        canvasStyleHeight = parseInt(canvas.style.height);
+        if (window.innerHeight < window.innerWidth) {
+            canvasStyleWidth = parseInt(window.innerHeight*0.95);
+            canvasStyleHeight = parseInt(window.innerHeight*0.95);
+        } else {
+            canvasStyleWidth = parseInt(window.innerWidth*0.95);
+            canvasStyleHeight = parseInt(window.innerWidth*0.95);
+        }
+        canvas.style.width = `${canvasStyleWidth}px`;
+        canvas.style.height = `${canvasStyleHeight}px`;
+        scale = {w: canvasStyleWidth/canvas.width, 
+                 h: canvasStyleHeight/canvas.height};
+    });
 
     animate();
 }

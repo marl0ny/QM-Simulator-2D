@@ -43,7 +43,7 @@ void main () {
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
     vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*2.0);
-    float probDensity = col1.g*col3.g + col2.r*col2.r;
+    float probDensity = (col1.g*col3.g + col2.r*col2.r);
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
     if (displayMode == 0) {
@@ -51,7 +51,8 @@ void main () {
                         vec3(col4.r, col4.r, col4.r),
                         1.0);
     } else {
-        gl_FragColor = vec4(probDensity + col4.r, probDensity + col4.r, 
-                            probDensity + col4.r, 1.0);
+        gl_FragColor = vec4(probDensity/4.0 + col4.r, 
+                            probDensity/4.0 + col4.r, 
+                            probDensity/4.0 + col4.r, 1.0);
     }
 }

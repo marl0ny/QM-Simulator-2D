@@ -3,6 +3,20 @@
 * various WebGL interfaces.
 */
 
+let canvas = document.getElementById("sketch-canvas");
+/*let gl = canvas.getContext("webgl2");
+if (gl === null) {
+    console.log("WebGL2 not available.");*/
+gl = canvas.getContext("webgl");
+if (gl === null) {
+    throw "Your browser does not support WebGL."
+}
+gl.getExtension('OES_texture_float');
+gl.getExtension('OES_texture_float_linear');    
+/*} else {
+
+}*/
+
 function makeShader(shaderType, shaderSource) {
     let shaderID = gl.createShader(shaderType);
     if (shaderID === 0) {
@@ -191,21 +205,7 @@ function replaceIntsToFloats(expr) {
     }
     return newExpr;
 }
-// replaceIntsToFloats('a3*3 - 4*x + y + z*0.1231 - 3');
 
-
-/*function replaceCaretPowersWithPow(expr) {
-    // Posible cases
-    let varOrNumber = '(?:[a-zA-Z_][a-zA-Z_0-9]*|[0-9]+(\.)?'
-                      + '|\.[0-9]+|[0-9]*(\.)?[0-9]+[eE](-)?[0-9]+)'
-    let powExpr = new RegExp(varOrNumber + '\s*\^\s*' + varOrNumber);
-    while(expr.match(powExpr) !== null) {
-        let match = expr.match(powExpr);
-        match.split 
-        expr.replaceAll(match, '');
-    }
-
-}*/
 
 function createFunctionShader(expr, uniforms) {
     let splitTemplateShader = [`
@@ -214,11 +214,19 @@ function createFunctionShader(expr, uniforms) {
     uniform float xScale;
     uniform float yScale;`, // 0
     '// UNIFORMS HERE', // 1
-    'void main() {',  // 2
-    '    float pi = 3.141592653589793;', // 3
-    '    float x = xScale*fragTexCoord.x;', // 4
-    '    float y = yScale*fragTexCoord.y;', // 5
-    '    float functionValue = ', // 6
+    `
+    float circle(float x, float y, 
+                 float x0, float y0, float r) {
+        float xc = x0 - x;
+        float yc = y0 - y;
+        return (sqrt(xc*xc + yc*yc) < r)? 1.0: 0.0;
+    }
+    `, // 2
+    'void main() {',  // 3
+    '    float pi = 3.141592653589793;', // 4
+    '    float x = xScale*fragTexCoord.x;', // 5
+    '    float y = yScale*fragTexCoord.y;', // 6
+    '    float functionValue = ', // 7
     `    if (functionValue > 30.0) {
         gl_FragColor = vec4(30.0, 0.0, 0.0, 1.0);
     } else {
@@ -230,7 +238,7 @@ function createFunctionShader(expr, uniforms) {
     }
     `, // 7
     '}'];
-    splitTemplateShader[6] = splitTemplateShader[6] + expr + ';';
+    splitTemplateShader[7] = splitTemplateShader[7] + expr + ';';
     for (let uniform of uniforms) {
         splitTemplateShader[1] += '\n' + `uniform float ${uniform};`
     }
@@ -246,8 +254,6 @@ function createFunctionShader(expr, uniforms) {
     gl.shaderSource(shaderID, templateShaderText);
     gl.compileShader(shaderID);
     if (!gl.getShaderParameter(shaderID, gl.COMPILE_STATUS)) {
-        // let msg = gl.getShaderInfoLog(shaderID);
-        // alert(msg);
         gl.deleteShader(shaderID);
         return null;
     }
