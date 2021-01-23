@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <meta charset="utf-8"/>
 <html>
-    <center>
+    <!--<center>-->
     <body style="font-family: Arial; background-color: black; touch-action: none;">
         <!-- <h2 style="color: white;">Single Particle QM in 2D Box</h2> -->
+        <center>
         <canvas id="sketch-canvas",
         width="512", height="512", 
         style = "touch-action: none; width: 512px; height: 512px; 
                  border: solid white 1px; top: 0px; bottom: 0px;">
         </canvas>
+        <div id="error-text", style="font-family: Arial; color: white;"></div>
+        </center>
     </body>
-    </center>
     <script src="shaders.js"> </script>
     <script src="./dat.gui/dat.gui.js"> </script>
     <script src="gl-wrappers.js"> </script>

@@ -34,6 +34,23 @@ void main() {
 `;
 
 
+const probDensityFragmentSource = `#define NAME probDensityFragmentSource
+precision highp float;
+varying highp vec2 fragTexCoord;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+
+
+void main() {
+    vec4 col1 = texture2D(tex1, fragTexCoord);
+    vec4 col2 = texture2D(tex2, fragTexCoord);
+    vec4 col3 = texture2D(tex3, fragTexCoord);
+    float probDensity = col2.r*col2.r + col1.g*col3.g;
+    gl_FragColor = vec4(probDensity, 0.0, 0.0, 1.0);
+}`;
+
+
 const initializePotentialFragmentSource = `#define NAME initializePotentialFragmentSource
 precision highp float;
 varying highp vec2 fragTexCoord;
@@ -127,6 +144,9 @@ uniform float bx;
 uniform float by;
 uniform float px;
 uniform float py;
+uniform float sx;
+uniform float sy;
+uniform float amp;
 float sqrt2 = 1.4142135623730951; 
 float sqrtpi = 1.7724538509055159;
 float pi = 3.141592653589793;
@@ -136,13 +156,10 @@ void main () {
         fragTexCoord.y > dy && fragTexCoord.y < 1.0-dy) {
         float x = fragTexCoord.x;
         float y = fragTexCoord.y;
-        float sx = 30.0*dx;
-        float sy = 30.0*dy;
         float u = ((x - bx)/(sx*sqrt2));
         float v = ((y - by)/(sy*sqrt2));
-        float amp = 5.0;
-        float re = 5.0*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
-        float im = 5.0*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
+        float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
+        float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
         gl_FragColor = vec4(re, im, 0.0, 1.0); 
     } else {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
@@ -153,11 +170,68 @@ void main () {
 const viewFrameFragmentSource = `#define NAME viewFrameFragmentSource
 precision highp float;
 varying highp vec2 fragTexCoord;
+uniform float x0;
+uniform float y0;
+uniform float w;
+uniform float h;
+uniform float lineWidth;
+uniform float brightness;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
 uniform sampler2D texV;
+uniform sampler2D textTex;
 uniform int displayMode;
+
+/*
+mat4 num0 = mat4(
+    1, 1, 1,
+    1, 0, 1,
+    1, 0, 1,
+    1, 0, 1,
+    1, 1, 1, 0
+);
+mat4 num1 = mat4(
+    1, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    1, 1, 1, 0
+);
+mat4 num2 = mat4(
+    1, 1, 1,
+    0, 0, 1,
+    1, 1, 1,
+    1, 0, 0,
+    1, 1, 1, 0
+);*/
+
+
+vec4 drawWindow(vec4 pix, float x, float y,
+                float x0, float y0, float w, float h,
+                float lineWidth) {
+    y0 = (h < 0.0)? y0 + h: y0;
+    h = (h < 0.0)? -h: h;
+    x0 = (w < 0.0)? x0 + w: x0;
+    w = (w < 0.0)? -w: w;
+    if ((x >= x0 && x <= (x0 + w)) &&
+        (
+            (abs(y - y0) <= lineWidth/2.0) ||
+            (abs(y - y0 - h) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    if ((y > y0 && y < (y0 + h)) &&
+        (
+            (abs(x - x0) <= lineWidth/2.0) ||
+            (abs(x - x0 - w) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    return pix;
+}
 
 
 vec3 complexToColour(float re, float im) {
@@ -194,19 +268,29 @@ void main () {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
-    vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*2.0);
+    vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*1.0);
     float probDensity = (col1.g*col3.g + col2.r*col2.r);
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
+    vec4 pix;
     if (displayMode == 0) {
-    gl_FragColor = vec4(probDensity*complexToColour(re, im)/4.0 + 
-                        vec3(col4.r, col4.r, col4.r),
-                        1.0);
+        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) + 
+                   vec3(col4.r, col4.r, col4.r),
+                   1.0);
     } else {
-        gl_FragColor = vec4(probDensity/4.0 + col4.r, 
-                            probDensity/4.0 + col4.r, 
-                            probDensity/4.0 + col4.r, 1.0);
+        pix = vec4(probDensity*(brightness/16.0) + col4.r, 
+                   probDensity*(brightness/16.0) + col4.r, 
+                   probDensity*(brightness/16.0) + col4.r, 1.0);
     }
+    gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
+                              x0, y0, w, h, lineWidth) + texture2D(textTex, fragTexCoord);
+    /*
+    if (lineWidth >= 0.001) {
+        gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
+                                  x0, y0, w, h, lineWidth);
+    } else {
+        gl_FragColor = pix;
+    }*/
 }`;
 
 

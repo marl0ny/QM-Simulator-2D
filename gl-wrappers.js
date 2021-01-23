@@ -4,18 +4,32 @@
 */
 
 let canvas = document.getElementById("sketch-canvas");
-/*let gl = canvas.getContext("webgl2");
+let context = "webgl2";
+let gl = canvas.getContext(context);
+let ext = null;
+let ext2 = null;
 if (gl === null) {
-    console.log("WebGL2 not available.");*/
-gl = canvas.getContext("webgl");
-if (gl === null) {
-    throw "Your browser does not support WebGL."
+    console.log("WebGL2 not available.");
+    context = "webgl";
+    gl = canvas.getContext(context);
+    if (gl === null) {
+        throw "Your browser does not support WebGL."
+    }
+    ext = gl.getExtension('OES_texture_float');
+    ext2 = gl.getExtension('OES_texture_float_linear');
+    if (ext === null && ext2 === null) {
+        throw "Your browser does not support the necessary WebGL extensions."
+    }
+} else {
+    ext = gl.getExtension('EXT_color_buffer_float');
+    if (ext === null) {
+        throw "Your browser does not support the necessary WebGL extensions."
+    }
 }
-gl.getExtension('OES_texture_float');
-gl.getExtension('OES_texture_float_linear');    
-/*} else {
 
-}*/
+if (gl === null) {
+    document.getElementById("error-text").textContent = `<br>Unable to display canvas.`;
+}
 
 function makeShader(shaderType, shaderSource) {
     let shaderID = gl.createShader(shaderType);
@@ -53,18 +67,31 @@ function unbind() {
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 }
 
-function makeTexture(buf, w, h) {
+function makeTexture(buf, w, h, format) {
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGBA, 
-        w, h, 0, 
-        gl.RGBA, gl.FLOAT, 
-        buf
-    );
+    if (format === gl.FLOAT) {
+        gl.texImage2D(
+            gl.TEXTURE_2D, 0, 
+            (context === "webgl")? gl.RGBA: gl.RGBA32F, 
+            w, h, 0, 
+            gl.RGBA, gl.FLOAT, 
+            buf
+        );
+    } else {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
+                      gl.RGBA, gl.UNSIGNED_BYTE, buf);
+    }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    if (context == "webgl") {
+        gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }
     return texture;
 }
 
@@ -78,7 +105,7 @@ class Frame {
         this.frameTexture = null;
         if (this.frameNumber !== 0) {
             gl.activeTexture(gl.TEXTURE0 + frameNumber);
-            this.frameTexture = makeTexture(null, w, h);
+            this.frameTexture = makeTexture(null, w, h, gl.FLOAT);
             gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         }
         this.vbo = gl.createBuffer();
@@ -124,11 +151,40 @@ class Frame {
         gl.vertexAttribPointer(pos, 3, gl.FLOAT, false, 3*4, 0);
     }
     getTextureArray(boxDimensions) {
+        // Getting texture data as array:
         // https://stackoverflow.com/a/18804153
+        // answered by nkron 
+        // (https://stackoverflow.com/users/977809/nkron)
+        // question (https://stackoverflow.com/q/4702032)
+        // by pion (https://stackoverflow.com/users/365450/pion)
+        /*let x = boxDimensions.x;
+        let y = boxDimensions.y;
+        let w = boxDimensions.w;
+        let h = boxDimensions.h;*/
+        let x, y, w, h;
         ({x, y, w, h} = boxDimensions);
         let buf = new Float32Array((w - x)*(h - y)*4);
         gl.readPixels(x, y, w, h, gl.RGBA, gl.FLOAT, buf);
         return buf;
+    }
+}
+
+class ImageFrame extends Frame {
+    constructor(w, h, image, frameNumber, shaderProgram) {
+        super(w, h, 0);
+        this.shaderProgram = shaderProgram;
+        this.bind();
+        gl.activeTexture(gl.TEXTURE0 + frameNumber);
+        this.frameTexture = makeTexture(image, w, h, gl.UNSIGNED_BYTE);
+        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+                                gl.TEXTURE_2D, this.frameTexture, 0);
+        unbind();
+
+    }
+    getTextureArray(boxDimensions) {
+        throw "Not implemented yet";
     }
 }
 
