@@ -1,20 +1,34 @@
 const copyOverFragmentSource = `#define NAME copyOverFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 
 void main () {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
-    gl_FragColor = vec4(col1.rgb + col2.rgb, 1.0); 
+    fragColor = vec4(col1.rgb + col2.rgb, 1.0); 
 }
 `;
 
 
 const reshapePotentialFragmentSource = `#define NAME reshapePotentialFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform sampler2D tex1;
 uniform float bx;
 uniform float by;
@@ -26,9 +40,9 @@ void main() {
     float initialV = texture2D(tex1, fragTexCoord).r;
     if ((xy.x - bx)*(xy.x - bx) < 0.0001 && (xy.y - by)*(xy.y - by) < 0.0001
          && initialV < v2) {
-        gl_FragColor = vec4(v2, (initialV + v2)/2.0, 0.0, 1.0);
+        fragColor = vec4(v2, initialV, 0.0, 1.0);
     } else {
-        gl_FragColor = vec4(initialV, initialV, 0.0, 1.0);
+        fragColor = vec4(initialV, initialV, 0.0, 1.0);
     }
 }
 `;
@@ -36,7 +50,14 @@ void main() {
 
 const probDensityFragmentSource = `#define NAME probDensityFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
@@ -47,13 +68,20 @@ void main() {
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
     float probDensity = col2.r*col2.r + col1.g*col3.g;
-    gl_FragColor = vec4(probDensity, 0.0, 0.0, 1.0);
+    fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
 }`;
 
 
 const initializePotentialFragmentSource = `#define NAME initializePotentialFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform int potentialType;
 
 // Controls size of potential
@@ -71,7 +99,7 @@ void main() {
     float x = fragTexCoord.x;
     float y = fragTexCoord.y;
     if (potentialType == 1) {
-        gl_FragColor = vec4(a*((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)), 0.0, 0.0, 1.0); 
+        fragColor = vec4(a*((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)), 0.0, 0.0, 1.0); 
     } else if (potentialType == 2) {
         if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&
@@ -80,34 +108,41 @@ void main() {
               x <= x2 - spacing/2.0
              ) || x >= x2 + spacing/2.0
             )) {
-            gl_FragColor = vec4(a, 0.0, 0.0, 1.0); 
+            fragColor = vec4(a, 0.0, 0.0, 1.0); 
         } else {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
     } else if (potentialType == 3) {
          if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&
             (x <= x1 - spacing/2.0 ||
              x >= x1 + spacing/2.0)) {
-            gl_FragColor = vec4(a, 0.0, 0.0, 1.0); 
+            fragColor = vec4(a, 0.0, 0.0, 1.0); 
         } else {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
     } else if (potentialType == 4) {
         float u = 10.0*(x - 0.5);        
         float v = 10.0*(y - 0.5);
         float oneOverR = 1.0/sqrt(u*u + v*v);
         float val = (oneOverR < 50.0)? oneOverR: 50.0;
-        gl_FragColor = vec4(val, 0.0, 0.0, 1.0); 
+        fragColor = vec4(val, 0.0, 0.0, 1.0); 
     } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
 }`;
 
 
 const realTimeStepFragmentSource = `#define NAME realTimeStepFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float dx;
 uniform float dy;
 uniform float dt;
@@ -121,7 +156,8 @@ uniform sampler2D texV;
 
 
 void main () {
-    float V = rScaleV*texture2D(texV, fragTexCoord).r;
+    float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
+                rScaleV*texture2D(texV, fragTexCoord).g;
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
     float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
@@ -131,13 +167,20 @@ void main () {
     // float div2ImPsi = (u + d - 2.0*imPsi)/(dy*dy) + (l + r - 2.0*imPsi)/(dx*dx);
     float div2ImPsi = (u + d + l + r - 4.0*imPsi)/(dx*dx);
     float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
-    gl_FragColor = vec4(rePsi + hamiltonImPsi*dt/hbar, imPsi, 0.0, 1.0);
+    fragColor = vec4(rePsi + hamiltonImPsi*dt/hbar, imPsi, 0.0, 1.0);
 }`;
 
 
 const initialWaveFragmentSource = `#define NAME initialWaveFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float dx;
 uniform float dy;
 uniform float bx;
@@ -160,16 +203,23 @@ void main () {
         float v = ((y - by)/(sy*sqrt2));
         float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
         float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
-        gl_FragColor = vec4(re, im, 0.0, 1.0); 
+        fragColor = vec4(re, im, 0.0, 1.0); 
     } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
 }`;
 
 
 const viewFrameFragmentSource = `#define NAME viewFrameFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float x0;
 uniform float y0;
 uniform float w;
@@ -182,29 +232,6 @@ uniform sampler2D tex3;
 uniform sampler2D texV;
 uniform sampler2D textTex;
 uniform int displayMode;
-
-/*
-mat4 num0 = mat4(
-    1, 1, 1,
-    1, 0, 1,
-    1, 0, 1,
-    1, 0, 1,
-    1, 1, 1, 0
-);
-mat4 num1 = mat4(
-    1, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    1, 1, 1, 0
-);
-mat4 num2 = mat4(
-    1, 1, 1,
-    0, 0, 1,
-    1, 1, 1,
-    1, 0, 0,
-    1, 1, 1, 0
-);*/
 
 
 vec4 drawWindow(vec4 pix, float x, float y,
@@ -282,21 +309,20 @@ void main () {
                    probDensity*(brightness/16.0) + col4.r, 
                    probDensity*(brightness/16.0) + col4.r, 1.0);
     }
-    gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
+    fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) + texture2D(textTex, fragTexCoord);
-    /*
-    if (lineWidth >= 0.001) {
-        gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
-                                  x0, y0, w, h, lineWidth);
-    } else {
-        gl_FragColor = pix;
-    }*/
 }`;
 
 
 const vertexShaderSource = `#define NAME vertexShaderSource
+
+#if __VERSION__ == 300
+in vec3 pos;
+out highp vec2 fragTexCoord;
+#else
 attribute vec3 pos;
 varying highp vec2 fragTexCoord;
+#endif
 
 void main() {
     gl_Position = vec4(pos.xyz, 1.0);
@@ -306,7 +332,14 @@ void main() {
 
 const imagTimeStepFragmentSource = `#define NAME imagTimeStepFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float dx;
 uniform float dy;
 uniform float dt;
@@ -314,12 +347,15 @@ uniform float w;
 uniform float h;
 uniform float m;
 uniform float hbar;
+uniform float rScaleV;
 uniform sampler2D texPsi;
 uniform sampler2D texV;
 
 
 void main () {
     float V = texture2D(texV, fragTexCoord).r;
+    /*float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
+                rScaleV*texture2D(texV, fragTexCoord).g;*/
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
     float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
@@ -329,7 +365,7 @@ void main () {
     // float div2RePsi = (u + d - 2.0*rePsi)/(dy*dy) + (l + r - 2.0*rePsi)/(dx*dx);
     float div2RePsi = (u + d + l + r - 4.0*rePsi)/(dx*dx);
     float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;
-    gl_FragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt/hbar, 0.0, 1.0);
+    fragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt/hbar, 0.0, 1.0);
 }`;
 
 

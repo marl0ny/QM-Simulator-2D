@@ -31,12 +31,19 @@ if (gl === null) {
     document.getElementById("error-text").textContent = `<br>Unable to display canvas.`;
 }
 
+if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).precision < 23) {
+    throw "GPU precision for highp float is not high enough.";
+}
+
 function makeShader(shaderType, shaderSource) {
     let shaderID = gl.createShader(shaderType);
     if (shaderID === 0) {
         alert("Unable to create shader.");
     }
-    gl.shaderSource(shaderID, shaderSource);
+    gl.shaderSource(shaderID, 
+                    (context === "webgl2")? "#version 300 es\n" + shaderSource: 
+                                            shaderSource
+                   );
     gl.compileShader(shaderID);
     if (!gl.getShaderParameter(shaderID, gl.COMPILE_STATUS)) {
         let msg = gl.getShaderInfoLog(shaderID);
@@ -157,10 +164,6 @@ class Frame {
         // (https://stackoverflow.com/users/977809/nkron)
         // question (https://stackoverflow.com/q/4702032)
         // by pion (https://stackoverflow.com/users/365450/pion)
-        /*let x = boxDimensions.x;
-        let y = boxDimensions.y;
-        let w = boxDimensions.w;
-        let h = boxDimensions.h;*/
         let x, y, w, h;
         ({x, y, w, h} = boxDimensions);
         let buf = new Float32Array((w - x)*(h - y)*4);
@@ -266,9 +269,17 @@ function replaceIntsToFloats(expr) {
 function createFunctionShader(expr, uniforms) {
     let splitTemplateShader = [`
     precision highp float;
+    #if __VERSION__ == 300
+    #define texture2D texture
+    in vec2 fragTexCoord;
+    out vec4 fragColor;
+    #else
+    #define fragColor gl_FragColor
     varying highp vec2 fragTexCoord;
+    #endif
     uniform float xScale;
-    uniform float yScale;`, // 0
+    uniform float yScale;
+    uniform sampler2D prevV;`, // 0
     '// UNIFORMS HERE', // 1
     `
     float circle(float x, float y, 
@@ -283,13 +294,14 @@ function createFunctionShader(expr, uniforms) {
     '    float x = xScale*fragTexCoord.x;', // 5
     '    float y = yScale*fragTexCoord.y;', // 6
     '    float functionValue = ', // 7
-    `    if (functionValue > 30.0) {
-        gl_FragColor = vec4(30.0, 0.0, 0.0, 1.0);
+    `float prevVal = texture2D(prevV, fragTexCoord).r;    
+    if (functionValue > 30.0) {
+        fragColor = vec4(30.0, prevVal, 0.0, 1.0);
     } else {
         if (functionValue >= 0.0) {
-            gl_FragColor = vec4(functionValue, 0.0, 0.0, 1.0);
+            fragColor = vec4(functionValue, prevVal, 0.0, 1.0);
         } else {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            fragColor = vec4(0.0, prevVal, 0.0, 1.0);
         }
     }
     `, // 7

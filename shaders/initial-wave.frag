@@ -1,6 +1,13 @@
 #define NAME initialWaveFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float dx;
 uniform float dy;
 uniform float bx;
@@ -23,8 +30,8 @@ void main () {
         float v = ((y - by)/(sy*sqrt2));
         float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
         float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
-        gl_FragColor = vec4(re, im, 0.0, 1.0); 
+        fragColor = vec4(re, im, 0.0, 1.0); 
     } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
 }

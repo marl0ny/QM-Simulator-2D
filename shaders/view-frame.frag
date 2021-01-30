@@ -1,6 +1,13 @@
 #define NAME viewFrameFragmentSource
 precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
+#endif
 uniform float x0;
 uniform float y0;
 uniform float w;
@@ -13,29 +20,6 @@ uniform sampler2D tex3;
 uniform sampler2D texV;
 uniform sampler2D textTex;
 uniform int displayMode;
-
-/*
-mat4 num0 = mat4(
-    1, 1, 1,
-    1, 0, 1,
-    1, 0, 1,
-    1, 0, 1,
-    1, 1, 1, 0
-);
-mat4 num1 = mat4(
-    1, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    1, 1, 1, 0
-);
-mat4 num2 = mat4(
-    1, 1, 1,
-    0, 0, 1,
-    1, 1, 1,
-    1, 0, 0,
-    1, 1, 1, 0
-);*/
 
 
 vec4 drawWindow(vec4 pix, float x, float y,
@@ -113,13 +97,6 @@ void main () {
                    probDensity*(brightness/16.0) + col4.r, 
                    probDensity*(brightness/16.0) + col4.r, 1.0);
     }
-    gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
+    fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) + texture2D(textTex, fragTexCoord);
-    /*
-    if (lineWidth >= 0.001) {
-        gl_FragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
-                                  x0, y0, w, h, lineWidth);
-    } else {
-        gl_FragColor = pix;
-    }*/
 }

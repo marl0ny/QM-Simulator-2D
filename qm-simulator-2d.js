@@ -94,7 +94,7 @@ let editUniformsFolder = moreControlsFolder.addFolder('Edit Uniform Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
 // editUniformsFolder.add(controls, 'dx', 1.0/pixelWidth, 1.0);
-let rScaleV = 1.0;
+let rScaleV = 0.0;
 
 let image = new Image(4, 4);
 image.src = 'numbers.png';
@@ -168,7 +168,7 @@ function main() {
                         1000 + time - timeMilliseconds: 
                         time - timeMilliseconds;
         timeMilliseconds = time;
-        console.clear();
+        // console.clear();
         console.log(parseInt(1000/interval));
 
     }
@@ -195,7 +195,6 @@ function main() {
             let u = j%pixelHeight;
             unbind();
             measure = false;
-            gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
             swapFrames[t-3].useProgram(initialWaveProgram);
             swapFrames[t-3].bind();
             swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth, dy: 1.0/pixelHeight,
@@ -218,11 +217,11 @@ function main() {
     }
 
     function initializePotential(type) {
-        gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
         potentialFrame.useProgram(initPotentialProgram);
         potentialFrame.bind();
         // Possible presets:
         // 10 - inversesqrt(4*(x-0.5)*(x-0.5) + 4*(y-0.5)*(y-0.5))
+        // -20*(x-0.5) + 20.0*circle(x,y,0.6,0.5,0.01) 
         if (type === 'SHO') {
             potentialFrame.setFloatUniforms({a: 40.0});
             potentialFrame.setIntUniforms({potentialType: 1});
@@ -262,28 +261,24 @@ function main() {
     }
 
     function reshapePotential() {
-        gl.activeTexture(gl.TEXTURE0 + potentialFrame.frameNumber);
         storeFrame.useProgram(shapePotentialProgram);
         storeFrame.bind();
-        gl.bindTexture(gl.TEXTURE_2D, potentialFrame.frameTexture);
         storeFrame.setFloatUniforms({bx: bx/canvas.width, 
                                      by: 1.0 - by/canvas.height,
                                      v2: 10.0});
         storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber});
         draw();
         unbind();
-        gl.activeTexture(gl.TEXTURE0 + storeFrame.frameNumber);
         potentialFrame.useProgram(copyToProgram);
         potentialFrame.bind();
         potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber, 
                                        tex2: nullTexNumber});
         draw();
         unbind();
-        // rScaleV = 0.5;
+        rScaleV = 0.5;
     }
 
     function createNewWave() {
-        gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
         swapFrames[t-3].useProgram(initialWaveProgram);
         swapFrames[t-3].bind();
         swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth, dy: 1.0/pixelHeight,
@@ -314,11 +309,12 @@ function main() {
         swapFrames[t-1].useProgram(realTimeStepProgram);
         swapFrames[t-1].bind();
         swapFrames[t-1].setFloatUniforms({dx: width/pixelWidth, dy: height/pixelHeight, 
-                                        dt: dt, w: width, h: height, m: controls.m, hbar: 1.0, 
+                                        dt: controls.dt, w: width, h: height, m: controls.m, hbar: 1.0, 
                                         rScaleV: rScaleV});
         swapFrames[t-1].setIntUniforms({texPsi: swapFrames[t-2].frameNumber,
                                         texV: potentialFrame.frameNumber});
         draw();
+        rScaleV = 0.0;
         unbind();
         swapFrames[t].useProgram(imagTimeStepProgram);
         swapFrames[t].bind();
@@ -331,7 +327,6 @@ function main() {
     }
 
     function display() {
-        gl.activeTexture(gl.TEXTURE0);
         viewFrame.useProgram(displayProgram);
         viewFrame.bind();
         viewFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
@@ -384,7 +379,6 @@ function main() {
             potentialFrame.useTextureCoordinates)) {
             potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
             potentialFrame.enterPotential = controls.enterPotential;
-            gl.activeTexture(gl.TEXTURE0 + nullTexNumber);
             let expr = potentialFrame.enterPotential;
             expr = replaceIntsToFloats(expr);
             let shader = createFunctionShader(expr, []);
@@ -392,9 +386,9 @@ function main() {
                 return;
             }
             let program = makeProgram(vShader, shader);
-            potentialFrame.useProgram(program);
+
+            /*potentialFrame.useProgram(program);
             potentialFrame.bind();
-            // gl.bindTexture(gl.TEXTURE_2D, potentialFrame.frameTexture);
             if (controls.useTextureCoordinates) {
                 potentialFrame.setFloatUniforms({xScale: 1.0, yScale: 1.0});
             } else {
@@ -402,8 +396,25 @@ function main() {
             }
             potChanged = true;
             draw();
+            unbind();*/
+            storeFrame.useProgram(program);
+            storeFrame.bind();
+            if (controls.useTextureCoordinates) {
+                storeFrame.setFloatUniforms({xScale: 1.0, yScale: 1.0});
+            } else {
+                storeFrame.setFloatUniforms({xScale: width, yScale: height});
+            }
+            storeFrame.setIntUniforms({prevV: potentialFrame.frameNumber});
+            draw();
             unbind();
-            // rScaleV = 0.5;
+            potentialFrame.useProgram(copyToProgram);
+            potentialFrame.bind();
+            potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
+                                           tex2: nullTexNumber});
+            draw();
+            unbind();
+            potChanged = true;
+            rScaleV = 0.5;
         }
 
     }
@@ -423,10 +434,10 @@ function main() {
         }
         for (let i = 0; i < controls.speed; i++) {
             timeStepWave();
-            rScaleV = 1.0;
+            rScaleV = 0.0;
             swap();
         }
-        // logFPS();
+        logFPS();
         display();
         measurePosition();
         requestAnimationFrame(animate);
@@ -439,12 +450,12 @@ function main() {
             bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
             by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
             controls.px = parseInt(bx - prevBx);
-            if (Math.abs(controls.px) > 60.0/controls.scaleP) {
-                controls.px = Math.sign(controls.px)*60.0/controls.scaleP;
+            if (Math.abs(controls.px) > 50.0/controls.scaleP) {
+                controls.px = Math.sign(controls.px)*50.0/controls.scaleP;
             }
             controls.py = -parseInt(by - prevBy);
-            if (Math.abs(controls.py) > 60.0/controls.scaleP) {
-                controls.py = Math.sign(controls.py)*60.0/controls.scaleP;
+            if (Math.abs(controls.py) > 50.0/controls.scaleP) {
+                controls.py = Math.sign(controls.py)*50.0/controls.scaleP;
             }
         }
         if (mouseUse) {
