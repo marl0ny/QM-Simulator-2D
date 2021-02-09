@@ -89,16 +89,16 @@ function makeTexture(buf, w, h, format) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
                       gl.RGBA, gl.UNSIGNED_BYTE, buf);
     }
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    if (context == "webgl") {
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    /*if (context == "webgl") {
         gl.generateMipmap(gl.TEXTURE_2D);
     } else {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    }
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }*/
     return texture;
 }
 
@@ -110,11 +110,11 @@ class Frame {
         this.uniforms = {};
         this.frameNumber = frameNumber;
         this.frameTexture = null;
-        if (this.frameNumber !== 0) {
-            gl.activeTexture(gl.TEXTURE0 + frameNumber);
-            this.frameTexture = makeTexture(null, w, h, gl.FLOAT);
-            gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-        }
+        // if (this.frameNumber !== 0) {
+        gl.activeTexture(gl.TEXTURE0 + frameNumber);
+        this.frameTexture = makeTexture(null, w, h, gl.FLOAT);
+        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+        // }
         this.vbo = gl.createBuffer();
         this.ebo = gl.createBuffer();
         this.fbo = gl.createFramebuffer();
@@ -195,20 +195,23 @@ function getVariables(expr) {
     expr += ' ';
     let v = new RegExp(/[a-zA-Z_][a-zA-Z_0-9]*[^a-zA-Z_0-9]/g);
     let lst = [];
+    if (!expr.match(v)) return new Set();
     for (let s of expr.match(v)) {
         lst.push(s.substring(0, s.length - 1));
     }
     let vars = new Set(lst);
-    for (let mathKeyword in ['sin', 'cos', 'tan',
+    for (let mathKeyword of ['sin', 'cos', 'tan',
                              'asin', 'acos', 'atan',
                              'sinh', 'cosh', 'tanh',
                              'asinh', 'acosh', 'atanh',
                              'pow', 'log', 'exp',
                              'sqrt', 'inversesqrt',
                              'abs', 'ceil', 'max', 'min', 
-                             'mod', 'modf', 'pi']) {
-        vars.delete(mathKeyword);
+                             'mod', 'modf', 'pi',
+                             'circle']) {
+        console.log(vars.delete(mathKeyword));
     }
+    console.log(vars);
     return vars;
 }
 
@@ -304,7 +307,7 @@ function createFunctionShader(expr, uniforms) {
             fragColor = vec4(0.0, prevVal, 0.0, 1.0);
         }
     }
-    `, // 7
+    `, // 8
     '}'];
     splitTemplateShader[7] = splitTemplateShader[7] + expr + ';';
     for (let uniform of uniforms) {
@@ -315,6 +318,8 @@ function createFunctionShader(expr, uniforms) {
     for (let s of splitTemplateShader) {
         templateShaderText += s + '\n';
     }
+    if (context === "webgl2")
+        templateShaderText = "#version 300 es\n" + templateShaderText;
     let shaderID = gl.createShader(gl.FRAGMENT_SHADER);
     if (shaderID === 0) {
         return null;

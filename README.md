@@ -16,11 +16,12 @@ To the right of the box are the GUI controls. These are:
 - **Mouse** dropdown. Use the mouse to either place a new wavefunction `new Ψ(x, y)`, redraw the current potential `reshape V(x, y)`, or draw a rectangular region of interest `draw ROI` 
 (currently this option only outputs to console the probability of finding the particle in the region of interest). 
 - **Preset Potential** dropdown. Modify the potential within the box using the preset options found here. The options are SHO (Simple Harmonic Oscillator), ISW (Infinite Square Well), Double Slit, Single Slit, and 1/r. The default potential at the start is SHO.
+- **Preset Controls** folder. Contains sliders to manipulate the shape of the preset potential. 
 - **Measure Position** button. Perform a measurement on the position of the particle. The wavefunction of the particle is subsequently localized at the measurement position.
 - Under the folders **More Controls** and **Text Edit Potential** is the **Enter Potential V(x, y)** entry
 box and the **Use Tex Coordinates** checkbox. The **Enter Potential V(x, y)** entry box is where you can type in a
 new potential. Please note that as of right now you cannot use `**` or `^` to express powers. 
-Also note that the value of the potential at a given point may be cutoff if it's too high or too deep. Checking **Use Tex Coordinates** uses the coordinates of the texture image to express V(x, y) instead of the coordinates in the simulation. Note that the origin `0, 0` is defined at the bottom left corner of the box.
+Also note that the value of the potential at a given point may be cutoff if it's too high or too deep. Checking **Use Tex Coordinates** uses the coordinates of the texture image to express V(x, y) instead of the coordinates in the simulation. Note that the origin `0, 0` is defined at the bottom left corner of the box. The folder **Edit Variables** contains sliders for any inputted variables that are not x or y.
 - Also under the **More Controls** folder is the **Edit Uniforms Folder** which contains sliders to modify the mass **m** of the particle or the time step length **dt**.
 
 

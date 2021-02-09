@@ -85,11 +85,15 @@ let mouseMode = gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)
                                                 'draw ROI']).name('Mouse');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit', 
                                        'Single Slit', '1/r']).name('Preset Potential');
+let presetControlsFolder = gui.addFolder('Preset Controls');
+presetControlsFolder.controls = [];
 gui.add(controls, 'measurePosition').name('Measure Position');
 let moreControlsFolder = gui.addFolder('More Controls');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
 textEditPotential.add(controls, 'useTextureCoordinates').name('Use Tex Coordinates');
 textEditPotential.add(controls, 'enterPotential').name('Enter Potential V(x, y)');
+let textEditSubFolder = textEditPotential.addFolder('Edit variables');
+textEditSubFolder.controls = [];
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Uniform Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
@@ -217,20 +221,52 @@ function main() {
     }
 
     function initializePotential(type) {
-        potentialFrame.useProgram(initPotentialProgram);
-        potentialFrame.bind();
         // Possible presets:
         // 10 - inversesqrt(4*(x-0.5)*(x-0.5) + 4*(y-0.5)*(y-0.5))
         // -20*(x-0.5) + 20.0*circle(x,y,0.6,0.5,0.01) 
+        for (let e of presetControlsFolder.controls) {
+            e.remove();
+        }
+        presetControlsFolder.controls = [];
         if (type === 'SHO') {
-            potentialFrame.setFloatUniforms({a: 40.0});
-            potentialFrame.setIntUniforms({potentialType: 1});
-        } else if (type == 'Double Slit') {
+            let f = (a) => {
+                potentialFrame.useProgram(initPotentialProgram);
+                potentialFrame.bind();
+                potentialFrame.setFloatUniforms({a: a});
+                potentialFrame.setIntUniforms({potentialType: 1});
+                draw();
+                unbind();
+            }
+            f(40.0);
+            let items = {a: 40.0};
+            let aVar = presetControlsFolder.add(items, 'a', 0.0, 40.0);
+            aVar.onChange(f);
+            presetControlsFolder.controls.push(aVar);
 
+        } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54, 
                                       spacing: 0.02, a: 30.0};
-            potentialFrame.setFloatUniforms(doubleSlitUniforms);
-            potentialFrame.setIntUniforms({potentialType: 2});
+            let f = (doubleSlitUniforms) => {
+                potentialFrame.useProgram(initPotentialProgram);
+                potentialFrame.bind();
+                potentialFrame.setFloatUniforms(doubleSlitUniforms);
+                potentialFrame.setIntUniforms({potentialType: 2});
+                draw();
+                unbind();
+            };
+            f(doubleSlitUniforms);
+            for (let e of Object.keys(doubleSlitUniforms)) {
+                let slider = presetControlsFolder.add(
+                    doubleSlitUniforms, e, 
+                    doubleSlitUniforms[e]*0.8,
+                    doubleSlitUniforms[e]*1.2
+                );
+                slider.onChange(val => {
+                    doubleSlitUniforms[e] = val;
+                    f(doubleSlitUniforms);
+                });
+                presetControlsFolder.controls.push(slider);
+            }
             mouseAction = true;
             bx = pixelWidth/2;
             by = pixelHeight*0.75;
@@ -238,11 +274,31 @@ function main() {
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay(); 
+        
         } else if (type == 'Single Slit') {
-            let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5, x2: 0.54, 
-            spacing: 0.02, a: 30.0};
-            potentialFrame.setFloatUniforms(singleSlitUniforms);
-            potentialFrame.setIntUniforms({potentialType: 3});
+            let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5, 
+                                      spacing: 0.02, a: 30.0};
+            let f = (singleSlitUniforms) => {
+                potentialFrame.useProgram(initPotentialProgram);
+                potentialFrame.bind();
+                potentialFrame.setFloatUniforms(singleSlitUniforms);
+                potentialFrame.setIntUniforms({potentialType: 3});
+                draw();
+                unbind();
+            }
+            f(singleSlitUniforms);
+            for (let e of Object.keys(singleSlitUniforms)) {
+                let slider = presetControlsFolder.add(
+                    singleSlitUniforms, e, 
+                    singleSlitUniforms[e]*0.8,
+                    singleSlitUniforms[e]*1.2
+                );
+                slider.onChange(val => {
+                    singleSlitUniforms[e] = val;
+                    f(singleSlitUniforms);
+                });
+                presetControlsFolder.controls.push(slider);
+            }
             mouseAction = true;
             bx = pixelWidth/2;
             by = pixelHeight*0.75;
@@ -250,14 +306,28 @@ function main() {
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
-        } else if (type == '1/r') {
-            potentialFrame.setIntUniforms({potentialType: 4});
         } else {
-            potentialFrame.setFloatUniforms({a: 0.0});
-            potentialFrame.setIntUniforms({potentialType: 3});
+            potentialFrame.useProgram(initPotentialProgram);
+            potentialFrame.bind();
+            if (type == '1/r') {
+                potentialFrame.setIntUniforms({potentialType: 4});
+                bx = pixelWidth/2;
+                by = pixelHeight*0.75;
+                controls.py = 40.0/controls.scaleP;
+                controls.px = 0.0;
+            } else {
+                potentialFrame.setIntUniforms({potentialType: 5});
+                bx = pixelWidth/3;
+                by = pixelHeight*0.75;
+                controls.py = 30.0/controls.scaleP;
+                controls.px = -30.0/controls.scaleP;
+            }
+            draw();
+            unbind();
+            mouseAction = true;
+            controls.mouseMode = 'new ψ(x, y)';
+            mouseMode.updateDisplay();
         }
-        draw();
-        unbind();
     }
 
     function reshapePotential() {
@@ -377,33 +447,82 @@ function main() {
         if ((controls.enterPotential !== potentialFrame.enterPotential) ||
            (controls.useTextureCoordinates !== 
             potentialFrame.useTextureCoordinates)) {
+            for (let e of textEditSubFolder.controls) {
+                e.remove();
+            }
+            textEditSubFolder.controls = [];
+            if (textEditSubFolder.closed) {
+                textEditSubFolder.open();
+            }
+
             potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
             potentialFrame.enterPotential = controls.enterPotential;
             let expr = potentialFrame.enterPotential;
             expr = replaceIntsToFloats(expr);
-            let shader = createFunctionShader(expr, []);
+            let uniforms = getVariables(expr);
+            uniforms.delete('x');
+            uniforms.delete('y');
+            console.log(uniforms);
+            let shader = createFunctionShader(expr, uniforms);
             if (shader === null) {
                 return;
             }
             let program = makeProgram(vShader, shader);
-
-            /*potentialFrame.useProgram(program);
-            potentialFrame.bind();
-            if (controls.useTextureCoordinates) {
-                potentialFrame.setFloatUniforms({xScale: 1.0, yScale: 1.0});
-            } else {
-                potentialFrame.setFloatUniforms({xScale: width, yScale: height});
-            }
-            potChanged = true;
-            draw();
-            unbind();*/
             storeFrame.useProgram(program);
             storeFrame.bind();
             if (controls.useTextureCoordinates) {
-                storeFrame.setFloatUniforms({xScale: 1.0, yScale: 1.0});
+                floatUniforms = {xScale: 1.0, yScale: 1.0};
             } else {
-                storeFrame.setFloatUniforms({xScale: width, yScale: height});
+                floatUniforms = {xScale: width, yScale: height};
             }
+
+            let f = (uniforms) => {
+                if (controls.useTextureCoordinates) {
+                    floatUniforms = {xScale: 1.0, yScale: 1.0};
+                } else {
+                    floatUniforms = {xScale: width, yScale: height};
+                }
+                for (let e of Object.keys(floatUniforms)) {
+                    uniforms[e] = floatUniforms[e];
+                }
+                storeFrame.useProgram(program);
+                storeFrame.bind();
+                storeFrame.setFloatUniforms(uniforms);
+                storeFrame.setIntUniforms({prevV: potentialFrame.frameNumber});
+                draw();
+                unbind();
+                potentialFrame.useProgram(copyToProgram);
+                potentialFrame.bind();
+                potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
+                                            tex2: nullTexNumber});
+                draw();
+                unbind();
+                potChanged = true;
+                rScaleV = 0.5;
+            };
+            console.log(uniforms);
+            let uniformsObj = {};
+            for (let u of uniforms) {
+                uniformsObj[u] = 0.0;
+            }
+            for (let e of uniforms) {
+                console.log(e);
+                let slider = textEditSubFolder.add(
+                    uniformsObj, e, 
+                    0.0, 10.0
+                );
+                slider.onChange(val => {
+                    uniformsObj[e] = val;
+                    f(uniformsObj);
+                });
+                textEditSubFolder.controls.push(slider);
+            }
+
+            for (let u of uniforms) {
+                floatUniforms[u] = 1.0;
+            }
+
+            storeFrame.setFloatUniforms(floatUniforms);
             storeFrame.setIntUniforms({prevV: potentialFrame.frameNumber});
             draw();
             unbind();
@@ -437,7 +556,7 @@ function main() {
             rScaleV = 0.0;
             swap();
         }
-        logFPS();
+        // logFPS();
         display();
         measurePosition();
         requestAnimationFrame(animate);
