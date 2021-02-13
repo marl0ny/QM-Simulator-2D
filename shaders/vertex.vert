@@ -1,5 +1,3 @@
-#define NAME vertexShaderSource
-
 #if __VERSION__ == 300
 in vec3 pos;
 out highp vec2 fragTexCoord;

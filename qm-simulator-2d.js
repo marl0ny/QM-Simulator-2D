@@ -1,13 +1,11 @@
-
-
 let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
-let realTimeStepShader = makeShader(gl.FRAGMENT_SHADER, realTimeStepFragmentSource);
+let realTimeStepShader = makeShader(gl.FRAGMENT_SHADER, realTimestepFragmentSource);
 let realTimeStepProgram = makeProgram(vShader, realTimeStepShader);
-let imagTimeStepShader = makeShader(gl.FRAGMENT_SHADER, imagTimeStepFragmentSource);
+let imagTimeStepShader = makeShader(gl.FRAGMENT_SHADER, imagTimestepFragmentSource);
 let imagTimeStepProgram = makeProgram(vShader, imagTimeStepShader);
 let initialWaveShader = makeShader(gl.FRAGMENT_SHADER, initialWaveFragmentSource);
 let initialWaveProgram = makeProgram(vShader, initialWaveShader);
-let initPotentialShader = makeShader(gl.FRAGMENT_SHADER, initializePotentialFragmentSource);
+let initPotentialShader = makeShader(gl.FRAGMENT_SHADER, initialPotentialFragmentSource);
 let initPotentialProgram = makeProgram(vShader, initPotentialShader);
 let reshapePotentialShader = makeShader(gl.FRAGMENT_SHADER, reshapePotentialFragmentSource);
 let shapePotentialProgram = makeProgram(vShader, reshapePotentialShader);
@@ -28,16 +26,15 @@ gl.deleteShader(displayShader);
 gl.deleteShader(copyToShader);
 gl.deleteShader(probDensityShader);
 
+let showFPS = false;
 let canvasStyleWidth = parseInt(canvas.style.width);
 let canvasStyleHeight = parseInt(canvas.style.height);
 let windowScale = 0.96;
 // let width = 85.3333333333*Math.sqrt(2.0), height = 64.0*Math.sqrt(2.0);
 let width = 64.0*Math.sqrt(2.0), height = 64.0*Math.sqrt(2.0);
-if (canvas.width === 640 && canvas.height === 640) {
-    width = (640/512)*64.0*Math.sqrt(2.0), height = (640/512)*64.0*Math.sqrt(2.0);
-}
-if (canvas.width === 256 && canvas.height === 256) {
-    width = (256/512)*64.0*Math.sqrt(2.0), height = (256/512)*64.0*Math.sqrt(2.0);
+if (canvas.width === canvas.height && canvas.width  !== 512) {
+    width = (canvas.width/512)*64.0*Math.sqrt(2.0);
+    height = (canvas.width/512)*64.0*Math.sqrt(2.0);
 }
 
 if (window.innerHeight < window.innerWidth) {
@@ -69,7 +66,11 @@ let controls = {
     measurePosition: () => measure=true,
     dt: 0.01,
     m: 1.0,
-    scaleP: 1.0
+    scaleP: 1.0,
+    changeDimensions: '512x512',
+    boundaries: 'default',
+    sPeriodic: false,
+    tPeriodic: false
     };
 gui.add(controls, 'colourPhase').name('Colour Phase');
 gui.add(controls , 'brightness', 0, 10).name('Brightness');
@@ -85,10 +86,13 @@ let mouseMode = gui.add(controls, 'mouseMode', ['new ψ(x, y)', 'reshape V(x, y)
                                                 'draw ROI']).name('Mouse');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit', 
                                        'Single Slit', '1/r']).name('Preset Potential');
-let presetControlsFolder = gui.addFolder('Preset Controls');
+let presetControlsFolder = gui.addFolder('Preset Potential Sliders');
 presetControlsFolder.controls = [];
 gui.add(controls, 'measurePosition').name('Measure Position');
 let moreControlsFolder = gui.addFolder('More Controls');
+let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
+let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions', ['400x400', '512x512', 
+                                                          '640x640', '800x800']).name('Grid Size');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
 textEditPotential.add(controls, 'useTextureCoordinates').name('Use Tex Coordinates');
 textEditPotential.add(controls, 'enterPotential').name('Enter Potential V(x, y)');
@@ -97,18 +101,15 @@ textEditSubFolder.controls = [];
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Uniform Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
-// editUniformsFolder.add(controls, 'dx', 1.0/pixelWidth, 1.0);
+let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
+let sPeriodic = boundariesFolder.add(controls, 'sPeriodic').name('s periodic');
+let tPeriodic = boundariesFolder.add(controls, 'tPeriodic').name('t periodic');
 let rScaleV = 0.0;
-
-let image = new Image(4, 4);
-image.src = 'numbers.png';
 let timeMilliseconds = 0;
 
 // new Promise(() => setTimeout(main, 500));
 main();
 function main() {
-
-    let draw = () => gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
     let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
 
@@ -127,14 +128,72 @@ function main() {
     potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
     initializePotential('SHO');
 
-    let numberText = new ImageFrame(image.width, image.height, image, 7, displayProgram);
-
-
     let bx = 0; let by = 0;
     let mouseUse = false;
     let mouseAction = false;
 
     let potChanged = false;
+
+    function changeBoundaries(s, t) {
+        if (pixelWidth !== 512 && pixelHeight !== 512) {
+            setFrameDimensions(512, 512);
+        }
+        viewFrame.setTexture(pixelWidth, pixelHeight, {s: s, 
+            t: t});
+        unbind();
+        let frames = [].concat(swapFrames, storeFrame, potentialFrame);
+        for (let frame of frames) {
+        frame.setTexture(pixelWidth, pixelHeight, {s: s, 
+                    t: t});
+        frame.activateFramebuffer();
+        unbind();
+        initializePotential(controls.presetPotentials);
+        }
+    }
+    sPeriodic.onChange(() => {
+
+        let s = (controls.sPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
+        let t = (controls.tPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
+        changeBoundaries(s, t);
+    });
+    tPeriodic.onChange(() => {
+        let s = (controls.sPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
+        let t = (controls.tPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
+        changeBoundaries(s, t);
+    });
+
+
+    function setFrameDimensions(newWidth, newHeight) {
+        document.getElementById('sketch-canvas').width = newWidth;
+        document.getElementById('sketch-canvas').height = newHeight;
+        width = (canvas.width/512)*64.0*Math.sqrt(2.0);
+        height = (canvas.width/512)*64.0*Math.sqrt(2.0);
+        scale = {w: canvasStyleWidth/canvas.width, 
+            h: canvasStyleHeight/canvas.height};
+        pixelWidth = newWidth;
+        pixelHeight = newHeight;
+        gl.viewport(0, 0, pixelWidth, pixelHeight);
+        // TODO if boundary is changed then changing the frame dimensions
+        // causes the boundaries to go back to clamp_to_edge.
+        // Change this behaviour.
+        viewFrame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE, 
+                                                       t: gl.CLAMP_TO_EDGE});
+        unbind();
+        let frames = [].concat(swapFrames, storeFrame, potentialFrame);
+        for (let frame of frames) {
+            frame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE, 
+                                                       t: gl.CLAMP_TO_EDGE});
+            frame.activateFramebuffer();
+            unbind();
+        }
+        initializePotential(controls.presetPotentials);
+    }
+    gridSelect.onChange(e => {
+        xyDims = e.split('x');
+        setFrameDimensions(parseInt(xyDims[0]), parseInt(xyDims[1]));
+
+    });
+
 
     function getUnnormalizedProbDist() {
         storeFrame.useProgram(probDensityProgram);
@@ -166,15 +225,16 @@ function main() {
     }
 
     function logFPS() {
-        let date = new Date();
-        let time = date.getMilliseconds();
-        let interval = (timeMilliseconds > time)? 
-                        1000 + time - timeMilliseconds: 
-                        time - timeMilliseconds;
-        timeMilliseconds = time;
-        // console.clear();
-        console.log(parseInt(1000/interval));
-
+        if (showFPS) {
+            let date = new Date();
+            let time = date.getMilliseconds();
+            let interval = (timeMilliseconds > time)? 
+                            1000 + time - timeMilliseconds: 
+                            time - timeMilliseconds;
+            timeMilliseconds = time;
+            console.clear();
+            console.log(parseInt(1000/interval));
+        }
     }
 
     function measurePosition() {
@@ -403,7 +463,7 @@ function main() {
                                   tex2: swapFrames[t-3].frameNumber,
                                   tex3: swapFrames[t-2].frameNumber,
                                   texV: potentialFrame.frameNumber,
-                                  textTex: numberText.frameNumber,
+                                  // textTex: numberText.frameNumber,
                                   displayMode: (controls.colourPhase)? 0: 1});
         if (controls.mouseMode[0] == 'd') {
             viewFrame.setFloatUniforms({
@@ -556,7 +616,7 @@ function main() {
             rScaleV = 0.0;
             swap();
         }
-        // logFPS();
+        logFPS();
         display();
         measurePosition();
         requestAnimationFrame(animate);

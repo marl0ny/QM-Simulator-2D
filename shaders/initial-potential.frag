@@ -1,4 +1,3 @@
-#define NAME initializePotentialFragmentSource
 precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture

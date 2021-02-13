@@ -1,5 +1,4 @@
-const copyOverFragmentSource = `#define NAME copyOverFragmentSource
-precision highp float;
+const copyOverFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -19,8 +18,7 @@ void main () {
 `;
 
 
-const reshapePotentialFragmentSource = `#define NAME reshapePotentialFragmentSource
-precision highp float;
+const reshapePotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -48,8 +46,7 @@ void main() {
 `;
 
 
-const probDensityFragmentSource = `#define NAME probDensityFragmentSource
-precision highp float;
+const probDensityFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -72,8 +69,7 @@ void main() {
 }`;
 
 
-const initializePotentialFragmentSource = `#define NAME initializePotentialFragmentSource
-precision highp float;
+const initialPotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -133,8 +129,7 @@ void main() {
 }`;
 
 
-const realTimeStepFragmentSource = `#define NAME realTimeStepFragmentSource
-precision highp float;
+const realTimestepFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -171,8 +166,7 @@ void main () {
 }`;
 
 
-const initialWaveFragmentSource = `#define NAME initialWaveFragmentSource
-precision highp float;
+const initialWaveFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -314,9 +308,7 @@ void main () {
 }`;
 
 
-const vertexShaderSource = `#define NAME vertexShaderSource
-
-#if __VERSION__ == 300
+const vertexShaderSource = `#if __VERSION__ == 300
 in vec3 pos;
 out highp vec2 fragTexCoord;
 #else
@@ -330,8 +322,7 @@ void main() {
 }`;
 
 
-const imagTimeStepFragmentSource = `#define NAME imagTimeStepFragmentSource
-precision highp float;
+const imagTimestepFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;

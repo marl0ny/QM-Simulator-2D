@@ -74,7 +74,7 @@ function unbind() {
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 }
 
-function makeTexture(buf, w, h, format) {
+function makeBlankTexture(buf, w, h, format, boundaries) {
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     if (format === gl.FLOAT) {
@@ -82,17 +82,22 @@ function makeTexture(buf, w, h, format) {
             gl.TEXTURE_2D, 0, 
             (context === "webgl")? gl.RGBA: gl.RGBA32F, 
             w, h, 0, 
-            gl.RGBA, gl.FLOAT, 
+            gl.RGBA, format, 
             buf
         );
     } else {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
-                      gl.RGBA, gl.UNSIGNED_BYTE, buf);
+        gl.texImage2D(
+            gl.TEXTURE_2D, 0, 
+            (context === "webgl")? gl.RGBA: gl.RGBA8, 
+            w, h, 0, gl.RGBA, format, 
+            buf
+        );
     }
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    let interpolation = (format===gl.FLOAT)? gl.NEAREST: gl.LINEAR;
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, boundaries.s);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, boundaries.t);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, interpolation);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, interpolation);
     /*if (context == "webgl") {
         gl.generateMipmap(gl.TEXTURE_2D);
     } else {
@@ -102,6 +107,9 @@ function makeTexture(buf, w, h, format) {
     return texture;
 }
 
+function draw() {
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+}
 
 class Frame {
     constructor(w, h, frameNumber) {
@@ -110,20 +118,26 @@ class Frame {
         this.uniforms = {};
         this.frameNumber = frameNumber;
         this.frameTexture = null;
-        // if (this.frameNumber !== 0) {
-        gl.activeTexture(gl.TEXTURE0 + frameNumber);
-        this.frameTexture = makeTexture(null, w, h, gl.FLOAT);
-        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-        // }
+        this.setTexture(w, h, {s: gl.CLAMP_TO_EDGE, 
+                               t: gl.CLAMP_TO_EDGE});
         this.vbo = gl.createBuffer();
         this.ebo = gl.createBuffer();
         this.fbo = gl.createFramebuffer();
         if (this.frameNumber !== 0) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
-                                    gl.TEXTURE_2D, this.frameTexture, 0);
+            this.activateFramebuffer();
         }
         unbind();
+    }
+    setTexture(w, h, boundaries) {
+        gl.activeTexture(gl.TEXTURE0 + this.frameNumber);
+        let type = (this.frameNumber === 0)? gl.UNSIGNED_BYTE: gl.FLOAT;
+        this.frameTexture = makeBlankTexture(null, w, h, type, boundaries);
+        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+    }
+    activateFramebuffer() {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+                                gl.TEXTURE_2D, this.frameTexture, 0);
     }
     setFloatUniforms(uniforms) {
         for (let field of Object.keys(uniforms)) {
@@ -178,7 +192,8 @@ class ImageFrame extends Frame {
         this.shaderProgram = shaderProgram;
         this.bind();
         gl.activeTexture(gl.TEXTURE0 + frameNumber);
-        this.frameTexture = makeTexture(image, w, h, gl.UNSIGNED_BYTE);
+        this.frameTexture = makeBlankTexture(image, w, h, 
+                                             gl.UNSIGNED_BYTE, gl.CLAMP_TO_EDGE);
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
