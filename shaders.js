@@ -28,17 +28,36 @@ out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 uniform sampler2D tex1;
+uniform int drawMode;
+uniform float drawWidth;
 uniform float bx;
 uniform float by;
 uniform float v2;
+
+#define DRAW_SQUARE 0
+#define DRAW_CIRCLE 1
+#define DRAW_GAUSS 2
 
 
 void main() {
     vec2 xy = fragTexCoord.xy;
     float initialV = texture2D(tex1, fragTexCoord).r;
-    if ((xy.x - bx)*(xy.x - bx) < 0.0001 && (xy.y - by)*(xy.y - by) < 0.0001
-         && initialV < v2) {
-        fragColor = vec4(v2, initialV, 0.0, 1.0);
+    float drawW2 = drawWidth*drawWidth;
+    float r2 = (xy.x - bx)*(xy.x - bx) 
+                + (xy.y - by)*(xy.y - by);
+    if (initialV < v2) {
+        if ((drawMode == DRAW_SQUARE && 
+            (xy.x - bx)*(xy.x - bx) < drawW2 && 
+            (xy.y - by)*(xy.y - by) < drawW2) ||
+            (drawMode == DRAW_CIRCLE && r2 < drawW2)) {
+            fragColor = vec4(v2, initialV, 0.0, 1.0);
+        } else if (drawMode == DRAW_GAUSS) {
+            float tmp = exp(-0.5*r2/(2.0*drawW2));
+            fragColor = vec4(max(tmp + initialV, initialV), 
+                             initialV, 0.0, 1.0);
+        } else {
+            fragColor = vec4(initialV, initialV, 0.0, 1.0);
+        }
     } else {
         fragColor = vec4(initialV, initialV, 0.0, 1.0);
     }
@@ -90,13 +109,19 @@ uniform float spacing;
 uniform float x1;
 uniform float x2;
 
+#define SHO 1
+#define DOUBLE_SLIT 2
+#define SINGLE_SLIT 3
+#define STEP 4
+#define INV_R 5
+
 
 void main() {
     float x = fragTexCoord.x;
     float y = fragTexCoord.y;
-    if (potentialType == 1) {
+    if (potentialType == SHO) {
         fragColor = vec4(a*((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)), 0.0, 0.0, 1.0); 
-    } else if (potentialType == 2) {
+    } else if (potentialType == DOUBLE_SLIT) {
         if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&
             (x <= x1 - spacing/2.0 ||
@@ -108,7 +133,7 @@ void main() {
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
-    } else if (potentialType == 3) {
+    } else if (potentialType == SINGLE_SLIT) {
          if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&
             (x <= x1 - spacing/2.0 ||
@@ -117,7 +142,13 @@ void main() {
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
-    } else if (potentialType == 4) {
+    } else if (potentialType == STEP) {
+        if (y > y0) {
+            fragColor = vec4(a, 0.0, 0.0, 1.0);
+        } else {
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    } else if (potentialType == INV_R) {
         float u = 10.0*(x - 0.5);        
         float v = 10.0*(y - 0.5);
         float oneOverR = 1.0/sqrt(u*u + v*v);
@@ -148,19 +179,37 @@ uniform float hbar;
 uniform float rScaleV;
 uniform sampler2D texPsi;
 uniform sampler2D texV;
+uniform int laplacePoints;
 
+float getDiv2ImPsi(float imPsi) {
+    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
+    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
+    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
+    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
+    // Laplacian stencils reference:
+    // Wikipedia contributors. (2021, February 17)
+    // Discrete Laplacian Operator 
+    // 1.5.1 Implementation via operator discretization
+    // https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+    // #Implementation_via_operator_discretization
+    if (laplacePoints <= 5) {
+        return (u + d + l + r - 4.0*imPsi)/(dx*dx);
+    } else {
+        float ul = texture2D(texPsi, fragTexCoord + vec2(-dx/w, dy/h)).g;
+        float ur = texture2D(texPsi, fragTexCoord + vec2(dx/w, dy/h)).g;
+        float dl = texture2D(texPsi, fragTexCoord + vec2(-dx/w, -dy/h)).g;
+        float dr = texture2D(texPsi, fragTexCoord + vec2(dx/w, -dy/h)).g;
+        return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*imPsi)/(dx*dx);
+    }
+}
 
 void main () {
     float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
                 rScaleV*texture2D(texV, fragTexCoord).g;
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
-    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).g;
-    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
-    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
-    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
-    // float div2ImPsi = (u + d - 2.0*imPsi)/(dy*dy) + (l + r - 2.0*imPsi)/(dx*dx);
-    float div2ImPsi = (u + d + l + r - 4.0*imPsi)/(dx*dx);
+    float div2ImPsi = getDiv2ImPsi(imPsi);
     float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
     fragColor = vec4(rePsi + hamiltonImPsi*dt/hbar, imPsi, 0.0, 1.0);
 }`;
@@ -201,7 +250,8 @@ void main () {
     } else {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
-}`;
+}
+`;
 
 
 const viewFrameFragmentSource = `#define NAME viewFrameFragmentSource
@@ -262,13 +312,13 @@ vec3 complexToColour(float re, float im) {
     float minCol = 50.0/255.0;
     float colRange = maxCol - minCol;
     if (argVal <= pi/3.0 && argVal >= 0.0) {
-        return vec3(maxCol, 
+        return vec3(maxCol,
                     minCol + colRange*argVal/(pi/3.0), minCol);
     } else if (argVal > pi/3.0 && argVal <= 2.0*pi/3.0){
-        return vec3(maxCol - colRange*(argVal - pi/3.0)/(pi/3.0), 
+        return vec3(maxCol - colRange*(argVal - pi/3.0)/(pi/3.0),
                     maxCol, minCol);
     } else if (argVal > 2.0*pi/3.0 && argVal <= pi){
-        return vec3(minCol, maxCol, 
+        return vec3(minCol, maxCol,
                     minCol + colRange*(argVal - 2.0*pi/3.0)/(pi/3.0));
     } else if (argVal < 0.0 && argVal > -pi/3.0){
         return vec3(maxCol, minCol,
@@ -295,17 +345,19 @@ void main () {
     float im = (col3.g + col1.g)/2.0;
     vec4 pix;
     if (displayMode == 0) {
-        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) + 
+        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
                    vec3(col4.r, col4.r, col4.r),
                    1.0);
     } else {
-        pix = vec4(probDensity*(brightness/16.0) + col4.r, 
-                   probDensity*(brightness/16.0) + col4.r, 
+        pix = vec4(probDensity*(brightness/16.0) + col4.r,
+                   probDensity*(brightness/16.0) + col4.r,
                    probDensity*(brightness/16.0) + col4.r, 1.0);
     }
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
-                              x0, y0, w, h, lineWidth) + texture2D(textTex, fragTexCoord);
-}`;
+                              x0, y0, w, h, lineWidth) +
+                              texture2D(textTex, fragTexCoord);
+}
+`;
 
 
 const vertexShaderSource = `#if __VERSION__ == 300
@@ -341,7 +393,31 @@ uniform float hbar;
 uniform float rScaleV;
 uniform sampler2D texPsi;
 uniform sampler2D texV;
+uniform int laplacePoints;
 
+
+float getDiv2RePsi(float rePsi) {
+    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
+    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
+    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
+    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
+    // Laplacian stencils reference:
+    // Wikipedia contributors. (2021, February 17)
+    // Discrete Laplacian Operator 
+    // 1.5.1 Implementation via operator discretization
+    // https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+    // #Implementation_via_operator_discretization
+    if (laplacePoints <= 5) {
+        return (u + d + l + r - 4.0*rePsi)/(dx*dx);
+    } else {
+        float ul = texture2D(texPsi, fragTexCoord + vec2(-dx/w, dy/h)).r;
+        float ur = texture2D(texPsi, fragTexCoord + vec2(dx/w, dy/h)).r;
+        float dl = texture2D(texPsi, fragTexCoord + vec2(-dx/w, -dy/h)).r;
+        float dr = texture2D(texPsi, fragTexCoord + vec2(dx/w, -dy/h)).r;
+        return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*rePsi)/(dx*dx);
+    }
+}
 
 void main () {
     float V = texture2D(texV, fragTexCoord).r;
@@ -349,12 +425,7 @@ void main () {
                 rScaleV*texture2D(texV, fragTexCoord).g;*/
     float rePsi = texture2D(texPsi, fragTexCoord).r;
     float imPsi = texture2D(texPsi, fragTexCoord).g;
-    float u = texture2D(texPsi, fragTexCoord + vec2(0.0, dy/h)).r;
-    float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
-    float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
-    float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
-    // float div2RePsi = (u + d - 2.0*rePsi)/(dy*dy) + (l + r - 2.0*rePsi)/(dx*dx);
-    float div2RePsi = (u + d + l + r - 4.0*rePsi)/(dx*dx);
+    float div2RePsi = getDiv2RePsi(rePsi);
     float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;
     fragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt/hbar, 0.0, 1.0);
 }`;

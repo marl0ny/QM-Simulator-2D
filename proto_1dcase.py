@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 
 
 def rect(x, c, w):
-    return np.array([1.0 if xi > c - w/2 and xi < c + w/2 
+    return np.array([1.0 if xi > c - w/2 and xi < c + w/2
                      else 0.0 for xi in x])
 
 dt = 0.01
@@ -28,7 +28,7 @@ V = plot_to_v*rect(x/length, 0.75, 0.15)/25
 
 def time_step(psis):
     psi = psis[-2]
-    psi2 = psis[-1] 
+    psi2 = psis[-1]
     for i in range(1, len(x)-1):
         re_psi = psi[0, i]
         im_psi = psi[1, i]

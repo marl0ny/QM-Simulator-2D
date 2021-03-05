@@ -28,10 +28,12 @@ if (gl === null) {
 }
 
 if (gl === null) {
-    document.getElementById("error-text").textContent = `<br>Unable to display canvas.`;
+    document.getElementById("error-text").textContent =
+                                                `<br>Unable to display canvas.`;
 }
 
-if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).precision < 23) {
+if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,
+                                gl.HIGH_FLOAT).precision < 23) {
     throw "GPU precision for highp float is not high enough.";
 }
 
@@ -40,8 +42,8 @@ function makeShader(shaderType, shaderSource) {
     if (shaderID === 0) {
         alert("Unable to create shader.");
     }
-    gl.shaderSource(shaderID, 
-                    (context === "webgl2")? "#version 300 es\n" + shaderSource: 
+    gl.shaderSource(shaderID,
+                    (context === "webgl2")? "#version 300 es\n" + shaderSource:
                                             shaderSource
                    );
     gl.compileShader(shaderID);
@@ -79,17 +81,17 @@ function makeBlankTexture(buf, w, h, format, boundaries) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
     if (format === gl.FLOAT) {
         gl.texImage2D(
-            gl.TEXTURE_2D, 0, 
-            (context === "webgl")? gl.RGBA: gl.RGBA32F, 
-            w, h, 0, 
-            gl.RGBA, format, 
+            gl.TEXTURE_2D, 0,
+            (context === "webgl")? gl.RGBA: gl.RGBA32F,
+            w, h, 0,
+            gl.RGBA, format,
             buf
         );
     } else {
         gl.texImage2D(
-            gl.TEXTURE_2D, 0, 
-            (context === "webgl")? gl.RGBA: gl.RGBA8, 
-            w, h, 0, gl.RGBA, format, 
+            gl.TEXTURE_2D, 0,
+            (context === "webgl")? gl.RGBA: gl.RGBA8,
+            w, h, 0, gl.RGBA, format,
             buf
         );
     }
@@ -118,7 +120,7 @@ class Frame {
         this.uniforms = {};
         this.frameNumber = frameNumber;
         this.frameTexture = null;
-        this.setTexture(w, h, {s: gl.CLAMP_TO_EDGE, 
+        this.setTexture(w, h, {s: gl.CLAMP_TO_EDGE,
                                t: gl.CLAMP_TO_EDGE});
         this.vbo = gl.createBuffer();
         this.ebo = gl.createBuffer();
@@ -136,18 +138,20 @@ class Frame {
     }
     activateFramebuffer() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
                                 gl.TEXTURE_2D, this.frameTexture, 0);
     }
     setFloatUniforms(uniforms) {
         for (let field of Object.keys(uniforms)) {
-            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram, field);
+            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,
+                                                         field);
             gl.uniform1f(this.uniforms[field], uniforms[field]);
         }
     }
     setIntUniforms(uniforms) {
         for (let field of Object.keys(uniforms)) {
-            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram, field);
+            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,
+                                                         field);
             gl.uniform1i(this.uniforms[field], uniforms[field]);
         }
     }
@@ -160,7 +164,7 @@ class Frame {
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
         }
         let shaderProgram = this.shaderProgram;
-        let vertices = new Float32Array([1.0, 1.0, 0.0, 1.0, -1.0, 0.0, 
+        let vertices = new Float32Array([1.0, 1.0, 0.0, 1.0, -1.0, 0.0,
             -1.0, -1.0, 0.0, -1.0, 1.0, 0.0]);
         let elements = new Uint16Array([0, 2, 3, 0, 1, 2]);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -174,7 +178,7 @@ class Frame {
     getTextureArray(boxDimensions) {
         // Getting texture data as array:
         // https://stackoverflow.com/a/18804153
-        // answered by nkron 
+        // answered by nkron
         // (https://stackoverflow.com/users/977809/nkron)
         // question (https://stackoverflow.com/q/4702032)
         // by pion (https://stackoverflow.com/users/365450/pion)
@@ -192,11 +196,12 @@ class ImageFrame extends Frame {
         this.shaderProgram = shaderProgram;
         this.bind();
         gl.activeTexture(gl.TEXTURE0 + frameNumber);
-        this.frameTexture = makeBlankTexture(image, w, h, 
-                                             gl.UNSIGNED_BYTE, gl.CLAMP_TO_EDGE);
+        this.frameTexture = makeBlankTexture(image, w, h,
+                                             gl.UNSIGNED_BYTE,
+                                             gl.CLAMP_TO_EDGE);
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
                                 gl.TEXTURE_2D, this.frameTexture, 0);
         unbind();
 
@@ -221,7 +226,7 @@ function getVariables(expr) {
                              'asinh', 'acosh', 'atanh',
                              'pow', 'log', 'exp',
                              'sqrt', 'inversesqrt',
-                             'abs', 'ceil', 'max', 'min', 
+                             'abs', 'ceil', 'max', 'min',
                              'mod', 'modf', 'pi',
                              'circle']) {
         console.log(vars.delete(mathKeyword));
@@ -271,8 +276,9 @@ function replaceIntsToFloats(expr) {
         if ('0123456789.'.indexOf(expr[i]) >= 0 &&
             ((i - 1 >= 0 &&
              ' ()+-*/'.indexOf(expr[i-1]) >= 0)
-            || i === 0) 
+            || i === 0)
         ) {
+            let num;
             ({i, num} = getNumberAndEndPos(expr, i));
             newExpr += num;
         } else {
@@ -300,7 +306,7 @@ function createFunctionShader(expr, uniforms) {
     uniform sampler2D prevV;`, // 0
     '// UNIFORMS HERE', // 1
     `
-    float circle(float x, float y, 
+    float circle(float x, float y,
                  float x0, float y0, float r) {
         float xc = x0 - x;
         float yc = y0 - y;
@@ -312,7 +318,7 @@ function createFunctionShader(expr, uniforms) {
     '    float x = xScale*fragTexCoord.x;', // 5
     '    float y = yScale*fragTexCoord.y;', // 6
     '    float functionValue = ', // 7
-    `float prevVal = texture2D(prevV, fragTexCoord).r;    
+    `float prevVal = texture2D(prevV, fragTexCoord).r;
     if (functionValue > 30.0) {
         fragColor = vec4(30.0, prevVal, 0.0, 1.0);
     } else {
@@ -329,7 +335,7 @@ function createFunctionShader(expr, uniforms) {
         splitTemplateShader[1] += '\n' + `uniform float ${uniform};`
     }
     splitTemplateShader[1] += '\n';
-    templateShaderText = '';
+    let templateShaderText = '';
     for (let s of splitTemplateShader) {
         templateShaderText += s + '\n';
     }

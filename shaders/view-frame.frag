@@ -56,13 +56,13 @@ vec3 complexToColour(float re, float im) {
     float minCol = 50.0/255.0;
     float colRange = maxCol - minCol;
     if (argVal <= pi/3.0 && argVal >= 0.0) {
-        return vec3(maxCol, 
+        return vec3(maxCol,
                     minCol + colRange*argVal/(pi/3.0), minCol);
     } else if (argVal > pi/3.0 && argVal <= 2.0*pi/3.0){
-        return vec3(maxCol - colRange*(argVal - pi/3.0)/(pi/3.0), 
+        return vec3(maxCol - colRange*(argVal - pi/3.0)/(pi/3.0),
                     maxCol, minCol);
     } else if (argVal > 2.0*pi/3.0 && argVal <= pi){
-        return vec3(minCol, maxCol, 
+        return vec3(minCol, maxCol,
                     minCol + colRange*(argVal - 2.0*pi/3.0)/(pi/3.0));
     } else if (argVal < 0.0 && argVal > -pi/3.0){
         return vec3(maxCol, minCol,
@@ -89,14 +89,15 @@ void main () {
     float im = (col3.g + col1.g)/2.0;
     vec4 pix;
     if (displayMode == 0) {
-        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) + 
+        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
                    vec3(col4.r, col4.r, col4.r),
                    1.0);
     } else {
-        pix = vec4(probDensity*(brightness/16.0) + col4.r, 
-                   probDensity*(brightness/16.0) + col4.r, 
+        pix = vec4(probDensity*(brightness/16.0) + col4.r,
+                   probDensity*(brightness/16.0) + col4.r,
                    probDensity*(brightness/16.0) + col4.r, 1.0);
     }
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
-                              x0, y0, w, h, lineWidth) + texture2D(textTex, fragTexCoord);
+                              x0, y0, w, h, lineWidth) +
+                              texture2D(textTex, fragTexCoord);
 }
