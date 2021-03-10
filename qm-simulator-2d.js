@@ -72,17 +72,69 @@ let controls = {
     measurePosition: () => measure=true,
     dt: 0.01,
     m: 1.0,
-    // laplace: 5,
+    laplace: '5 point',
+    laplaceVal: 5,
     scaleP: 1.0,
+    object: "string",
     changeDimensions: '512x512',
     boundaries: 'default',
     sPeriodic: false,
     tPeriodic: false
     };
-gui.add(controls, 'colourPhase').name('Colour Phase');
+
+// dark green #20c520
+// light green #68c568
+// lighter green #a9c5a9
+// light blue #729aed
+// grey #999999
+// https://stackoverflow.com/a/31001163
+
+// let instructions = gui.add(controls, 'object').name(
+//     '<a href="https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md" '
+//     + 'style="color: #68c568; text-decoration: none;"><b> • 🛈 Instructions</b></a>'
+//     + ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
+//     + 'style="color: #20c520; text-decoration: none;"><b> • 📝 Source Code</b></a>'
+// );
+
+let palette0 = {color: '#1b191b'};
+let instructions = gui.addColor(palette0, 'color').name(
+    '<a href="https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md" '
+    + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
+    + 'Instructions</a>'
+    // &nbsp;
+    // + ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
+    // + 'style="color: #20c520; text-decoration: none;"> • SOURCE CODE</a>'
+);
+instructions.domElement.hidden = true;
+// console.log(instructions);
+// var class2Replace = "cr color"
+// var tmp = document.getElementsByClassName(class2Replace)[0].innerHTML;
+// tmp = tmp.replace('class="property-name"', '');
+// document.getElementsByClassName(class2Replace)[0].innerHTML = tmp;
+let palette = {color: '#1b191b'};
+source = gui.addColor(palette, 'color').name(
+    ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
+    + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
+    + 'Source</a>'
+);
+source.domElement.hidden = true;
+// console.log(source.domElement);
+// ⓘ
+// console.log(instructions.domElement);
+// let source = gui.add(controls, 'object').name(
+//    ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
+//     + 'style="color: #999999; text-decoration: none; font-size: 1.1em;">'
+//     + '<b>&nbsp; Source</b></a>');
+// // source.addColor({color: '#AFAFAF'}, 'color');
+// source.domElement.hidden = true;
+// tmp = document.getElementsByClassName(class2Replace)[1].innerHTML;
+// tmp = tmp.replace('class="property-name"', '');
+// document.getElementsByClassName(class2Replace)[1].innerHTML = tmp;
+
 gui.add(controls , 'brightness', 0, 10).name('Brightness');
 let iter = gui.add(controls, 'speed', 0, 20).name('Speed');
 iter.step(1.0);
+gui.add(controls, 'colourPhase').name('Colour Phase');
 
 // How to do dropdowns in dat.gui:
 // https://stackoverflow.com/questions/30372761/
@@ -90,12 +142,13 @@ iter.step(1.0);
 // Answer (https://stackoverflow.com/a/31000465)
 // by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
 let mouseMode = gui.add(controls, 'mouseMode',
-                        ['new ψ(x, y)', 'reshape V(x, y)',
-                         'draw ROI']).name('Mouse Usage');
+                        ['new ψ(x, y)', 
+                         'sketch barrier',
+                         'prob. in box']).name('Mouse Usage');
 // gui.add(controls, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit',
-                                       'Single Slit', 'Step', '1/r']
+                                       'Single Slit', 'Step', 'Spike']
                                        ).name('Preset Potential');
 let mouseControls = gui.addFolder('Mouse Usage Controls');
 mouseControls.widgets = [];
@@ -114,7 +167,7 @@ function mouseControlsCallback(e) {
         }
         mouseControls.widgets = [];
         let items = mouseControls.values;
-        let name = mouseControls.add(items, 'name').name(`${e} controls`)
+        let name = mouseControls.add(items, 'name').name(`${e} controls`);
         let fixInitialP = mouseControls.add(items,
                                             'fixInitialP').name('Fix p0');
         let px0 = mouseControls.add(items, 'px0', -40.0, 40.0).name('px');
@@ -124,7 +177,7 @@ function mouseControlsCallback(e) {
         mouseControls.widgets.push(px0);
         mouseControls.widgets.push(py0);
 
-    } else if (e[0] === 'r') {
+    } else if (e[0] === 's') {
         for (let w of mouseControls.widgets) {
             w.remove();
         }
@@ -156,7 +209,7 @@ function mouseControlsCallback(e) {
         mouseControls.widgets.push(stencilTypes);
         mouseControls.widgets.push(widthControl);
         mouseControls.widgets.push(vControl);
-    } else if (e[0] === 'd') {
+    } else if (e[0] === 'p') {
         let items = mouseControls.values;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         for (let w of mouseControls.widgets) {
@@ -188,13 +241,18 @@ textEditPotential.add(controls,
                       'enterPotential').name('Enter Potential V(x, y)');
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
-let editUniformsFolder = moreControlsFolder.addFolder('Edit Uniform Values');
-editUniformsFolder.add(controls, 'm', 0.75, 10.0);
-editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
-// editUniformsFolder.add(controls, 'laplace', 5, 10).step(5);
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
 let sPeriodic = boundariesFolder.add(controls, 'sPeriodic').name('s periodic');
 let tPeriodic = boundariesFolder.add(controls, 'tPeriodic').name('t periodic');
+let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
+editUniformsFolder.add(controls, 'm', 0.75, 10.0);
+editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
+let laplaceSelect = editUniformsFolder.add(controls, 'laplace',
+                                           ['5 point', '9 point'],
+                                           10).name('Laplacian');
+laplaceSelect.onChange(e => {
+    controls.laplaceVal = parseInt(e.split(' ')[0]);
+});
 let rScaleV = 0.0;
 let timeMilliseconds = 0;
 
@@ -375,7 +433,7 @@ function main() {
                                                 m: controls.m, hbar: 1.0});
             swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
                                             texV: potentialFrame.frameNumber,
-                                            laplacePoints: controls.laplace});
+                                            laplacePoints: controls.laplaceVal});
             draw();
             unbind();
         }
@@ -503,7 +561,7 @@ function main() {
         } else {
             potentialFrame.useProgram(initPotentialProgram);
             potentialFrame.bind();
-            if (type == '1/r') {
+            if (type == 'Spike') {
                 potentialFrame.setIntUniforms({potentialType: 5});
                 bx = pixelWidth/2;
                 by = pixelHeight*0.75;
@@ -576,7 +634,7 @@ function main() {
                                           w: width, h: height, m: controls.m,
                                           hbar: 1.0});
         swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
-            texV: potentialFrame.frameNumber, laplacePoints: controls.laplace});
+            texV: potentialFrame.frameNumber, laplacePoints: controls.laplaceVal});
         draw();
         unbind();
     }
@@ -596,7 +654,7 @@ function main() {
                                         rScaleV: rScaleV});
         swapFrames[t-1].setIntUniforms({texPsi: swapFrames[t-2].frameNumber,
                                         texV: potentialFrame.frameNumber,
-                                        laplacePoints: controls.laplace});
+                                        laplacePoints: controls.laplaceVal});
         draw();
         rScaleV = 0.0;
         unbind();
@@ -608,7 +666,7 @@ function main() {
                                         m: controls.m, hbar: 1.0});
         swapFrames[t].setIntUniforms({texPsi: swapFrames[t-1].frameNumber,
                                       texV: potentialFrame.frameNumber,
-                                      laplacePoints: controls.laplace});
+                                      laplacePoints: controls.laplaceVal});
         draw();
         unbind();
     }
@@ -622,7 +680,7 @@ function main() {
                                   texV: potentialFrame.frameNumber,
                                   // textTex: numberText.frameNumber,
                                   displayMode: (controls.colourPhase)? 0: 1});
-        if (controls.mouseMode[0] == 'd') {
+        if (controls.mouseMode[0] == 'p') {
             viewFrame.setFloatUniforms({
                 x0: drawRect.x/pixelWidth,
                 y0: (pixelHeight - drawRect.y)/pixelHeight,
@@ -637,7 +695,7 @@ function main() {
         }
         draw();
         unbind();
-        if (controls.mouseMode[0] == 'd') {
+        if (controls.mouseMode[0] == 'p') {
             let prob = getUnnormalizedProbDist();
             let j0 = pixelHeight - drawRect.y;
             let h = -drawRect.h;
@@ -676,7 +734,11 @@ function main() {
                                                 controls.useTextureCoordinates;
             potentialFrame.enterPotential = controls.enterPotential;
             let expr = potentialFrame.enterPotential;
+            if (expr.includes('^') || expr.includes('**')) {
+                expr = powerOpsToCallables(expr, false);
+            }
             expr = replaceIntsToFloats(expr);
+            console.log(expr);
             let uniforms = getVariables(expr);
             uniforms.delete('x');
             uniforms.delete('y');
@@ -761,7 +823,7 @@ function main() {
         if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
-            } else if ((controls.mouseMode[0] === 'r') ){
+            } else if ((controls.mouseMode[0] === 's') ){
                 reshapePotential();
             } else {
                 drawRect.w = bx - drawRect.x;

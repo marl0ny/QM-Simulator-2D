@@ -289,6 +289,97 @@ function replaceIntsToFloats(expr) {
     return newExpr;
 }
 
+function isAlphanumericOrUnderscore(letter) {
+    return (letter.charCodeAt(0) >= 48 && 
+            letter.charCodeAt(0) <= 57) ||
+           (letter.charCodeAt(0) >= 65 &&
+            letter.charCodeAt(0) <= 90) ||
+            (letter.charCodeAt(0) >= 97 && 
+            letter.charCodeAt(0) <= 122) ||
+            letter === '_' || letter === '.';
+}
+
+function getPowerExpressionLocation(expr, i) {
+    let parenthStack = [];
+    let j = i + 1;
+    while (j < expr.length &&
+        (isAlphanumericOrUnderscore(expr[j]) || 
+            expr[j] === '(' || parenthStack.length > 0
+        ) || (parenthStack.length == 0 && 
+                ((expr.substring(j, j+2) === '**' ||
+                    expr.substring(j-1, j+1) === '**')
+                    || expr[j] === '^'
+                )
+            )
+    ) {
+        if (expr[j] === '(') parenthStack.push('(');
+        if (expr[j] === ')') parenthStack.pop();
+        j++;
+    }
+    parenthStack = [];
+    let k = (expr[i] === '*')? i - 2: i - 1;
+    while (k >= 0 && (isAlphanumericOrUnderscore(expr[k])
+            || expr[k] === ')' || parenthStack.length > 0)) {
+        if (expr[k] === ')') parenthStack.push(')');
+        if (expr[k] === '(') parenthStack.pop();
+        k--;
+    }
+    return {start: k+1, end: j};
+}
+
+function powerOpsToCallables(expr, isWhitespaceRemoved) {
+    if (!isWhitespaceRemoved) {
+        while (expr.includes(' ', '')) {
+            expr = expr.replace(' ', '');
+        }
+    }
+    let i = 0;
+    while (i < expr.length) {
+        let c = expr[i];
+        if (c === '^' || (c === '*' && i > 0 && 
+                          expr[i-1] === '*')) {
+            let {start, end} = getPowerExpressionLocation(expr, i);
+            let powExpr = powerOpToCallable(expr.substring(start, end));
+            expr = expr.substring(0, start) + powExpr
+                     + expr.substring(end, expr.length);
+            setTimeout(() => {}, 1000);
+        }
+        i += 1;
+    }
+    return expr;
+}
+
+function split(expr, delim) {
+    let string0 = expr.split(delim)[0];
+    let string1 = '';
+    for (let i = string0.length + delim.length; 
+         i < expr.length; i++) {
+        string1 += expr[i];
+    }
+    // console.log([string0, string1]);
+    return [string0, string1];
+}
+
+function powerOpToCallable(expr) {
+    let caret = expr.search('\\^');
+    let stars = expr.search('\\*\\*');
+    let binTokens;
+    if (stars >= 0 && caret < 0) {
+        binTokens = split(expr, '**');
+    }
+    else if (stars < 0 && caret >= 0) {
+        binTokens = split(expr, '^');
+    }
+    else {
+        binTokens = (caret < stars)? split(expr, '^') : 
+                                     split(expr, '**');
+    }
+    // TODO: Fix a bug in replaceIntsToFloats
+    // where in expressions such as pow(x,2)
+    // the 2 is not converted to 2.0.
+    let tmp = replaceIntsToFloats(binTokens[1]);
+    return 'pow(' + binTokens[0] + ',' + tmp + ')';
+}
 
 function createFunctionShader(expr, uniforms) {
     let splitTemplateShader = [`

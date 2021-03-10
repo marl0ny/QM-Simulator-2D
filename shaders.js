@@ -186,7 +186,7 @@ float getDiv2ImPsi(float imPsi) {
     float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).g;
     float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).g;
     float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).g;
-    // Laplacian stencils reference:
+    // Reference for different Laplacian stencil choices:
     // Wikipedia contributors. (2021, February 17)
     // Discrete Laplacian Operator 
     // 1.5.1 Implementation via operator discretization
@@ -401,7 +401,7 @@ float getDiv2RePsi(float rePsi) {
     float d = texture2D(texPsi, fragTexCoord + vec2(0.0, -dy/h)).r;
     float l = texture2D(texPsi, fragTexCoord + vec2(-dx/w, 0.0)).r;
     float r = texture2D(texPsi, fragTexCoord + vec2(dx/w, 0.0)).r;
-    // Laplacian stencils reference:
+    // Reference for different Laplacian stencil choices:
     // Wikipedia contributors. (2021, February 17)
     // Discrete Laplacian Operator 
     // 1.5.1 Implementation via operator discretization
