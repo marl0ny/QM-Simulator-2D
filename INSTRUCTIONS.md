@@ -32,3 +32,9 @@ new potential.
 Note that the value of the potential at a given point may be cutoff if it's too high or too deep. Checking **Use Tex Coordinates** uses the coordinates of the texture image to express V(x, y) instead of the coordinates in the simulation. Note that the origin `0, 0` is defined at the bottom left corner of the box. The folder **Edit Variables** contains sliders for any inputted variables that are not x or y.
 - **Edit Boundary Type** folder. Change the boundary conditions, where checking the **s periodic** checkbox makes the simulation periodic in the horizontal direction, and likewise checking the **t periodic** checkbox adds periodicity in the vertical direction.
 - **Edit Other Values** folder. This contains sliders to modify the mass **m** of the particle, the time step length **dt**, or the discrete **Laplacian** stencil size.
+
+
+### Issues
+- To my knowledge, WebGL does not require for highp float to be at least 32 bit. If it is less than this on your machine, you may see wavefunction quickly decay to zero.
+- There is nothing stopping you from placing wavepackets on top of irregular shaped potentials, or drawing potential barriers on top of wavepackets. Weird behaviour may also occur when placing a new wavefunction at the boundaries.
+- Things with high momentum may propagate in a square-like way, when it should instead propagate in a circular fashion. 
