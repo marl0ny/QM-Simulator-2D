@@ -82,35 +82,18 @@ let controls = {
     tPeriodic: false
     };
 
-// dark green #20c520
-// light green #68c568
-// lighter green #a9c5a9
-// light blue #729aed
-// grey #999999
-// https://stackoverflow.com/a/31001163
-
-// let instructions = gui.add(controls, 'object').name(
-//     '<a href="https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md" '
-//     + 'style="color: #68c568; text-decoration: none;"><b> • 🛈 Instructions</b></a>'
-//     + ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
-//     + 'style="color: #20c520; text-decoration: none;"><b> • 📝 Source Code</b></a>'
-// );
-
 let palette0 = {color: '#1b191b'};
 let instructions = gui.addColor(palette0, 'color').name(
     '<a href="https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md" '
     + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
     + 'Instructions</a>'
-    // &nbsp;
-    // + ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
-    // + 'style="color: #20c520; text-decoration: none;"> • SOURCE CODE</a>'
 );
+// How to display only text:
+// https://stackoverflow.com/q/30834678
+// Question by Oggy (https://stackoverflow.com/users/2562154)
+// Answer (https://stackoverflow.com/a/31001163)
+// by Djuro Mirkovic (https://stackoverflow.com/users/4972372)
 instructions.domElement.hidden = true;
-// console.log(instructions);
-// var class2Replace = "cr color"
-// var tmp = document.getElementsByClassName(class2Replace)[0].innerHTML;
-// tmp = tmp.replace('class="property-name"', '');
-// document.getElementsByClassName(class2Replace)[0].innerHTML = tmp;
 let palette = {color: '#1b191b'};
 source = gui.addColor(palette, 'color').name(
     ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
@@ -118,18 +101,6 @@ source = gui.addColor(palette, 'color').name(
     + 'Source</a>'
 );
 source.domElement.hidden = true;
-// console.log(source.domElement);
-// ⓘ
-// console.log(instructions.domElement);
-// let source = gui.add(controls, 'object').name(
-//    ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
-//     + 'style="color: #999999; text-decoration: none; font-size: 1.1em;">'
-//     + '<b>&nbsp; Source</b></a>');
-// // source.addColor({color: '#AFAFAF'}, 'color');
-// source.domElement.hidden = true;
-// tmp = document.getElementsByClassName(class2Replace)[1].innerHTML;
-// tmp = tmp.replace('class="property-name"', '');
-// document.getElementsByClassName(class2Replace)[1].innerHTML = tmp;
 
 gui.add(controls , 'brightness', 0, 10).name('Brightness');
 let iter = gui.add(controls, 'speed', 0, 20).name('Speed');
@@ -148,7 +119,7 @@ let mouseMode = gui.add(controls, 'mouseMode',
 // gui.add(controls, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit',
-                                       'Single Slit', 'Step', 'Spike']
+                                       'Single Slit', 'Step', 'Spike', 'Triple Slit']
                                        ).name('Preset Potential');
 let mouseControls = gui.addFolder('Mouse Usage Controls');
 mouseControls.widgets = [];
@@ -169,9 +140,9 @@ function mouseControlsCallback(e) {
         let items = mouseControls.values;
         let name = mouseControls.add(items, 'name').name(`${e} controls`);
         let fixInitialP = mouseControls.add(items,
-                                            'fixInitialP').name('Fix p0');
-        let px0 = mouseControls.add(items, 'px0', -40.0, 40.0).name('px');
-        let py0 = mouseControls.add(items, 'py0', -40.0, 40.0).name('py');
+                                            'fixInitialP').name('Fix Init. Mom.');
+        let px0 = mouseControls.add(items, 'px0', -40.0, 40.0).name('kx');
+        let py0 = mouseControls.add(items, 'py0', -40.0, 40.0).name('ky');
         mouseControls.widgets.push(name);
         mouseControls.widgets.push(fixInitialP);
         mouseControls.widgets.push(px0);
@@ -229,6 +200,10 @@ let presetControlsFolder = gui.addFolder('Preset Potential Controls');
 presetControlsFolder.controls = [];
 gui.add(controls, 'measurePosition').name('Measure Position');
 let moreControlsFolder = gui.addFolder('More Controls');
+let showFolder = moreControlsFolder.addFolder('Show Dimensions');
+let showValues = {w: width, h: height};
+let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
+let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
 let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
                                             ['400x400', '512x512',
@@ -322,6 +297,11 @@ function main() {
             h: canvasStyleHeight/canvas.height};
         pixelWidth = newWidth;
         pixelHeight = newHeight;
+        showValues.w = width;
+        showValues.h = height;
+        boxW.updateDisplay();
+        boxH.updateDisplay();
+
         gl.viewport(0, 0, pixelWidth, pixelHeight);
         // TODO if boundary is changed then changing the frame dimensions
         // causes the boundaries to go back to clamp_to_edge.
@@ -458,7 +438,7 @@ function main() {
             }
             f(40.0);
             let items = {a: 40.0};
-            let aVar = presetControlsFolder.add(items, 'a', 0.0, 40.0);
+            let aVar = presetControlsFolder.add(items, 'a', 0.0, 40.0).name('Strength');
             aVar.onChange(f);
             presetControlsFolder.controls.push(aVar);
 
@@ -475,11 +455,23 @@ function main() {
             };
             f(doubleSlitUniforms);
             for (let e of Object.keys(doubleSlitUniforms)) {
+                let minVal, maxVal, name;
+                if (e === 'a') {
+                    minVal = 0.0; maxVal = 36.0; name = 'Energy';
+                } else if (e === 'w') {
+                    minVal = 0.0; maxVal = 0.05; name = 'width';
+                } else if (e === 'spacing') {
+                    minVal = 0.0; maxVal = 0.05; name = e;
+                } else {
+                    name = e;
+                    minVal = doubleSlitUniforms[e]*0.8;
+                    maxVal = doubleSlitUniforms[e]*1.2;
+                }
                 let slider = presetControlsFolder.add(
                     doubleSlitUniforms, e,
-                    doubleSlitUniforms[e]*0.8,
-                    doubleSlitUniforms[e]*1.2
-                );
+                    minVal,
+                    maxVal
+                ).name(name);
                 slider.onChange(val => {
                     doubleSlitUniforms[e] = val;
                     f(doubleSlitUniforms);
@@ -507,11 +499,23 @@ function main() {
             }
             f(singleSlitUniforms);
             for (let e of Object.keys(singleSlitUniforms)) {
+                let minVal, maxVal, name;
+                if (e === 'a') {
+                    minVal = 0.0; maxVal = 36.0; name = 'Energy';
+                } else if (e === 'w') {
+                    minVal = 0.0; maxVal = 0.05; name = 'width';
+                } else if (e === 'spacing') {
+                    minVal = 0.0; maxVal = 0.05; name = e;
+                } else {
+                    name = e;
+                    minVal = singleSlitUniforms[e]*0.8;
+                    maxVal = singleSlitUniforms[e]*1.2;
+                }
                 let slider = presetControlsFolder.add(
                     singleSlitUniforms, e,
-                    singleSlitUniforms[e]*0.8,
-                    singleSlitUniforms[e]*1.2
-                );
+                    minVal,
+                    maxVal
+                ).name(name);
                 slider.onChange(val => {
                     singleSlitUniforms[e] = val;
                     f(singleSlitUniforms);
@@ -538,7 +542,7 @@ function main() {
             f(stepUniforms);
             let aSlider = presetControlsFolder.add(
                 stepUniforms, 'a', 0.0, 10.0
-            ).step(0.1);
+            ).step(0.1).name('Energy');
             aSlider.onChange(val => {
                 stepUniforms['a'] = val;
                 f(stepUniforms);
@@ -557,6 +561,7 @@ function main() {
             controls.py = 40.0/controls.scaleP;
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
+            presetControlsFolder.controls.push(aSlider);
             mouseMode.updateDisplay();
         } else {
             potentialFrame.useProgram(initPotentialProgram);
@@ -567,8 +572,14 @@ function main() {
                 by = pixelHeight*0.75;
                 controls.py = 40.0/controls.scaleP;
                 controls.px = 0.0;
-            } else {
+            } else if (type == 'Triple Slit') {
                 potentialFrame.setIntUniforms({potentialType: 6});
+                bx = pixelWidth/2;
+                by = pixelHeight*0.75;
+                controls.py = 40.0/controls.scaleP;
+                controls.px = 0.0;
+            } else {
+                potentialFrame.setIntUniforms({potentialType: 7});
                 bx = pixelWidth/3;
                 by = pixelHeight*0.75;
                 controls.py = 30.0/controls.scaleP;

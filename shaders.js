@@ -114,6 +114,7 @@ uniform float x2;
 #define SINGLE_SLIT 3
 #define STEP 4
 #define INV_R 5
+#define TRIPLE_SLIT 6
 
 
 void main() {
@@ -154,7 +155,15 @@ void main() {
         float oneOverR = 1.0/sqrt(u*u + v*v);
         float val = (oneOverR < 50.0)? oneOverR: 50.0;
         fragColor = vec4(val, 0.0, 0.0, 1.0); 
-    } else {
+    } else if (potentialType == TRIPLE_SLIT) {
+        float val = 15.0;   
+        if ((y <= 0.45 || y >= 0.48) || (x > 0.49 && x < 0.51)
+            || (x > 0.43 && x < 0.45) || (x > 0.55 && x < 0.57)) {
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        } else {
+            fragColor = vec4(val, 0.0, 0.0, 1.0);
+        }
+    }else {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
 }`;
