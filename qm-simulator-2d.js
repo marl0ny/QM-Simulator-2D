@@ -60,6 +60,7 @@ measure = false;
 let drawRect = {x: 0.0, y: 0.0, w: 0.0, h: 0.0};
 let controls = {
     brightness: 4,
+    brightness2: 1.0,
     speed: 6,
     px: 0.0,
     py: 0.0,
@@ -84,7 +85,8 @@ let controls = {
 
 let palette0 = {color: '#1b191b'};
 let instructions = gui.addColor(palette0, 'color').name(
-    '<a href="https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md" '
+    '<a href='
+    + '"https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md"'
     + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
     + 'Instructions</a>'
 );
@@ -119,7 +121,8 @@ let mouseMode = gui.add(controls, 'mouseMode',
 // gui.add(controls, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
 gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit',
-                                       'Single Slit', 'Step', 'Spike', 'Triple Slit']
+                                       'Single Slit', 'Step', 'Spike',
+                                       'Triple Slit']
                                        ).name('Preset Potential');
 let mouseControls = gui.addFolder('Mouse Usage Controls');
 mouseControls.widgets = [];
@@ -159,7 +162,7 @@ function mouseControlsCallback(e) {
                                              ['square', 'circle', 'gaussian']
                                             ).name('Draw Type');
         let widthControl = mouseControls.add(items, 'width',
-                                             0.005, 0.02).name('Draw Width');
+                                             0.005, 0.03).name('Draw Width');
         let vControl = mouseControls.add(items, 'v2', 0.0, 10.0).name('E');
         stencilTypes.onChange(
             e => {
@@ -222,6 +225,7 @@ let tPeriodic = boundariesFolder.add(controls, 'tPeriodic').name('t periodic');
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
+editUniformsFolder.add(controls, 'brightness2', 1.0, 10.0).name('Pot. brightness');
 let laplaceSelect = editUniformsFolder.add(controls, 'laplace',
                                            ['5 point', '9 point'],
                                            10).name('Laplacian');
@@ -251,13 +255,14 @@ function main() {
     potentialFrame.presetPotentials = controls.presetPotentials;
     potentialFrame.enterPotential = controls.enterPotential;
     potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
-    initializePotential('SHO');
 
     let bx = 0; let by = 0;
     let mouseUse = false;
     let mouseAction = false;
 
     let potChanged = false;
+
+    initializePotential('SHO');
 
     function changeBoundaries(s, t) {
         if (pixelWidth !== 512 && pixelHeight !== 512) {
@@ -435,12 +440,20 @@ function main() {
                 potentialFrame.setIntUniforms({potentialType: 1});
                 draw();
                 unbind();
-            }
+            };
             f(40.0);
             let items = {a: 40.0};
-            let aVar = presetControlsFolder.add(items, 'a', 0.0, 40.0).name('Strength');
+            let aVar = presetControlsFolder.add(items,
+                                                'a', 0.0, 40.0).name('Strength');
             aVar.onChange(f);
             presetControlsFolder.controls.push(aVar);
+            mouseAction = true;
+            bx = pixelWidth/2;
+            by = pixelHeight*0.75;
+            controls.py = 0.0;
+            controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*40.0/controls.scaleP;
+            controls.mouseMode = 'new ψ(x, y)';
+            mouseMode.updateDisplay();
 
         } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
@@ -496,7 +509,7 @@ function main() {
                 potentialFrame.setIntUniforms({potentialType: 3});
                 draw();
                 unbind();
-            }
+            };
             f(singleSlitUniforms);
             for (let e of Object.keys(singleSlitUniforms)) {
                 let minVal, maxVal, name;
@@ -538,7 +551,7 @@ function main() {
                 potentialFrame.setIntUniforms({potentialType: 4});
                 draw();
                 unbind();
-            }
+            };
             f(stepUniforms);
             let aSlider = presetControlsFolder.add(
                 stepUniforms, 'a', 0.0, 10.0
@@ -583,7 +596,8 @@ function main() {
                 bx = pixelWidth/3;
                 by = pixelHeight*0.75;
                 controls.py = 30.0/controls.scaleP;
-                controls.px = -30.0/controls.scaleP;
+                controls.px = -((Math.random() > 0.5)? -1.0: 1.0)*
+                                30.0/controls.scaleP;
             }
             draw();
             unbind();
@@ -698,11 +712,13 @@ function main() {
                 w: drawRect.w/pixelWidth,
                 h: -drawRect.h/pixelHeight,
                 lineWidth: 0.002,
-                brightness: controls.brightness
+                brightness: controls.brightness,
+                brightness2: controls.brightness2
             });
         } else {
             viewFrame.setFloatUniforms({lineWidth: 0.0,
-                                         brightness: controls.brightness});
+                                         brightness: controls.brightness,
+                                         brightness2: controls.brightness2});
         }
         draw();
         unbind();
@@ -872,34 +888,28 @@ function main() {
             if (bx < canvas.width && by < canvas.height &&
                 bx >= 0 && by >= 0) mouseAction = true;
         }
-    }
-
-    let touchReleaseWave = function(ev, mode) {
+    };
+    canvas.addEventListener("touchstart", ev => {
+        mouseUse = true;
         let touches = ev.changedTouches;
-        let n = touches.length;
-        if (n !== 0) {
-            if (mode == 'move') {
-                let prevBx = bx;
-                let prevBy = by;
-                bx = Math.floor((touches[n-1].pageX - canvas.offsetLeft));
-                by = Math.floor((touches[n-1].pageY - canvas.offsetTop));
-                controls.px = parseInt(bx - prevBx);
-                if (Math.abs(controls.px) > 60.0) {
-                    controls.px = Math.sign(controls.px)*60.0;
-                }
-                controls.py = -parseInt(by - prevBy);
-                if (Math.abs(controls.py) > 60.0) {
-                    controls.py = Math.sign(controls.py)*60.0;
-                }
-            }
-            if (bx < canvas.width && by < canvas.height &&
-                bx >= 0 && by >= 0) {mouseAction = true; }
-        }
-    }
-    canvas.addEventListener("touchstart", ev => touchReleaseWave(ev, 'start'));
-    canvas.addEventListener("touchmove", ev => touchReleaseWave(ev, 'move'));
-    // document.addEventListener("touchevent",
-    //                           ev => touchReleaseWave(ev, "start"));
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        drawRect.w = 0;
+        drawRect.h = 0;
+        drawRect.x = Math.floor((mouseEv.clientX - canvas.offsetLeft))/scale.w;
+        drawRect.y = Math.floor((mouseEv.clientY - canvas.offsetTop))/scale.h;
+        mousePos(mouseEv, 'move');
+    });
+    canvas.addEventListener("touchmove", ev => {
+        let touches = ev.changedTouches;
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        mousePos(mouseEv, 'move');
+    });
+    canvas.addEventListener("touchend", ev => {
+        let touches = ev.changedTouches;
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        mousePos(mouseEv, 'up');
+        mouseUse = false;
+    });
     canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
         mouseUse = false;

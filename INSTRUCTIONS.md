@@ -1,6 +1,6 @@
 # Instructions
-When you open the app, the first thing that you will see is an empty square box where the dynamics of the simulation occur. 
-Click anywhere on the box to initialize the wavefunction, where its brightness and colour corresponds to its probability density and complex phase respectively. The motion of the mouse at release determines the initial momentum of the wavefunction.
+When you open the app, the first thing you will see is the time evolution of the wavefunction in an embedded Simple Harmonic Oscillator potential. The brightness and colour of the wavefunction corresponds to its probability density and complex phase. 
+Click anywhere on the box to initialize a new wavefunction, where the  motion of the mouse at release determines the initial momentum of the wavefunction.
 To the right of the box are the GUI controls. These are:
 - **Instructions**. Link to this document.
 - **Source**. Link to the source code.

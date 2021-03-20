@@ -279,6 +279,7 @@ uniform float w;
 uniform float h;
 uniform float lineWidth;
 uniform float brightness;
+uniform float brightness2;
 uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
@@ -353,14 +354,15 @@ void main () {
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
     vec4 pix;
+    float potential = col4.r*brightness2;
     if (displayMode == 0) {
         pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
-                   vec3(col4.r, col4.r, col4.r),
+                   vec3(potential, potential, potential),
                    1.0);
     } else {
-        pix = vec4(probDensity*(brightness/16.0) + col4.r,
-                   probDensity*(brightness/16.0) + col4.r,
-                   probDensity*(brightness/16.0) + col4.r, 1.0);
+        pix = vec4(probDensity*(brightness/16.0) + potential,
+                   probDensity*(brightness/16.0) + potential,
+                   probDensity*(brightness/16.0) + potential, 1.0);
     }
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) +

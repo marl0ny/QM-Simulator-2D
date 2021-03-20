@@ -13,17 +13,23 @@ if (gl === null) {
     context = "webgl";
     gl = canvas.getContext(context);
     if (gl === null) {
-        throw "Your browser does not support WebGL."
+        let msg = "Your browser does not support WebGL.";
+        alert(msg);
+        throw msg;
     }
     ext = gl.getExtension('OES_texture_float');
     ext2 = gl.getExtension('OES_texture_float_linear');
     if (ext === null && ext2 === null) {
-        throw "Your browser does not support the necessary WebGL extensions."
+        let msg = "Your browser does not support the necessary WebGL extensions.";
+        alert(msg);
+        throw msg;
     }
 } else {
     ext = gl.getExtension('EXT_color_buffer_float');
     if (ext === null) {
-        throw "Your browser does not support the necessary WebGL extensions."
+        let msg = "Your browser does not support the necessary WebGL extensions.";
+        alert(msg);
+        throw msg;
     }
 }
 
@@ -34,7 +40,9 @@ if (gl === null) {
 
 if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,
                                 gl.HIGH_FLOAT).precision < 23) {
-    throw "GPU precision for highp float is not high enough.";
+    let msg = "Your GPU does not support 32 bit floats or higher. "
+               + "You may see solutions quickly decay to zero.";
+    alert(msg);
 }
 
 function makeShader(shaderType, shaderSource) {
@@ -265,7 +273,7 @@ let getNumberAndEndPos = function(expr, i) {
     if (!isFloat) {
         num += '.0';
     }
-    return {i: i, num: num}
+    return {i: i, num: num};
 }
 
 
@@ -423,7 +431,7 @@ function createFunctionShader(expr, uniforms) {
     '}'];
     splitTemplateShader[7] = splitTemplateShader[7] + expr + ';';
     for (let uniform of uniforms) {
-        splitTemplateShader[1] += '\n' + `uniform float ${uniform};`
+        splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
     }
     splitTemplateShader[1] += '\n';
     let templateShaderText = '';
