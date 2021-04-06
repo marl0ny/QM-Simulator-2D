@@ -12,6 +12,8 @@ To the right of the box are the GUI controls. These are:
 - **Mouse Usage Controls** folder. Contains widgets that pertain to what is selected in the Mouse dropdown. A list of what these widgets do for each of the Mouse dropdown options is shown below:
     - **new Ψ(x, y)**
         - **Fix Init. Mom.** checkbox. Fix Initial Momentum. Instead of using the motion of the mouse to specify the wavefunction's expected initial momentum, use the controls found here instead.
+        - **sigma** slider. The new wavefunction is initialized as a Gaussian wavepacket, and this slider
+        controls its standard deviation. Note that the sigma value are in texture units, where in these units the width and height of the boundaries are equal to one.
         - **kx** slider. Proportional to the initial momentum in the x-direction (if `px` is the x-momentum, then `px = 2*π*kx/Lx`, where `Lx` is the width of the box).
         - **ky** slider. Proportional to the initial momentum in the y-direction (if `py` is the y-momentum, then `py = 2*π*ky/Ly`, where `Ly` is the height of the box).
     - **sketch barrier**
@@ -30,7 +32,7 @@ To the right of the box are the GUI controls. These are:
 - **Text Edit Potential** folder. This contains the **Enter Potential V(x, y)** entry box and the **Use Tex Coordinates** checkbox. The **Enter Potential V(x, y)** entry box is where you can type in a
 new potential.
 Note that the value of the potential at a given point may be cutoff if it's too high or too deep. Checking **Use Tex Coordinates** uses the coordinates of the texture image to express V(x, y) instead of the coordinates in the simulation. Note that the origin `0, 0` is defined at the bottom left corner of the box. The folder **Edit Variables** contains sliders for any inputted variables that are not x or y.
-- **Edit Boundary Type** folder. Change the boundary conditions, where checking the **s periodic** checkbox makes the simulation periodic in the horizontal direction, and likewise checking the **t periodic** checkbox adds periodicity in the vertical direction.
+- **Edit Boundary Type** folder. Change the boundary conditions, where selecting **Dirichlet** sets the wavefunction to zero at the boundaries, **Neumann** sets the first spatial derivative with respect to the boundary normal to zero, and **Periodic** makes the simulation wrap around itself.
 - **Edit Other Values** folder. This contains sliders to modify the mass **m** of the particle, the time step length **dt**, or the discrete **Laplacian** stencil size.
 
 

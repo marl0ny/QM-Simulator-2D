@@ -79,8 +79,8 @@ let controls = {
     object: "string",
     changeDimensions: '512x512',
     boundaries: 'default',
-    sPeriodic: false,
-    tPeriodic: false
+    borderAlpha: 0.0,
+    boundaryType: "Dirichlet"
     };
 
 let palette0 = {color: '#1b191b'};
@@ -131,6 +131,7 @@ mouseControls.values = {name: () => {},
                         stencilType: 0,
                         width: 0.01, v2: 10.0,
                         fixInitialP: false,
+                        sigma: 0.05859375,
                         px0: 0.0, py0: 20.0,
                         probabilityInBox: '0.0'};
 
@@ -143,11 +144,15 @@ function mouseControlsCallback(e) {
         let items = mouseControls.values;
         let name = mouseControls.add(items, 'name').name(`${e} controls`);
         let fixInitialP = mouseControls.add(items,
-                                            'fixInitialP').name('Fix Init. Mom.');
+                                            'fixInitialP'
+                                           ).name('Fix Init. Mom.');
+        let sigma = mouseControls.add(items, 'sigma', 
+                                      20.0/512.0, 40.0/512.0).name('sigma');
         let px0 = mouseControls.add(items, 'px0', -40.0, 40.0).name('kx');
         let py0 = mouseControls.add(items, 'py0', -40.0, 40.0).name('ky');
         mouseControls.widgets.push(name);
         mouseControls.widgets.push(fixInitialP);
+        mouseControls.widgets.push(sigma);
         mouseControls.widgets.push(px0);
         mouseControls.widgets.push(py0);
 
@@ -220,8 +225,10 @@ textEditPotential.add(controls,
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
-let sPeriodic = boundariesFolder.add(controls, 'sPeriodic').name('s periodic');
-let tPeriodic = boundariesFolder.add(controls, 'tPeriodic').name('t periodic');
+let boundariesSelect = boundariesFolder.add(controls, 'boundaryType', 
+                                            ['Dirichlet', 'Neumann', 
+                                             'Periodic']
+                                            ).name('Type');
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
@@ -265,8 +272,12 @@ function main() {
     initializePotential('SHO');
 
     function changeBoundaries(s, t) {
-        if (pixelWidth !== 512 && pixelHeight !== 512) {
-            setFrameDimensions(512, 512);
+        if (s === gl.REPEAT || t === gl.REPEAT) {
+            if (pixelWidth !== 512 && pixelHeight !== 512) {
+                setFrameDimensions(512, 512);
+                controls.changeDimensions = '512x512';
+                gridSelect.updateDisplay();
+            }
         }
         viewFrame.setTexture(pixelWidth, pixelHeight, {s: s,
             t: t});
@@ -280,16 +291,24 @@ function main() {
         initializePotential(controls.presetPotentials);
         }
     }
-    sPeriodic.onChange(() => {
+    boundariesSelect.onChange(e => {
+        // List of the names of different boundary conditions:
+        // Wikipedia contributors. (2021, March 7). 
+        // Boundary value problem
+        // https://en.wikipedia.org/wiki/Boundary_value_problem
+        // #Types of boundary value problems#Examples
+        console.log('update');
+        if (e === 'Dirichlet') {
+            controls.borderAlpha = 0.0;
+            changeBoundaries(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+        } else if (e === 'Neumann') {
+            controls.borderAlpha = 1.0;
+            changeBoundaries(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+        } else if (e === 'Periodic') {
+            controls.borderAlpha = 1.0;
+            changeBoundaries(gl.REPEAT, gl.REPEAT);
 
-        let s = (controls.sPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
-        let t = (controls.tPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
-        changeBoundaries(s, t);
-    });
-    tPeriodic.onChange(() => {
-        let s = (controls.sPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
-        let t = (controls.tPeriodic == true)? gl.REPEAT: gl.CLAMP_TO_EDGE;
-        changeBoundaries(s, t);
+        }
     });
 
 
@@ -311,6 +330,14 @@ function main() {
         // TODO if boundary is changed then changing the frame dimensions
         // causes the boundaries to go back to clamp_to_edge.
         // Change this behaviour.
+        if (controls.borderAlpha === 0.0) {
+            controls.boundaryType = 'Dirichlet';
+            boundariesSelect.updateDisplay();
+        }
+        else if (controls.borderAlpha === 1.0) {
+            controls.boundaryType = 'Neumann';
+            boundariesSelect.updateDisplay();
+        }
         viewFrame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
                                                        t: gl.CLAMP_TO_EDGE});
         unbind();
@@ -406,7 +433,8 @@ function main() {
                                               sx: 4.0/pixelWidth,
                                               sy: 4.0/pixelHeight,
                                               bx: u/canvas.width,
-                                              by: v/canvas.height});
+                                              by: v/canvas.height,
+                                              borderAlpha: controls.borderAlpha});
             draw();
             unbind();
             swapFrames[t-2].useProgram(imagTimeStepProgram);
@@ -441,8 +469,8 @@ function main() {
                 draw();
                 unbind();
             };
-            f(40.0);
-            let items = {a: 40.0};
+            f(20.0);
+            let items = {a: 20.0};
             let aVar = presetControlsFolder.add(items,
                                                 'a', 0.0, 40.0).name('Strength');
             aVar.onChange(f);
@@ -451,7 +479,7 @@ function main() {
             bx = pixelWidth/2;
             by = pixelHeight*0.75;
             controls.py = 0.0;
-            controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*40.0/controls.scaleP;
+            controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/controls.scaleP;
             controls.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
 
@@ -637,6 +665,8 @@ function main() {
                   controls.scaleP*controls.px: mouseControls.values.px0;
         let py = (!mouseControls.values.fixInitialP)?
                   controls.scaleP*controls.py: mouseControls.values.py0;
+        let sigma = mouseControls.values.sigma;
+        console.log(mouseControls.values.sigma)
         // console.log(px, py);
         swapFrames[t-3].useProgram(initialWaveProgram);
         swapFrames[t-3].bind();
@@ -644,11 +674,12 @@ function main() {
                                             dy: 1.0/pixelHeight,
                                             px: px,
                                             py: py,
-                                            amp: 5.0,
-                                            sx: 30.0/pixelWidth,
-                                            sy: 30.0/pixelHeight,
+                                            amp: 5.0*30.0/(sigma*512.0),
+                                            sx: (sigma*512.0)/pixelWidth,
+                                            sy: (sigma*512.0)/pixelHeight,
                                             bx: bx/canvas.width,
-                                            by: 1.0 - by/canvas.height});
+                                            by: 1.0 - by/canvas.height,
+                                            borderAlpha: controls.borderAlpha});
         draw();
         unbind();
         swapFrames[t-2].useProgram(imagTimeStepProgram);

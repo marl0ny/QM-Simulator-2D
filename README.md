@@ -10,3 +10,7 @@ performing a half-step to advance the real component in time, then using these u
  In <em>An Introduction to Computer Simulation Methods</em>, 
 chapter 16. Pearson Addison-Wesley.
  - Schroeder D. [Quantum Scattering in Two Dimensions](https://physics.weber.edu/schroeder/software/QuantumScattering2D.html).
+
+ ###
+ Names of the Different Boundary Conditions:
+ - Wikipedia contributors. (2021, March 7). [Boundary value problem](https://en.wikipedia.org/wiki/Boundary_value_problem). In <em>Wikipedia, The Free Encyclopedia</em>.

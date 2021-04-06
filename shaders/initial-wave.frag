@@ -16,6 +16,7 @@ uniform float py;
 uniform float sx;
 uniform float sy;
 uniform float amp;
+uniform float borderAlpha;
 float sqrt2 = 1.4142135623730951; 
 float sqrtpi = 1.7724538509055159;
 float pi = 3.141592653589793;
@@ -31,6 +32,6 @@ void main () {
         float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
         fragColor = vec4(re, im, 0.0, 1.0); 
     } else {
-        fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        fragColor = vec4(0.0, 0.0, 0.0, borderAlpha); 
     }
 }
