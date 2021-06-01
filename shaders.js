@@ -1,3 +1,20 @@
+const onesFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+
+void main () {
+    fragColor = vec4(1.0, 1.0, 1.0, 1.0); 
+}
+`;
+
+
 const copyOverFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -29,6 +46,7 @@ varying highp vec2 fragTexCoord;
 #endif
 uniform sampler2D tex1;
 uniform int drawMode;
+uniform int eraseMode;
 uniform float drawWidth;
 uniform float bx;
 uniform float by;
@@ -45,7 +63,7 @@ void main() {
     float drawW2 = drawWidth*drawWidth;
     float r2 = (xy.x - bx)*(xy.x - bx) 
                 + (xy.y - by)*(xy.y - by);
-    if (initialV < v2) {
+    if (initialV < v2 || eraseMode == 1) {
         if ((drawMode == DRAW_SQUARE && 
             (xy.x - bx)*(xy.x - bx) < drawW2 && 
             (xy.y - by)*(xy.y - by) < drawW2) ||
@@ -167,6 +185,69 @@ void main() {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
     }
 }`;
+
+
+const probCurrentFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;
+uniform float dy;
+uniform float w;
+uniform float h;
+uniform float hbar;
+uniform float m;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+
+
+float realValueAt(sampler2D texPsi, vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.r*tmp.a;
+}
+
+float imagValueAt(sampler2D texPsi, vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.g*tmp.a;
+}
+
+vec2 getDivRePsi(sampler2D texPsi) {
+    float u = realValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));
+    float d = realValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));
+    float l = realValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = realValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));
+    return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);
+}
+
+vec2 getDivImPsi(sampler2D texPsi) {
+    float u = imagValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));
+    float d = imagValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));
+    float l = imagValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = imagValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));
+    return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);
+}
+
+void main() {
+    float rePsi = texture2D(tex2, fragTexCoord).r;
+    float imPsi = 0.5*(texture2D(tex1, fragTexCoord).g
+                        + texture2D(tex3, fragTexCoord).g);
+    vec2 divRePsi = getDivRePsi(tex2);
+    vec2 divImPsi = (getDivImPsi(tex1) + getDivImPsi(tex3))/2.0;
+    // (*psi)*div psi = (rePsi - I*imPsi)*(divRePsi + I*divImPsi)
+    // = rePsi*divRePsi + imPsi*divImPsi
+    //     + I*(-imPsi*divRePsi + rePsi*divImPsi)
+    // I*(hbar/(2m))*(psi*div (*psi) - (*psi)*div psi)
+    // = I*(hbar/(2m))*2*Im(-(*psi)*div psi)
+    vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);
+    fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
+}
+`;
 
 
 const realTimestepFragmentSource = `precision highp float;
@@ -294,8 +375,16 @@ uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
 uniform sampler2D texV;
+uniform sampler2D vecTex;
 uniform sampler2D textTex;
 uniform int displayMode;
+uniform vec3 probColour;
+uniform vec3 potColour;
+
+#define DISPLAY_ONLY_PROB_DENSITY 0
+#define DISPLAY_PHASE 1
+#define DISPLAY_CURRENT_WITH_PROB 2
+#define DISPLAY_CURRENT_WITH_PHASE 3
 
 
 vec4 drawWindow(vec4 pix, float x, float y,
@@ -364,15 +453,27 @@ void main () {
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
     vec4 pix;
-    float potential = col4.r*brightness2;
-    if (displayMode == 0) {
+    vec3 potential = col4.r*brightness2*potColour;
+    if (displayMode == DISPLAY_PHASE) {
         pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
-                   vec3(potential, potential, potential),
+                   potential,
                    1.0);
-    } else {
-        pix = vec4(probDensity*(brightness/16.0) + potential,
-                   probDensity*(brightness/16.0) + potential,
-                   probDensity*(brightness/16.0) + potential, 1.0);
+    } else if (displayMode == DISPLAY_ONLY_PROB_DENSITY) {
+        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
+                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
+                   probDensity*probColour[2]*(brightness/16.0) + potential.b, 
+                   1.0);
+    } else if (displayMode == DISPLAY_CURRENT_WITH_PHASE) {
+        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
+                   potential,
+                   1.0);
+        pix += 10.0*texture2D(vecTex, fragTexCoord);
+    } else if (displayMode == DISPLAY_CURRENT_WITH_PROB) {
+        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
+                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
+                   probDensity*probColour[2]*(brightness/16.0) + potential.b,
+                   1.0);
+        pix += 10.0*texture2D(vecTex, fragTexCoord);
     }
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) +

@@ -19,8 +19,16 @@ uniform sampler2D tex1;
 uniform sampler2D tex2;
 uniform sampler2D tex3;
 uniform sampler2D texV;
+uniform sampler2D vecTex;
 uniform sampler2D textTex;
 uniform int displayMode;
+uniform vec3 probColour;
+uniform vec3 potColour;
+
+#define DISPLAY_ONLY_PROB_DENSITY 0
+#define DISPLAY_PHASE 1
+#define DISPLAY_CURRENT_WITH_PROB 2
+#define DISPLAY_CURRENT_WITH_PHASE 3
 
 
 vec4 drawWindow(vec4 pix, float x, float y,
@@ -89,15 +97,27 @@ void main () {
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
     vec4 pix;
-    float potential = col4.r*brightness2;
-    if (displayMode == 0) {
+    vec3 potential = col4.r*brightness2*potColour;
+    if (displayMode == DISPLAY_PHASE) {
         pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
-                   vec3(potential, potential, potential),
+                   potential,
                    1.0);
-    } else {
-        pix = vec4(probDensity*(brightness/16.0) + potential,
-                   probDensity*(brightness/16.0) + potential,
-                   probDensity*(brightness/16.0) + potential, 1.0);
+    } else if (displayMode == DISPLAY_ONLY_PROB_DENSITY) {
+        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
+                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
+                   probDensity*probColour[2]*(brightness/16.0) + potential.b, 
+                   1.0);
+    } else if (displayMode == DISPLAY_CURRENT_WITH_PHASE) {
+        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
+                   potential,
+                   1.0);
+        pix += 10.0*texture2D(vecTex, fragTexCoord);
+    } else if (displayMode == DISPLAY_CURRENT_WITH_PROB) {
+        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
+                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
+                   probDensity*probColour[2]*(brightness/16.0) + potential.b,
+                   1.0);
+        pix += 10.0*texture2D(vecTex, fragTexCoord);
     }
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) +

@@ -1,247 +1,3 @@
-let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
-let realTimeStepShader = makeShader(gl.FRAGMENT_SHADER,
-                                    realTimestepFragmentSource);
-let realTimeStepProgram = makeProgram(vShader, realTimeStepShader);
-let imagTimeStepShader = makeShader(gl.FRAGMENT_SHADER,
-                                    imagTimestepFragmentSource);
-let imagTimeStepProgram = makeProgram(vShader, imagTimeStepShader);
-let initialWaveShader = makeShader(gl.FRAGMENT_SHADER,
-                                    initialWaveFragmentSource);
-let initialWaveProgram = makeProgram(vShader, initialWaveShader);
-let initPotentialShader = makeShader(gl.FRAGMENT_SHADER,
-                                        initialPotentialFragmentSource);
-let initPotentialProgram = makeProgram(vShader, initPotentialShader);
-let reshapePotentialShader = makeShader(gl.FRAGMENT_SHADER,
-                                        reshapePotentialFragmentSource);
-let shapePotentialProgram = makeProgram(vShader, reshapePotentialShader);
-let displayShader = makeShader(gl.FRAGMENT_SHADER, viewFrameFragmentSource);
-let displayProgram = makeProgram(vShader, displayShader);
-let copyToShader = makeShader(gl.FRAGMENT_SHADER, copyOverFragmentSource);
-let copyToProgram = makeProgram(vShader, copyToShader);
-let probDensityShader = makeShader(gl.FRAGMENT_SHADER,
-                                    probDensityFragmentSource);
-let probDensityProgram = makeProgram(vShader, probDensityShader);
-
-gl.deleteShader(vShader);
-gl.deleteShader(realTimeStepShader);
-gl.deleteShader(imagTimeStepShader);
-gl.deleteShader(initialWaveShader);
-gl.deleteShader(initPotentialShader);
-gl.deleteShader(reshapePotentialShader);
-gl.deleteShader(displayShader);
-gl.deleteShader(copyToShader);
-gl.deleteShader(probDensityShader);
-
-let showFPS = false;
-let canvasStyleWidth = parseInt(canvas.style.width);
-let canvasStyleHeight = parseInt(canvas.style.height);
-let windowScale = 0.96;
-// let width = 85.3333333333*Math.sqrt(2.0), height = 64.0*Math.sqrt(2.0);
-let width = 64.0*Math.sqrt(2.0), height = 64.0*Math.sqrt(2.0);
-if (canvas.width === canvas.height && canvas.width  !== 512) {
-    width = (canvas.width/512)*64.0*Math.sqrt(2.0);
-    height = (canvas.width/512)*64.0*Math.sqrt(2.0);
-}
-
-if (window.innerHeight < window.innerWidth) {
-    canvasStyleWidth = parseInt((width/height)*window.innerHeight*windowScale);
-    canvasStyleHeight = parseInt(window.innerHeight*windowScale);
-} else {
-    canvasStyleWidth = parseInt(window.innerWidth*windowScale);
-    canvasStyleHeight = parseInt((width/height)*window.innerWidth*windowScale);
-}
-canvas.style.width = `${canvasStyleWidth}px`;
-canvas.style.height = `${canvasStyleHeight}px`;
-let scale = {w: canvasStyleWidth/canvas.width,
-             h: canvasStyleHeight/canvas.height};
-let pixelWidth = canvas.width, pixelHeight = canvas.height;
-let gui = new dat.GUI();
-measure = false;
-let drawRect = {x: 0.0, y: 0.0, w: 0.0, h: 0.0};
-let controls = {
-    brightness: 4,
-    brightness2: 1.0,
-    speed: 6,
-    px: 0.0,
-    py: 0.0,
-    colourPhase: true,
-    displayOutline: false,
-    mouseMode: 'new ψ(x, y)',
-    presetPotentials: 'SHO',
-    useTextureCoordinates: true,
-    enterPotential: 'V(x, y)',
-    measurePosition: () => measure=true,
-    dt: 0.01,
-    m: 1.0,
-    laplace: '5 point',
-    laplaceVal: 5,
-    scaleP: 1.0,
-    object: "string",
-    changeDimensions: '512x512',
-    boundaries: 'default',
-    borderAlpha: 0.0,
-    boundaryType: "Dirichlet"
-    };
-
-let palette0 = {color: '#1b191b'};
-let instructions = gui.addColor(palette0, 'color').name(
-    '<a href='
-    + '"https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md"'
-    + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
-    + 'Instructions</a>'
-);
-// How to display only text:
-// https://stackoverflow.com/q/30834678
-// Question by Oggy (https://stackoverflow.com/users/2562154)
-// Answer (https://stackoverflow.com/a/31001163)
-// by Djuro Mirkovic (https://stackoverflow.com/users/4972372)
-instructions.domElement.hidden = true;
-let palette = {color: '#1b191b'};
-source = gui.addColor(palette, 'color').name(
-    ' <a href="https://github.com/marl0ny/QM-Simulator-2D"'
-    + 'style="color: #efefef; text-decoration: none; font-size: 1em;">'
-    + 'Source</a>'
-);
-source.domElement.hidden = true;
-
-gui.add(controls , 'brightness', 0, 10).name('Brightness');
-let iter = gui.add(controls, 'speed', 0, 20).name('Speed');
-iter.step(1.0);
-gui.add(controls, 'colourPhase').name('Colour Phase');
-
-// How to do dropdowns in dat.gui:
-// https://stackoverflow.com/questions/30372761/
-// Question by Adi Shavit (https://stackoverflow.com/users/135862/adi-shavit)
-// Answer (https://stackoverflow.com/a/31000465)
-// by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
-let mouseMode = gui.add(controls, 'mouseMode',
-                        ['new ψ(x, y)', 
-                         'sketch barrier',
-                         'prob. in box']).name('Mouse Usage');
-// gui.add(controls, 'changeDimensions', ['400x400', '512x512',
-//         '640x640', '800x800']).name('Grid Size');
-gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit',
-                                       'Single Slit', 'Step', 'Spike',
-                                       'Triple Slit']
-                                       ).name('Preset Potential');
-let mouseControls = gui.addFolder('Mouse Usage Controls');
-mouseControls.widgets = [];
-mouseControls.values = {name: () => {},
-                        stencilTypes: 'square',
-                        stencilType: 0,
-                        width: 0.01, v2: 10.0,
-                        fixInitialP: false,
-                        sigma: 0.05859375,
-                        px0: 0.0, py0: 20.0,
-                        probabilityInBox: '0.0'};
-
-function mouseControlsCallback(e) {
-    if (e[0] === 'n') {
-        for (let w of mouseControls.widgets) {
-            w.remove();
-        }
-        mouseControls.widgets = [];
-        let items = mouseControls.values;
-        let name = mouseControls.add(items, 'name').name(`${e} controls`);
-        let fixInitialP = mouseControls.add(items,
-                                            'fixInitialP'
-                                           ).name('Fix Init. Mom.');
-        let sigma = mouseControls.add(items, 'sigma', 
-                                      20.0/512.0, 40.0/512.0).name('sigma');
-        let px0 = mouseControls.add(items, 'px0', -40.0, 40.0).name('kx');
-        let py0 = mouseControls.add(items, 'py0', -40.0, 40.0).name('ky');
-        mouseControls.widgets.push(name);
-        mouseControls.widgets.push(fixInitialP);
-        mouseControls.widgets.push(sigma);
-        mouseControls.widgets.push(px0);
-        mouseControls.widgets.push(py0);
-
-    } else if (e[0] === 's') {
-        for (let w of mouseControls.widgets) {
-            w.remove();
-        }
-        mouseControls.widgets = [];
-        let items = mouseControls.values;
-        let name = mouseControls.add(items, 'name').name(`${e} Controls`);
-        let stencilTypes = mouseControls.add(items, 'stencilTypes',
-                                             ['square', 'circle', 'gaussian']
-                                            ).name('Draw Type');
-        let widthControl = mouseControls.add(items, 'width',
-                                             0.005, 0.03).name('Draw Width');
-        let vControl = mouseControls.add(items, 'v2', 0.0, 10.0).name('E');
-        stencilTypes.onChange(
-            e => {
-                // console.log(e);
-                let DRAW_SQUARE = 0;
-                let DRAW_CIRCLE = 1;
-                let DRAW_GAUSS = 2;
-                if (e === 'square') {
-                    mouseControls.values.stencilType = DRAW_SQUARE;
-                } else if (e === 'circle') {
-                    mouseControls.values.stencilType = DRAW_CIRCLE;
-                } else if (e === 'gaussian') {
-                    mouseControls.values.stencilType = DRAW_GAUSS;
-                }
-            }
-        );
-        mouseControls.widgets.push(name);
-        mouseControls.widgets.push(stencilTypes);
-        mouseControls.widgets.push(widthControl);
-        mouseControls.widgets.push(vControl);
-    } else if (e[0] === 'p') {
-        let items = mouseControls.values;
-        let name = mouseControls.add(items, 'name').name(`${e} Controls`);
-        for (let w of mouseControls.widgets) {
-            w.remove();
-        }
-        mouseControls.widgets = [];
-        let w = mouseControls.add(items, 'probabilityInBox', 
-                                  '0.0').name('Probability in box');
-        mouseControls.widgets.push(name);
-        mouseControls.widgets.push(w);
-        mouseControls.open();
-    }
-}
-
-mouseMode.onChange(mouseControlsCallback);
-let presetControlsFolder = gui.addFolder('Preset Potential Controls');
-presetControlsFolder.controls = [];
-gui.add(controls, 'measurePosition').name('Measure Position');
-let moreControlsFolder = gui.addFolder('More Controls');
-let showFolder = moreControlsFolder.addFolder('Show Dimensions');
-let showValues = {w: width, h: height};
-let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
-let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
-let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
-let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
-                                            ['400x400', '512x512',
-                                             '640x640', '800x800']
-                                           ).name('Grid Size');
-let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
-textEditPotential.add(controls,
-                      'useTextureCoordinates').name('Use Tex Coordinates');
-textEditPotential.add(controls,
-                      'enterPotential').name('Enter Potential V(x, y)');
-let textEditSubFolder = textEditPotential.addFolder('Edit variables');
-textEditSubFolder.controls = [];
-let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
-let boundariesSelect = boundariesFolder.add(controls, 'boundaryType', 
-                                            ['Dirichlet', 'Neumann', 
-                                             'Periodic']
-                                            ).name('Type');
-let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
-editUniformsFolder.add(controls, 'm', 0.75, 10.0);
-editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
-editUniformsFolder.add(controls, 'brightness2', 1.0, 10.0).name('Pot. brightness');
-let laplaceSelect = editUniformsFolder.add(controls, 'laplace',
-                                           ['5 point', '9 point'],
-                                           10).name('Laplacian');
-laplaceSelect.onChange(e => {
-    controls.laplaceVal = parseInt(e.split(' ')[0]);
-});
-let rScaleV = 0.0;
-let timeMilliseconds = 0;
-
 // new Promise(() => setTimeout(main, 500));
 main();
 function main() {
@@ -255,15 +11,14 @@ function main() {
                                    swapFrames[0], swapFrames[1]];
 
     let storeFrame = new Frame(pixelWidth, pixelHeight, 5);
-
     let nullTexNumber = 8;
 
     let potentialFrame = new Frame(pixelWidth, pixelHeight, 6);
+    let vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
     potentialFrame.presetPotentials = controls.presetPotentials;
     potentialFrame.enterPotential = controls.enterPotential;
     potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
 
-    let bx = 0; let by = 0;
     let mouseUse = false;
     let mouseAction = false;
 
@@ -341,7 +96,8 @@ function main() {
         viewFrame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
                                                        t: gl.CLAMP_TO_EDGE});
         unbind();
-        let frames = [].concat(swapFrames, storeFrame, potentialFrame);
+        let frames = [].concat(swapFrames, storeFrame, 
+                               potentialFrame, vectorFieldFrame);
         for (let frame of frames) {
             frame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
                                                        t: gl.CLAMP_TO_EDGE});
@@ -368,6 +124,62 @@ function main() {
             {x: 0, y: 0, w: pixelWidth, h: pixelHeight});
         unbind();
         return probDensity;
+    }
+
+    function getProbCurrent() {
+        storeFrame.useProgram(probCurrentProgram);
+        storeFrame.bind();
+        storeFrame.setFloatUniforms({dx: width/pixelWidth,
+                                     dy: height/pixelHeight,
+                                     w: width,
+                                     h: height,
+                                     hbar: 1.0,
+                                     m: controls.m,
+                                    });
+        storeFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
+                                   tex2: swapFrames[t-3].frameNumber,
+                                   tex3: swapFrames[t-2].frameNumber});
+        draw();
+        let probCurrent = storeFrame.getTextureArray({x: 0, y: 0,
+                                                      w: pixelWidth, 
+                                                      h: pixelHeight});
+        unbind();
+        let vecs = [];
+        let wSpacing = pixelWidth/32, hSpacing = pixelHeight/32;
+        let hEnd = pixelHeight; // - hSpacing;
+        let wEnd = pixelWidth; // - wSpacing;
+        let count = 0;
+        for (let i = hSpacing; i < hEnd; i += hSpacing) {
+            for (let j = wSpacing; j < wEnd; j += wSpacing) {
+                let vy = probCurrent[4*i*pixelHeight + 4*j]/60.0;
+                let vx = probCurrent[4*i*pixelHeight + 4*j + 1]/60.0;
+                if (vx*vx + vy*vy > 1e-9) {
+                    let x = 2.0*i/pixelHeight - 1.0;
+                    let y = 2.0*j/pixelWidth - 1.0;
+                    // let max_size = 0.1;
+                    let max_size = 0.05;
+                    if (vx*vx + vy*vy > max_size*max_size) {
+                        let norm = 1.0/Math.sqrt(vx*vx + vy*vy);
+                        vx = vx*norm*max_size;
+                        vy = vy*norm*max_size; 
+                    }
+                    vecs.push(y - vy/2.0);
+                    vecs.push(x - vx/2.0);
+                    vecs.push(0.0);
+                    vecs.push(y + vy/2.0);
+                    vecs.push(x + vx/2.0);
+                    vecs.push(0.0);
+                    count += 2;
+                }
+
+            }
+        }
+        let vertices = new Float32Array(vecs);
+        vectorFieldFrame.useProgram(onesProgram);
+        vectorFieldFrame.bind(vertices);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        drawLines(count);
+        unbind();
     }
 
     function getProbInRegion(probDist, i0, j0, w, h) {
@@ -403,7 +215,7 @@ function main() {
     }
 
     function measurePosition() {
-        if (measure) {
+        if (controls.measure) {
             let probDensity = getUnnormalizedProbDist();
             notNormalizedTot = 0.0;
             for (let i = 0; i < probDensity.length/4; i++) {
@@ -423,7 +235,7 @@ function main() {
             let v = j/pixelHeight;
             let u = j%pixelHeight;
             unbind();
-            measure = false;
+            controls.measure = false;
             swapFrames[t-3].useProgram(initialWaveProgram);
             swapFrames[t-3].bind();
             swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth,
@@ -476,8 +288,8 @@ function main() {
             aVar.onChange(f);
             presetControlsFolder.controls.push(aVar);
             mouseAction = true;
-            bx = pixelWidth/2;
-            by = pixelHeight*0.75;
+            controls.bx = pixelWidth/2;
+            controls.by = pixelHeight*0.75;
             controls.py = 0.0;
             controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/controls.scaleP;
             controls.mouseMode = 'new ψ(x, y)';
@@ -520,8 +332,8 @@ function main() {
                 presetControlsFolder.controls.push(slider);
             }
             mouseAction = true;
-            bx = pixelWidth/2;
-            by = pixelHeight*0.75;
+            controls.bx = pixelWidth/2;
+            controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
@@ -564,8 +376,8 @@ function main() {
                 presetControlsFolder.controls.push(slider);
             }
             mouseAction = true;
-            bx = pixelWidth/2;
-            by = pixelHeight*0.75;
+            controls.bx = pixelWidth/2;
+            controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
@@ -597,8 +409,8 @@ function main() {
             });
             presetControlsFolder.controls.push(y0Slider);
             mouseAction = true;
-            bx = pixelWidth/2;
-            by = pixelHeight*0.75;
+            controls.bx = pixelWidth/2;
+            controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
@@ -609,20 +421,20 @@ function main() {
             potentialFrame.bind();
             if (type == 'Spike') {
                 potentialFrame.setIntUniforms({potentialType: 5});
-                bx = pixelWidth/2;
-                by = pixelHeight*0.75;
+                controls.bx = pixelWidth/2;
+                controls.by = pixelHeight*0.75;
                 controls.py = 40.0/controls.scaleP;
                 controls.px = 0.0;
             } else if (type == 'Triple Slit') {
                 potentialFrame.setIntUniforms({potentialType: 6});
-                bx = pixelWidth/2;
-                by = pixelHeight*0.75;
+                controls.bx = pixelWidth/2;
+                controls.by = pixelHeight*0.75;
                 controls.py = 40.0/controls.scaleP;
                 controls.px = 0.0;
             } else {
                 potentialFrame.setIntUniforms({potentialType: 7});
-                bx = pixelWidth/3;
-                by = pixelHeight*0.75;
+                controls.bx = pixelWidth/3;
+                controls.by = pixelHeight*0.75;
                 controls.py = 30.0/controls.scaleP;
                 controls.px = -((Math.random() > 0.5)? -1.0: 1.0)*
                                 30.0/controls.scaleP;
@@ -641,14 +453,16 @@ function main() {
     function reshapePotential() {
         storeFrame.useProgram(shapePotentialProgram);
         storeFrame.bind();
-        storeFrame.setFloatUniforms({bx: bx/canvas.width,
-                                     by: 1.0 - by/canvas.height,
+        console.log(mouseControls.values.v2);
+        storeFrame.setFloatUniforms({bx: controls.bx/canvas.width,
+                                     by: 1.0 - controls.by/canvas.height,
                                      v2: mouseControls.values.v2,
                                      drawWidth:
                                      mouseControls.values.width});
         storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber,
                                    drawMode:
-                                   mouseControls.values.stencilType});
+                                   mouseControls.values.stencilType,
+                                    eraseMode: mouseControls.values.erase});
         draw();
         unbind();
         potentialFrame.useProgram(copyToProgram);
@@ -677,8 +491,8 @@ function main() {
                                             amp: 5.0*30.0/(sigma*512.0),
                                             sx: (sigma*512.0)/pixelWidth,
                                             sy: (sigma*512.0)/pixelHeight,
-                                            bx: bx/canvas.width,
-                                            by: 1.0 - by/canvas.height,
+                                            bx: controls.bx/canvas.width,
+                                            by: 1.0 - controls.by/canvas.height,
                                             borderAlpha: controls.borderAlpha});
         draw();
         unbind();
@@ -728,14 +542,32 @@ function main() {
     }
 
     function display() {
+        const DISPLAY_ONLY_PROB_DENSITY = 0;
+        const DISPLAY_PHASE = 1;
+        const DISPLAY_CURRENT_WITH_PROB = 2
+        const DISPLAY_CURRENT_WITH_PHASE = 3;
+        let intUniforms = {tex1: swapFrames[t].frameNumber,
+                           tex2: swapFrames[t-3].frameNumber,
+                           tex3: swapFrames[t-2].frameNumber,
+                           texV: potentialFrame.frameNumber,
+                           displayMode: DISPLAY_PHASE};
+        if (!controls.colourPhase) {
+            intUniforms['displayMode'] = DISPLAY_ONLY_PROB_DENSITY;
+        }
+        if (controls.viewProbCurrent) {
+            getProbCurrent(showLines=true);
+            let displayMode = (controls.colourPhase)?
+                                DISPLAY_CURRENT_WITH_PHASE:
+                                DISPLAY_CURRENT_WITH_PROB;
+            intUniforms['displayMode'] = displayMode;
+            let tex = vectorFieldFrame.frameNumber;
+            intUniforms['vecTex'] = tex;
+        }
         viewFrame.useProgram(displayProgram);
         viewFrame.bind();
-        viewFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
-                                  tex2: swapFrames[t-3].frameNumber,
-                                  tex3: swapFrames[t-2].frameNumber,
-                                  texV: potentialFrame.frameNumber,
-                                  // textTex: numberText.frameNumber,
-                                  displayMode: (controls.colourPhase)? 0: 1});
+        viewFrame.setIntUniforms(intUniforms);
+        viewFrame.setVec3Uniforms({probColour: controls.probColour,
+                                   potColour: controls.potColour});
         if (controls.mouseMode[0] == 'p') {
             viewFrame.setFloatUniforms({
                 x0: drawRect.x/pixelWidth,
@@ -881,11 +713,12 @@ function main() {
         if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
-            } else if ((controls.mouseMode[0] === 's') ){
+            } else if ((controls.mouseMode[0] === SKETCH_BARRIER ||
+                        controls.mouseMode[0] === ERASE_BARRIER) ){
                 reshapePotential();
             } else {
-                drawRect.w = bx - drawRect.x;
-                drawRect.h = by - drawRect.y;
+                drawRect.w = controls.bx - drawRect.x;
+                drawRect.h = controls.by - drawRect.y;
             }
             mouseAction = false;
         }
@@ -902,22 +735,23 @@ function main() {
 
     let mousePos = function(ev, mode) {
         if (mode == 'move') {
-            let prevBx = bx;
-            let prevBy = by;
-            bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
-            by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            controls.px = parseInt(bx - prevBx);
+            let prevBx = controls.bx;
+            let prevBy = controls.by;
+            controls.bx = Math.floor((ev.clientX 
+                                      - canvas.offsetLeft))/scale.w;
+            controls.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            controls.px = parseInt(controls.bx - prevBx);
             if (Math.abs(controls.px) > 50.0/controls.scaleP) {
                 controls.px = Math.sign(controls.px)*50.0/controls.scaleP;
             }
-            controls.py = -parseInt(by - prevBy);
+            controls.py = -parseInt(controls.by - prevBy);
             if (Math.abs(controls.py) > 50.0/controls.scaleP) {
                 controls.py = Math.sign(controls.py)*50.0/controls.scaleP;
             }
         }
         if (mouseUse) {
-            if (bx < canvas.width && by < canvas.height &&
-                bx >= 0 && by >= 0) mouseAction = true;
+            if (controls.bx < canvas.width && controls.by < canvas.height &&
+                controls.bx >= 0 && controls.by >= 0) mouseAction = true;
         }
     };
     canvas.addEventListener("touchstart", ev => {

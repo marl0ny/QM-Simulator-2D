@@ -121,6 +121,10 @@ function draw() {
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
+function drawLines(numberOfLines) {
+    gl.drawArrays(gl.LINES, 0, numberOfLines);
+}
+
 class Frame {
     constructor(w, h, frameNumber) {
         unbind();
@@ -163,6 +167,13 @@ class Frame {
             gl.uniform1i(this.uniforms[field], uniforms[field]);
         }
     }
+    setVec3Uniforms(uniforms) {
+        for (let field of Object.keys(uniforms)) {
+            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,
+                                                         field);
+            gl.uniform3fv(this.uniforms[field], uniforms[field]);
+        }   
+    }
     useProgram(shaderProgram) {
         this.shaderProgram = shaderProgram;
         gl.useProgram(shaderProgram);
@@ -195,6 +206,20 @@ class Frame {
         let buf = new Float32Array((w - x)*(h - y)*4);
         gl.readPixels(x, y, w, h, gl.RGBA, gl.FLOAT, buf);
         return buf;
+    }
+}
+
+class VectorFieldFrame extends Frame {
+    bind(vertices) {
+        if (this.frameNumber !== 0) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        }
+        let shaderProgram = this.shaderProgram;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        let pos = gl.getAttribLocation(shaderProgram, 'pos');
+        gl.enableVertexAttribArray(pos);
+        gl.vertexAttribPointer(pos, 3, gl.FLOAT, false, 3*4, 0);
     }
 }
 

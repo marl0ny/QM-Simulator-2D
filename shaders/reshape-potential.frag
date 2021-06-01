@@ -9,6 +9,7 @@ varying highp vec2 fragTexCoord;
 #endif
 uniform sampler2D tex1;
 uniform int drawMode;
+uniform int eraseMode;
 uniform float drawWidth;
 uniform float bx;
 uniform float by;
@@ -25,7 +26,7 @@ void main() {
     float drawW2 = drawWidth*drawWidth;
     float r2 = (xy.x - bx)*(xy.x - bx) 
                 + (xy.y - by)*(xy.y - by);
-    if (initialV < v2) {
+    if (initialV < v2 || eraseMode == 1) {
         if ((drawMode == DRAW_SQUARE && 
             (xy.x - bx)*(xy.x - bx) < drawW2 && 
             (xy.y - by)*(xy.y - by) < drawW2) ||
