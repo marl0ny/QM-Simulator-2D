@@ -180,7 +180,7 @@ presetControlsFolder.controls = [];
 gui.add(controls, 'measurePosition').name('Measure Position');
 let moreControlsFolder = gui.addFolder('More Controls');
 let visualizationOptionsFolder = 
-        moreControlsFolder.addFolder('More Visaulization Options');
+        moreControlsFolder.addFolder('More Visualization Options');
 visualizationOptionsFolder.add(controls, 'brightness2', 
         1.0, 10.0).name('Pot. brightness');
 let potColourController
@@ -192,7 +192,7 @@ potColourController.onChange(e => {
     controls.potColour[2] = e[2]/255.0;
 });
 visualizationOptionsFolder.add(controls, 'viewProbCurrent', 
-                                false).name('Prob. Current');
+                               false).name('Prob. Current');
 let probColourController
      = visualizationOptionsFolder.addColor({colour: [255.0, 255.0, 255.0]},
                                             'colour').name('Prob. Colour');

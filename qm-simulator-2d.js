@@ -145,7 +145,9 @@ function main() {
                                                       h: pixelHeight});
         unbind();
         let vecs = [];
-        let wSpacing = pixelWidth/32, hSpacing = pixelHeight/32;
+        let dst = 32;
+        if (pixelWidth === 400 && pixelHeight === 400) dst = 25;
+        let wSpacing = pixelWidth/dst, hSpacing = pixelHeight/dst;
         let hEnd = pixelHeight; // - hSpacing;
         let wEnd = pixelWidth; // - wSpacing;
         let count = 0;
@@ -156,7 +158,6 @@ function main() {
                 if (vx*vx + vy*vy > 1e-9) {
                     let x = 2.0*i/pixelHeight - 1.0;
                     let y = 2.0*j/pixelWidth - 1.0;
-                    // let max_size = 0.1;
                     let max_size = 0.05;
                     if (vx*vx + vy*vy > max_size*max_size) {
                         let norm = 1.0/Math.sqrt(vx*vx + vy*vy);
