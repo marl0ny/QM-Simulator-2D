@@ -15,6 +15,38 @@ void main () {
 `;
 
 
+const initialSpinorWaveFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float bx;
+uniform float by;
+uniform float px;
+uniform float py;
+uniform float sx;
+uniform float sy;
+uniform float amp;
+float sqrt2 = 1.4142135623730951; 
+float pi = 3.141592653589793;
+
+void main () {
+    float x = fragTexCoord.x;
+    float y = fragTexCoord.y;
+    float u = ((x - bx)/(sx*sqrt2));
+    float v = ((y - by)/(sy*sqrt2));
+    float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
+    float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
+    fragColor = vec4(re, im, 0.0, 0.0); 
+}
+`;
+
+
 const copyOverFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -103,6 +135,112 @@ void main() {
     vec4 col3 = texture2D(tex3, fragTexCoord);
     float probDensity = col2.r*col2.r + col1.g*col3.g;
     fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
+}`;
+
+
+const diracStepUpFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float dt;
+uniform float dx;
+uniform float dy;
+uniform float w;
+uniform float h;
+uniform float hbar;
+uniform float m;
+uniform float c;
+uniform sampler2D vTex;
+uniform sampler2D uTex;
+uniform sampler2D potTex;
+
+void main() {
+
+    vec2 xy = fragTexCoord;
+
+    vec4 dVdx = (texture2D(vTex, vec2(xy.x+dx/w, xy.y+0.5*dy/h))
+                 - texture2D(vTex, vec2(xy.x, xy.y+0.5*dy/h)))/dx;
+    vec4 dVdy = (texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y+dy/h))
+                 - texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y)))/dy;
+    vec4 v = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
+                  -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
+
+    float a = 0.5*(dt/hbar)*(m*c*c + c*texture2D(potTex, xy)[0]);
+    float den = (1.0 + a*a);
+    vec4 prevU = texture2D(uTex, xy);
+    vec4 u = vec4(dot(vec4(1.0 - a*a, 2.0*a,  0.0, 0.0), prevU)/den,
+                  dot(vec4(-2.0*a, 1.0 - a*a, 0.0, 0.0), prevU)/den,
+                  dot(vec4(0.0, 0.0,  1.0 - a*a, 2.0*a), prevU)/den,
+                  dot(vec4(0.0, 0.0, -2.0*a, 1.0 - a*a), prevU)/den);
+
+    fragColor = u + c*dt*v;
+}
+`;
+
+
+const diracViewFragmentSource = `#define NAME viewFrameFragmentSource
+precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform sampler2D wavefuncTex;
+uniform int displayMode;
+
+#define DISPLAY_ONLY_PROB_DENSITY 0
+#define DISPLAY_PHASE 1
+#define DISPLAY_CURRENT_WITH_PROB 2
+#define DISPLAY_CURRENT_WITH_PHASE 3
+
+
+vec3 complexToColour(float re, float im) {
+    float pi = 3.141592653589793;
+    float argVal = atan(im, re);
+    float maxCol = 1.0;
+    float minCol = 50.0/255.0;
+    float colRange = maxCol - minCol;
+    if (argVal <= pi/3.0 && argVal >= 0.0) {
+        return vec3(maxCol,
+                    minCol + colRange*argVal/(pi/3.0), minCol);
+    } else if (argVal > pi/3.0 && argVal <= 2.0*pi/3.0){
+        return vec3(maxCol - colRange*(argVal - pi/3.0)/(pi/3.0),
+                    maxCol, minCol);
+    } else if (argVal > 2.0*pi/3.0 && argVal <= pi){
+        return vec3(minCol, maxCol,
+                    minCol + colRange*(argVal - 2.0*pi/3.0)/(pi/3.0));
+    } else if (argVal < 0.0 && argVal > -pi/3.0){
+        return vec3(maxCol, minCol,
+                    minCol - colRange*argVal/(pi/3.0));
+    } else if (argVal <= -pi/3.0 && argVal > -2.0*pi/3.0){
+        return vec3(maxCol + (colRange*(argVal + pi/3.0)/(pi/3.0)),
+                    minCol, maxCol);
+    } else if (argVal <= -2.0*pi/3.0 && argVal >= -pi){
+        return vec3(minCol,
+                    minCol - (colRange*(argVal + 2.0*pi/3.0)/(pi/3.0)), maxCol);
+    }
+    else {
+        return vec3(minCol, maxCol, maxCol);
+    }
+}
+
+
+void main () {
+    vec4 wavefunc = texture2D(wavefuncTex, fragTexCoord);
+    float a = wavefunc[0]*wavefunc[0] + wavefunc[1]*wavefunc[1]
+            + wavefunc[2]*wavefunc[2] + wavefunc[3]*wavefunc[3];
+    vec3 col = complexToColour(wavefunc[0], wavefunc[1]);
+    fragColor = vec4(a*col, 1.0);
 }`;
 
 
@@ -246,6 +384,54 @@ void main() {
     // = I*(hbar/(2m))*2*Im(-(*psi)*div psi)
     vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);
     fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
+}
+`;
+
+
+const diracStepDownFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float dt;
+uniform float dx;
+uniform float dy;
+uniform float w;
+uniform float h;
+uniform float hbar;
+uniform float m;
+uniform float c;
+uniform sampler2D vTex;
+uniform sampler2D uTex;
+uniform sampler2D potTex;
+
+void main() {
+
+    vec2 xy = fragTexCoord;
+
+    vec4 dUdx = (texture2D(uTex, vec2(xy.x, xy.y-0.5*dy/h))
+                 - texture2D(uTex, vec2(xy.x-dx/w, xy.y-0.5*dy/h)))/dx;
+    vec4 dUdy = (texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y))
+                 - texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y-dy/h)))/dy;
+    vec4 u = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
+                  -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
+
+    float b = 0.5*(dt/hbar)*(-m*c*c
+                             + c*(texture2D(potTex, 
+                                            xy-0.5*vec2(dx/w, dy/h))[0]));
+    float den = (1.0 + b*b);
+    vec4 prevV = texture2D(vTex, xy);
+    vec4 v = vec4(dot(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0), prevV)/den,
+                  dot(vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0), prevV)/den,
+                  dot(vec4(0.0, 0.0,  1.0 - b*b, 2.0*b), prevV)/den,
+                  dot(vec4(0.0, 0.0, -2.0*b, 1.0 - b*b), prevV)/den);
+
+    fragColor = v + c*dt*u;
 }
 `;
 

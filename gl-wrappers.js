@@ -103,7 +103,7 @@ function makeBlankTexture(buf, w, h, format, boundaries) {
             buf
         );
     }
-    let interpolation = (format===gl.FLOAT)? gl.NEAREST: gl.LINEAR;
+    let interpolation = gl.LINEAR;
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, boundaries.s);
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, boundaries.t);
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, interpolation);

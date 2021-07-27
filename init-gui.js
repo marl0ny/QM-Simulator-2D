@@ -105,7 +105,7 @@ function mouseControlsCallback(e) {
                                            ).name('Fix Init. Mom.');
         
         let sigma = mouseControls.add(items, 'sigma', 
-                                      20.0/512.0, 40.0/512.0).name('sigma');
+                                      10.0/512.0, 40.0/512.0).name('sigma');
         let pVal = parseInt(40.0*pixelWidth/512.0);
         let px0 = mouseControls.add(items, 'px0', -pVal, pVal).name('kx');
         let py0 = mouseControls.add(items, 'py0', -pVal, pVal).name('ky');
