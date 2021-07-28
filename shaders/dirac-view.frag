@@ -9,7 +9,9 @@ out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 
+uniform float constPhase;
 uniform sampler2D wavefuncTex;
+uniform sampler2D potTex;
 uniform int displayMode;
 
 #define DISPLAY_ONLY_PROB_DENSITY 0
@@ -53,6 +55,10 @@ void main () {
     vec4 wavefunc = texture2D(wavefuncTex, fragTexCoord);
     float a = wavefunc[0]*wavefunc[0] + wavefunc[1]*wavefunc[1]
             + wavefunc[2]*wavefunc[2] + wavefunc[3]*wavefunc[3];
-    vec3 col = complexToColour(wavefunc[0], wavefunc[1]);
-    fragColor = vec4(a*col, 1.0);
+    vec3 pot = texture2D(potTex, fragTexCoord).rrr;
+    vec3 col = complexToColour(wavefunc[0]*cos(constPhase)
+                               - wavefunc[1]*sin(constPhase), 
+                               wavefunc[0]*sin(constPhase)
+                               + wavefunc[1]*cos(constPhase));
+    fragColor = vec4(a*col + 10.0*pot/1000.0, 1.0);
 }

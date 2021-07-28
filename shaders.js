@@ -168,11 +168,15 @@ void main() {
                  - texture2D(vTex, vec2(xy.x, xy.y+0.5*dy/h)))/dx;
     vec4 dVdy = (texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y+dy/h))
                  - texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y)))/dy;
-    vec4 v = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
-                  -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
-
+    vec4 vDerivatives = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
+                             -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
     float a = 0.5*(dt/hbar)*(m*c*c + c*texture2D(potTex, xy)[0]);
     float den = (1.0 + a*a);
+    vec4 v = vec4(dot(vec4(1.0, a,  0.0, 0.0), vDerivatives)/den,
+                  dot(vec4(-a, 1.0, 0.0, 0.0), vDerivatives)/den,
+                  dot(vec4(0.0, 0.0, 1.0, a),  vDerivatives)/den,
+                  dot(vec4(0.0, 0.0, -a, 1.0), vDerivatives)/den);
+
     vec4 prevU = texture2D(uTex, xy);
     vec4 u = vec4(dot(vec4(1.0 - a*a, 2.0*a,  0.0, 0.0), prevU)/den,
                   dot(vec4(-2.0*a, 1.0 - a*a, 0.0, 0.0), prevU)/den,
@@ -195,7 +199,9 @@ out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 
+uniform float constPhase;
 uniform sampler2D wavefuncTex;
+uniform sampler2D potTex;
 uniform int displayMode;
 
 #define DISPLAY_ONLY_PROB_DENSITY 0
@@ -239,8 +245,12 @@ void main () {
     vec4 wavefunc = texture2D(wavefuncTex, fragTexCoord);
     float a = wavefunc[0]*wavefunc[0] + wavefunc[1]*wavefunc[1]
             + wavefunc[2]*wavefunc[2] + wavefunc[3]*wavefunc[3];
-    vec3 col = complexToColour(wavefunc[0], wavefunc[1]);
-    fragColor = vec4(a*col, 1.0);
+    vec3 pot = texture2D(potTex, fragTexCoord).rrr;
+    vec3 col = complexToColour(wavefunc[0]*cos(constPhase)
+                               - wavefunc[1]*sin(constPhase), 
+                               wavefunc[0]*sin(constPhase)
+                               + wavefunc[1]*cos(constPhase));
+    fragColor = vec4(a*col + 10.0*pot/1000.0, 1.0);
 }`;
 
 
@@ -418,13 +428,17 @@ void main() {
                  - texture2D(uTex, vec2(xy.x-dx/w, xy.y-0.5*dy/h)))/dx;
     vec4 dUdy = (texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y))
                  - texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y-dy/h)))/dy;
-    vec4 u = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
-                  -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
-
+    vec4 uDerivatives = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
+                             -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
     float b = 0.5*(dt/hbar)*(-m*c*c
                              + c*(texture2D(potTex, 
                                             xy-0.5*vec2(dx/w, dy/h))[0]));
     float den = (1.0 + b*b);
+    vec4 u = vec4(dot(vec4(1.0, b,  0.0, 0.0), uDerivatives)/den,
+                  dot(vec4(-b, 1.0, 0.0, 0.0), uDerivatives)/den,
+                  dot(vec4(0.0, 0.0, 1.0, b ), uDerivatives)/den,
+                  dot(vec4(0.0, 0.0, -b, 1.0), uDerivatives)/den);
+
     vec4 prevV = texture2D(vTex, xy);
     vec4 v = vec4(dot(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0), prevV)/den,
                   dot(vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0), prevV)/den,

@@ -7,10 +7,13 @@ let stepDownShader = makeShader(gl.FRAGMENT_SHADER,
                                 diracStepDownFragmentSource);
 let viewShader = makeShader(gl.FRAGMENT_SHADER,
                             diracViewFragmentSource);
+let potShader = makeShader(gl.FRAGMENT_SHADER, 
+                            initialPotentialFragmentSource);
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
 let stepUpProgram = makeProgram(vShader, stepUpShader);
 let stepDownProgram = makeProgram(vShader, stepDownShader);
+let potProgram = makeProgram(vShader, potShader);
 let viewProgram = makeProgram(vShader, viewShader);
 
 let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
@@ -28,10 +31,19 @@ let controls = {
     // The fundamental constants used are expressed
     // in terms of [Hartree atomic units]
     // (https://en.wikipedia.org/wiki/Hartree_atomic_units)
-    m: 1.0, c: 137.036, hbar: 1.0
+    m: 1.0, c: 137.036, hbar: 1.0,
+    t: 0.0,
+    presetPotentials: 'ISW',
+    stepsPerFrame: 6
 };
+gui.add(controls , 'stepsPerFrame', 0, 20).name('steps/frame').step(1);
 gui.add(controls , 'dt', 0.000001, 0.00003).name('dt');
 gui.add(controls , 'm', 0.0, 2.0).name('m');
+let potSelect = gui.add(controls, 'presetPotentials', 
+                        ['ISW', 'SHO', 'Double Slit',
+                         'Single Slit', 'Step', 'Spike',
+                         'Triple Slit']
+                        ).name('Preset Potential');
 
 function initWavefunc() {
     let frames = [];
@@ -50,8 +62,40 @@ function initWavefunc() {
     }
 }
 
+function initializePotential(type) {
+    potFrame.useProgram(potProgram);
+    potFrame.bind();
+    if (type == 'SHO') {
+        potFrame.setFloatUniforms({"a": 10000.0/controls.c});
+        potFrame.setIntUniforms({"potentialType": 1});
+    } else if (type == 'Double Slit') {
+        potFrame.setFloatUniforms(
+            {"a": 10000.0/controls.c, "y0": 0.45, "w": 0.02, 
+             "spacing": 0.03, "x1": 0.43, "x2": 0.57}
+        );
+        potFrame.setIntUniforms({"potentialType": 2});
+    } else if (type == 'Single Slit') {
+        potFrame.setFloatUniforms(
+            {"a": 10000.0/controls.c, "y0": 0.45, "w": 0.01, 
+             "spacing": 0.01, "x1": 0.5}
+        );
+        potFrame.setIntUniforms({"potentialType": 3});
+    } else if (type == 'Step') {
+        potFrame.setFloatUniforms({"a": 5000.0/controls.c});
+        potFrame.setIntUniforms({"potentialType": 4});
+    } else if (type == 'Spike') {
+        potFrame.setIntUniforms({"potentialType": 5});
+    } else if (type == 'Triple Slit') {
+        potFrame.setIntUniforms({"potentialType": 6});
+    }
+    draw();
+    unbind();
+}
+potSelect.onChange(e => initializePotential(e));
+
 function step() {
     let dt = controls.dt;
+    controls.t += dt;
     let w = 2.0, h = 2.0;
     let hbar = controls.hbar;
     let m = controls.m;
@@ -65,7 +109,8 @@ function step() {
     );
     uFrames[1].setIntUniforms(
         {"vTex": vFrames[0].frameNumber,
-         "uTex": uFrames[0].frameNumber}
+         "uTex": uFrames[0].frameNumber,
+         "potTex": potFrame.frameNumber}
     );
     draw();
     unbind();
@@ -79,7 +124,8 @@ function step() {
     );
     vFrames[1].setIntUniforms(
         {"vTex": vFrames[0].frameNumber,
-         "uTex": uFrames[0].frameNumber}
+         "uTex": uFrames[0].frameNumber,
+         "potTex": potFrame.frameNumber}
     );
     draw();
     unbind();
@@ -124,12 +170,16 @@ function animation() {
         initWavefunc();
         mouseAction = false;
     }
-    step();
+    for (let i = 0; i < controls.stepsPerFrame; i++) step();
     viewFrame.useProgram(viewProgram);
     viewFrame.bind();
     viewFrame.setIntUniforms(
-        {"wavefuncTex": uFrames[0].frameNumber}
+        {"wavefuncTex": uFrames[0].frameNumber,
+         "potTex": potFrame.frameNumber}
     );
+    viewFrame.setFloatUniforms(
+        {"constPhase": controls.t*controls.m*controls.c**2}
+    )
     draw();
     unbind();
     requestAnimationFrame(animation);

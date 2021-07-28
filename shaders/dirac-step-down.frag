@@ -28,13 +28,17 @@ void main() {
                  - texture2D(uTex, vec2(xy.x-dx/w, xy.y-0.5*dy/h)))/dx;
     vec4 dUdy = (texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y))
                  - texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y-dy/h)))/dy;
-    vec4 u = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
-                  -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
-
+    vec4 uDerivatives = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
+                             -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
     float b = 0.5*(dt/hbar)*(-m*c*c
                              + c*(texture2D(potTex, 
                                             xy-0.5*vec2(dx/w, dy/h))[0]));
     float den = (1.0 + b*b);
+    vec4 u = vec4(dot(vec4(1.0, b,  0.0, 0.0), uDerivatives)/den,
+                  dot(vec4(-b, 1.0, 0.0, 0.0), uDerivatives)/den,
+                  dot(vec4(0.0, 0.0, 1.0, b ), uDerivatives)/den,
+                  dot(vec4(0.0, 0.0, -b, 1.0), uDerivatives)/den);
+
     vec4 prevV = texture2D(vTex, xy);
     vec4 v = vec4(dot(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0), prevV)/den,
                   dot(vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0), prevV)/den,
