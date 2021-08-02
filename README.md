@@ -1,7 +1,9 @@
 # Quantum Mechanics in 2D
 This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simulates the quantum mechanics of a single particle confined to a 2D box, where inside this box the user can draw new potential barriers and scatter gaussian wavepackets off them. The full instructions for using this app are found [here](https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md).
 
-The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step. 
+The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step.
+
+A simulation for the single particle Dirac equation in 2D is currently under development, which can be found [here](https://github.com/marl0ny/QM-Simulator-2D/tree/relativistic-qm).
 <!-- An option to use the Crank-Nicholson with Jacobi iteration to solve the sytem of equations is used as well. !-->
 
 # References
