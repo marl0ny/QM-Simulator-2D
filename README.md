@@ -3,7 +3,7 @@ This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simul
 
 The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step. 
 
-Also provided is a simulation of a 2D relativistic quantum particle described by the Dirac equation, found [here](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html). The numerical method used for this situation involves defining each of the two two-compenent spinors at different selected time and spatial steps. This method is described in more detail in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
+Also provided is a simulation of a 2D relativistic quantum particle described by the Dirac equation. In order to run this simulation you must download or clone this repository for this branch and open `rel-qm.html`. In this particular simulation the numerical method involved defines each of the two two-compenent spinors at different selected time and spatial steps. This method is described in more detail in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
 # References
  - Gould, H., Tobochnik J., Christian W. (2007). Quantum Systems.
