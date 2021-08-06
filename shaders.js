@@ -67,6 +67,34 @@ void main () {
 `;
 
 
+const diracProbDensityFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float pixelW;
+uniform float pixelH;
+uniform sampler2D uTex;
+uniform sampler2D vTex1;
+uniform sampler2D vTex2;
+
+
+void main() {
+    vec4 u = texture2D(uTex, fragTexCoord);
+    vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
+    vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
+    vec4 v2 = texture2D(vTex2, fragTexCoord + offset);
+    vec4 v = (v1 + v2)/2.0;
+    vec4 probs = vec4(u[0]*u[0] + u[1]*u[1], u[2]*u[2] + u[3]*u[3],
+                      v[0]*v[0] + v[1]*v[1], v[2]*v[2] + v[3]*v[3]);
+    fragColor = probs;
+}`;
+
+
 const reshapePotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -211,10 +239,9 @@ uniform sampler2D vTex1;
 uniform sampler2D vTex2;
 uniform sampler2D uTex;
 uniform sampler2D potTex;
+uniform sampler2D guiTex;
 uniform int displayMode;
 
-#define DISPLAY_ONLY_PROB_DENSITY 0
-#define DISPLAY_PHASE 1
 
 vec3 complexToColour(float re, float im) {
     float pi = 3.141592653589793;
@@ -248,6 +275,7 @@ vec3 complexToColour(float re, float im) {
 
 
 void main () {
+    vec4 gui = texture2D(guiTex, fragTexCoord);
     vec4 u = texture2D(uTex, fragTexCoord);
     vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
@@ -300,7 +328,7 @@ void main () {
     }
     vec4 pixColor = brightness*(phaseProb + notPhaseProb)
                                 + vec4(10.0*pot/1000.0, 1.0);
-    fragColor = vec4(pixColor.rgb, 1.0);
+    fragColor = vec4(pixColor.rgb, 1.0) + gui;
 }`;
 
 
@@ -446,6 +474,56 @@ void main() {
     fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
 }
 `;
+
+
+const guiRectangleFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float x0;
+uniform float y0;
+uniform float w;
+uniform float h;
+uniform float lineWidth;
+
+
+vec4 drawWindow(vec4 pix, float x, float y,
+                float x0, float y0, float w, float h,
+                float lineWidth) {
+    y0 = (h < 0.0)? y0 + h: y0;
+    h = (h < 0.0)? -h: h;
+    x0 = (w < 0.0)? x0 + w: x0;
+    w = (w < 0.0)? -w: w;
+    if ((x >= x0 && x <= (x0 + w)) &&
+        (
+            (abs(y - y0) <= lineWidth/2.0) ||
+            (abs(y - y0 - h) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    if ((y > y0 && y < (y0 + h)) &&
+        (
+            (abs(x - x0) <= lineWidth/2.0) ||
+            (abs(x - x0 - w) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    return pix;
+}
+
+
+void main() {
+    vec2 xy = fragTexCoord;
+    vec4 col = vec4(0.0, 0.0, 0.0, 0.0);
+    fragColor = drawWindow(col, xy.x, xy.y, x0, y0, w, h, lineWidth);
+}`;
 
 
 const diracStepDownFragmentSource = `precision highp float;

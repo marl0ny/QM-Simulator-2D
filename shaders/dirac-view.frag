@@ -21,10 +21,10 @@ uniform sampler2D vTex1;
 uniform sampler2D vTex2;
 uniform sampler2D uTex;
 uniform sampler2D potTex;
+uniform sampler2D guiTex;
+uniform sampler2D vecTex;
 uniform int displayMode;
 
-#define DISPLAY_ONLY_PROB_DENSITY 0
-#define DISPLAY_PHASE 1
 
 vec3 complexToColour(float re, float im) {
     float pi = 3.141592653589793;
@@ -58,6 +58,7 @@ vec3 complexToColour(float re, float im) {
 
 
 void main () {
+    vec4 gui = texture2D(guiTex, fragTexCoord);
     vec4 u = texture2D(uTex, fragTexCoord);
     vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
@@ -110,5 +111,5 @@ void main () {
     }
     vec4 pixColor = brightness*(phaseProb + notPhaseProb)
                                 + vec4(10.0*pot/1000.0, 1.0);
-    fragColor = vec4(pixColor.rgb, 1.0);
+    fragColor = vec4(pixColor.rgb, 1.0) + gui;
 }

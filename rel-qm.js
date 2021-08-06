@@ -12,6 +12,13 @@ let potShader = makeShader(gl.FRAGMENT_SHADER,
 let reshapePotShader = makeShader(gl.FRAGMENT_SHADER,
                                   reshapePotentialFragmentSource);
 let copyOverShader = makeShader(gl.FRAGMENT_SHADER, copyOverFragmentSource);
+let probDensityShader = makeShader(gl.FRAGMENT_SHADER, 
+                                   diracProbDensityFragmentSource);
+let guiRectShader = makeShader(gl.FRAGMENT_SHADER, 
+                               guiRectangleFragmentSource);
+{
+    let i = 0;
+}
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
 let stepUpProgram = makeProgram(vShader, stepUpShader);
@@ -20,6 +27,8 @@ let potProgram = makeProgram(vShader, potShader);
 let viewProgram = makeProgram(vShader, viewShader);
 let reshapePotProgram = makeProgram(vShader, reshapePotShader);
 let copyOverProgram = makeProgram(vShader, copyOverShader);
+let probDensityProgram = makeProgram(vShader, probDensityShader);
+let guiRectProgram = makeProgram(vShader, guiRectShader);
 
 let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
 uFrames = [1, 2].map(e => new Frame(pixelWidth, pixelHeight, e));
@@ -27,8 +36,9 @@ let uSwap = () => uFrames = [uFrames[1], uFrames[0]];
 vFrames = [3, 4].map(e => new Frame(pixelWidth, pixelHeight, e));
 let vSwap = () => vFrames = [vFrames[1], vFrames[0]];
 let potFrame = new Frame(pixelWidth, pixelHeight, 5);
-let extraFrame = new Frame(pixelWidth, pixelHeight, 6);
-let nullTex = 7;
+let guiFrame = new Frame(pixelWidth, pixelHeight, 6);
+let extraFrame = new Frame(pixelWidth, pixelHeight, 7);
+let nullTex = 8;
 var frames = [];
 frames.push(viewFrame);
 uFrames.forEach(e => frames.push(e));
@@ -40,9 +50,7 @@ for (let f of frames) {
     f.activateFramebuffer();
 }
 
-
-let gui = new dat.GUI();
-let controls = {
+let data = {
     w: 2.0, h: 2.0,
     bx: 0.5, by: 0.5, px: 0.0, py: 40.0,
     initMomentumByPxPySliders: false,
@@ -57,7 +65,7 @@ let controls = {
     drawShape: 'circle',
     drawSize: 0.01,
     drawValue: 10000/137.036,
-    mouseSelect: 'new ψ(x, y)',
+    mouseSelect: 'New ψ(x, y)',
     presetPotentials: 'Free (Periodic)',
     potentialType: 7,
     stepsPerFrame: 6,
@@ -72,8 +80,13 @@ let controls = {
     phaseMode: 0,
     mouseAction: false,
     presetPotentialSettings: {"a": 10000.0/137.036, "y0": 0.45, "w": 0.02, 
-                              "spacing": 0.03, "x1": 0.43, "x2": 0.57}
+                              "spacing": 0.03, "x1": 0.43, "x2": 0.57},
+    measurePosition: e => {},
+    drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
+    probInRegion: '0'
 };
+
+let gui = new dat.GUI();
 // How to display only text:
 // https://stackoverflow.com/q/30834678
 // Question by Oggy (https://stackoverflow.com/users/2562154)
@@ -86,84 +99,118 @@ source = gui.addColor(palette, 'color').name(
     + 'Source</a>'
 );
 source.domElement.hidden = true;
-gui.add(controls , 'stepsPerFrame', 0, 20).name('speed').step(1);
-let potSelect = gui.add(controls, 'presetPotentials', 
+gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
+let potSelect = gui.add(data, 'presetPotentials', 
                         ['Free (Periodic)', 'SHO', 'Double Slit',
                          'Single Slit', 'Step', 'Spike']
                         ).name('Preset Potential');
-let mouseSelect = gui.add(controls, 'mouseSelect', ['new ψ(x, y)', 
+let mouseSelect = gui.add(data, 'mouseSelect', ['New ψ(x, y)', 
                                                     'Draw Barrier', 
-                                                    'Erase Barrier']
+                                                    'Erase Barrier',
+                                                    'Prob. in Box']
                           ).name('Mouse Select');
 let presetPotOptions = gui.addFolder('Preset Potential Options');
 let additions = [];
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
-                                    'a', 0.0, 11000/controls.c));
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
+                                    'a', 0.0, 11000/data.c));
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
                                     'y0', 0.25, 0.75));
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
                                     'w', 0.0, 0.05));
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
                                     'spacing', 0.0, 0.06));
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
                                     'x1', 0.35, 0.5));
-additions.push(presetPotOptions.add(controls.presetPotentialSettings, 
+additions.push(presetPotOptions.add(data.presetPotentialSettings, 
                                     'x2', 0.5, 0.65));
 presetPotOptions.additions = additions;
-let newWavefuncOptions = gui.addFolder('New ψ(x, y) Options');
-newWavefuncOptions.add(controls, 'sigma', 0.01, 0.08);
-let initPByMouse = newWavefuncOptions.add(controls, 
+let mouseOptions = gui.addFolder('Mouse Select Options')
+let newWavefuncOptions = mouseOptions.addFolder('New ψ(x, y)');
+newWavefuncOptions.add(data, 'sigma', 0.01, 0.08);
+let initPByMouse = newWavefuncOptions.add(data, 
                                           'initMomentumByPxPySliders'
-                                          ).name('Use px/py sliders');
-let pxControl = newWavefuncOptions.add(controls, 'px', -50.0, 50.0);
-let pyControl = newWavefuncOptions.add(controls, 'py', -50.0, 50.0);
-let drawBarrierOptions = gui.addFolder('Draw Barrier Options');
-drawBarrierOptions.add(controls, 'drawShape',
+                                          ).name('Use kx/ky sliders');
+let pxControl = newWavefuncOptions.add(data, 'px', -50.0, 50.0).name('kx');
+let pyControl = newWavefuncOptions.add(data, 'py', -50.0, 50.0).name('ky');
+let drawBarrierOptions = mouseOptions.addFolder('Draw/Erase Barrier');
+let probInBoxFolder = mouseOptions.addFolder('Probability in Box');
+let probShow = probInBoxFolder.add(data, 'probInRegion').name('Probability');
+drawBarrierOptions.add(data, 'drawShape',
                        ['circle', 'square']).name('Draw Shape');
-drawBarrierOptions.add(controls, 'drawSize', 0.0, 0.1).name('Size');
-drawBarrierOptions.add(controls, 'drawValue', 0.0, 
-                       11000.0/controls.c).name('E');
-let viewOptions = gui.addFolder('ψ(x, y) View Options');
-viewOptions.add(controls, 'brightness', 0.0, 10.0);
-phaseOptions = viewOptions.add(controls, 'phaseOption', 
-                               controls.phaseOptions).name('Colour Options');
-phaseOptions.onChange(e => {controls.phaseMode
-                             = controls.phaseOptions.indexOf(e);});
-viewOptions.add(controls, 'showPsi1').name('Show |ψ1|^2');
-viewOptions.add(controls, 'showPsi2').name('Show |ψ2|^2');
-viewOptions.add(controls, 'showPsi3').name('Show |ψ3|^2');
-viewOptions.add(controls, 'showPsi4').name('Show |ψ4|^2');
-viewOptions.add(controls, 'applyPhaseShift').name('Adjust Global Phase');
-gui.add(controls, 'dt', 0.000001, 0.00003).name('dt');
-gui.add(controls, 'm', 0.0, 2.0).name('m');
+drawBarrierOptions.add(data, 'drawSize', 0.0, 0.1).name('Size');
+drawBarrierOptions.add(data, 'drawValue', 0.0, 
+                       11000.0/data.c).name('E');
+let viewOptions = gui.addFolder('ψ(x, y) Visualization Options');
+viewOptions.add(data, 'brightness', 0.0, 10.0);
+phaseOptions = viewOptions.add(data, 'phaseOption', 
+                               data.phaseOptions).name('Colour Options');
+phaseOptions.onChange(e => {data.phaseMode
+                             = data.phaseOptions.indexOf(e);});
+viewOptions.add(data, 'showPsi1').name('Show |ψ1|^2');
+viewOptions.add(data, 'showPsi2').name('Show |ψ2|^2');
+viewOptions.add(data, 'showPsi3').name('Show |ψ3|^2');
+viewOptions.add(data, 'showPsi4').name('Show |ψ4|^2');
+viewOptions.add(data, 'applyPhaseShift').name('Adjust Global Phase');
+gui.add(data, 'dt', -0.00001, 0.000028).name('dt');
+gui.add(data, 'm', 0.0, 2.0).name('m');
+gui.add(data, 'measurePosition').name('Measure Position');
+
+let guiControls = {
+    gui: gui,
+    potSelect: potSelect,
+    mouseSelect: mouseSelect,
+    presetPotOptions: presetPotOptions,
+    mouseOptions: mouseOptions,
+    newWavefuncOptions: newWavefuncOptions,
+    initPByMouse:  initPByMouse,
+    pxControl: pxControl,
+    pyControl: pyControl,
+    drawBarrierOptions: drawBarrierOptions,
+    viewOptions: viewOptions,
+    probInBoxFolder: probInBoxFolder,
+    probShow: probShow
+};
+
+guiControls.mouseSelect.onChange(e => {
+    if (e === 'Prob. in Box') {
+        guiControls.mouseOptions.open();
+        guiControls.probInBoxFolder.open();
+    } else {
+        data.probInRegion = '0';
+        guiControls.probShow.updateDisplay();
+        guiControls.probInBoxFolder.close();
+    }
+});
 
 function logFPS() {
-    if (controls.showFPS) {
+    if (data.showFPS) {
         let date = new Date();
         let time = date.getMilliseconds();
-        let interval = (controls.timeMilliseconds > time)?
-                        1000 + time - controls.timeMilliseconds:
-                        time - controls.timeMilliseconds;
-        controls.timeMilliseconds = time;
+        let interval = (data.timeMilliseconds > time)?
+                        1000 + time - data.timeMilliseconds:
+                        time - data.timeMilliseconds;
+        data.timeMilliseconds = time;
         console.clear();
         console.log(parseInt(1000/interval));
     }
 }
 
-function initWavefunc() {
-    controls.t = 0.0;
+function initWavefunc(customData = null) {
+    data.t = 0.0;
     let frames = [];
     uFrames.forEach(e => frames.push(e));
     vFrames.forEach(e => frames.push(e));
-    let sigma = controls.sigma;
+    let wavefuncData = (customData !== null)? 
+                            customData: data;
+    let sigma = wavefuncData.sigma;
     for (let f of frames) {
         f.useProgram(initWaveProgram);
         f.bind();
         f.setFloatUniforms(
-            {"bx": controls.bx, "by": controls.by, 
-            "sx": controls.sigma, "sy": sigma, 
+            {"bx": wavefuncData.bx, "by": wavefuncData.by, 
+            "sx": sigma, "sy": sigma, 
             "amp": (f.frameNumber > 2)? 0.0: 2.0*30.0/(sigma*512.0),
-            "px": controls.px, "py": controls.py}
+            "px": wavefuncData.px, "py": wavefuncData.py}
         );
         draw();
         unbind();
@@ -171,87 +218,92 @@ function initWavefunc() {
 }
 
 function initializePotential(type) {
-    controls.presetPotentialSettings.a = 10000/controls.c
+    data.presetPotentialSettings.a = 10000/data.c
     potFrame.useProgram(potProgram);
     potFrame.bind();
     if (type == 'SHO') {
-        controls.potentialType = 1;
-        potFrame.setFloatUniforms(controls.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
-        let newControlVals = {bx: 0.30, by: 0.30, 
+        data.potentialType = 1;
+        potFrame.setFloatUniforms(data.presetPotentialSettings);
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        let newDataVals = {bx: 0.30, by: 0.30, 
                               px: -10.0, py: 10.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newControlVals).forEach(e => controls[e[0]] = e[1]);
+        Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Double Slit') {
-        controls.potentialType = 2;
-        controls.presetPotentialSettings.x1 = 0.43;
-        controls.presetPotentialSettings.x2 = 0.57;
-        controls.presetPotentialSettings.w = 0.02;
-        controls.presetPotentialSettings.spacing = 0.03;
-        potFrame.setFloatUniforms(controls.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
-        let newControlVals = {bx: 0.5, by: 0.20, 
+        data.potentialType = 2;
+        data.presetPotentialSettings.x1 = 0.43;
+        data.presetPotentialSettings.x2 = 0.57;
+        data.presetPotentialSettings.w = 0.02;
+        data.presetPotentialSettings.spacing = 0.03;
+        potFrame.setFloatUniforms(data.presetPotentialSettings);
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true, 
-                              mouseSelect: 'new ψ(x, y)'};
-        Object.entries(newControlVals).forEach(e => controls[e[0]] = e[1]);
+                              mouseSelect: 'New ψ(x, y)'};
+        Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Single Slit') {
-        controls.potentialType = 3;
-        controls.presetPotentialSettings.x1 = 0.5;
-        controls.presetPotentialSettings.w = 0.01;
-        controls.presetPotentialSettings.spacing = 0.01;
-        potFrame.setFloatUniforms(controls.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
-        let newControlVals = {bx: 0.5, by: 0.20, 
+        data.potentialType = 3;
+        data.presetPotentialSettings.x1 = 0.5;
+        data.presetPotentialSettings.w = 0.01;
+        data.presetPotentialSettings.spacing = 0.01;
+        potFrame.setFloatUniforms(data.presetPotentialSettings);
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'new ψ(x, y)'};
-        Object.entries(newControlVals).forEach(e => controls[e[0]] = e[1]);
+                              mouseSelect: 'New ψ(x, y)'};
+        Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Step') {
-        controls.potentialType = 4;
-        controls.presetPotentialSettings.a = 5000/controls.c
-        potFrame.setFloatUniforms(controls.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
-        let newControlVals = {bx: 0.5, by: 0.20, 
+        data.potentialType = 4;
+        data.presetPotentialSettings.a = 5000/data.c
+        potFrame.setFloatUniforms(data.presetPotentialSettings);
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'new ψ(x, y)'};
-        Object.entries(newControlVals).forEach(e => controls[e[0]] = e[1]);
+                              mouseSelect: 'New ψ(x, y)'};
+        Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Spike') {
-        controls.potentialType = 5;
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
-        let newControlVals = {bx: 0.5, by: 0.20, 
+        data.potentialType = 5;
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'new ψ(x, y)'};
-        Object.entries(newControlVals).forEach(e => controls[e[0]] = e[1]);
+                              mouseSelect: 'New ψ(x, y)'};
+        Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else {
-        controls.potentialType = 7;
-        potFrame.setIntUniforms({"potentialType": controls.potentialType});
+        data.potentialType = 7;
+        potFrame.setIntUniforms({"potentialType": data.potentialType});
     }
     draw();
     unbind();
-    controls.isDisplayUpdate = true;
-    mouseSelect.updateDisplay();
-    for (let e of presetPotOptions.additions) e.updateDisplay();
-    controls.isDisplayUpdate = false;
+    data.isDisplayUpdate = true;
+    guiControls.mouseSelect.updateDisplay();
+    for (let e of guiControls.presetPotOptions.additions) e.updateDisplay();
+    data.isDisplayUpdate = false;
 }
-potSelect.onChange(e => initializePotential(e));
+guiControls.potSelect.onChange(e => {
+    initializePotential(e);
+    // guiControls.newWavefuncOptions.open();
+    guiControls.drawBarrierOptions.close();
+    guiControls.probInBoxFolder.close();
+});
 
 
 function onPotentialSettingsChange() {
-    if (controls.isDisplayUpdate === false) {
+    if (data.isDisplayUpdate === false) {
         potFrame.useProgram(potProgram);
         potFrame.bind();
-        potFrame.setIntUniforms({'potentialType': controls.potentialType});
-        potFrame.setFloatUniforms(controls.presetPotentialSettings);
+        potFrame.setIntUniforms({'potentialType': data.potentialType});
+        potFrame.setFloatUniforms(data.presetPotentialSettings);
         draw();
         unbind();
     }
 }
-for (let e of presetPotOptions.additions) {
+for (let e of guiControls.presetPotOptions.additions) {
     e.onChange(onPotentialSettingsChange);
 }
 
 function reshapePotential(mode) {
     let drawMode = 0;
-    if (controls.drawShape === 'circle') {
+    if (data.drawShape === 'circle') {
         drawMode = 1;
     }
     extraFrame.useProgram(copyOverProgram);
@@ -265,21 +317,113 @@ function reshapePotential(mode) {
                              "eraseMode": mode,
                              "drawMode" : drawMode});
     potFrame.setFloatUniforms({
-        "drawWidth": controls.drawSize, 
-        "bx": controls.bx, "by": controls.by, 
-        "v2": (mode === 0)? controls.drawValue: 0.0
+        "drawWidth": data.drawSize, 
+        "bx": data.bx, "by": data.by, 
+        "v2": (mode === 0)? data.drawValue: 0.0
+    });
+    draw();
+    unbind();
+}
+
+function getUnnormalizedProbDist() {
+    extraFrame.useProgram(probDensityProgram);
+    extraFrame.bind();
+    extraFrame.setIntUniforms({uTex: uFrames[0].frameNumber,
+                               vTex1: vFrames[0].frameNumber,
+                               vTex2: vFrames[1].frameNumber});
+    extraFrame.setFloatUniforms({pixelW: pixelWidth, pixelH: pixelHeight});
+    draw();
+    let probDensity = extraFrame.getTextureArray({x: 0, y: 0, 
+                                                  w: pixelWidth, 
+                                                  h: pixelHeight});
+    unbind();
+    return probDensity;
+}
+
+function measurePosition() {
+    let probDensity = getUnnormalizedProbDist();
+    let total = 0.0;
+    for (let i = 0; i < probDensity.length; i++) {
+        total += probDensity[i];
+    }
+    console.log(total);
+    let randNum = Math.random()*total;
+    let j = 0;
+    let notNormalizedProb = 0;
+    for (let i = 0; i < probDensity.length; i++) {
+        notNormalizedProb += probDensity[i];
+        if (randNum <= notNormalizedProb) {
+            j = i/4;
+            break;
+        }
+    }
+    let customData = Object.create(data);
+    customData.by = j/(pixelWidth*canvas.width);
+    customData.bx = (j%(pixelHeight))/canvas.height;
+    customData.px = 0.0;
+    customData.py = 0.0;
+    customData.sigma = 6.0/pixelWidth;
+    initWavefunc(customData);
+}
+data.measurePosition = measurePosition;
+
+function getProbInRegion(probDist, i0, j0, w, h) {
+    let reg = 0.0;
+    let tot = 0.0;
+    for (let j = 0; j < pixelHeight; j++) {
+        for (let i = 0; i < pixelWidth; i++) {
+            let val = 0.0;
+            for (let k = 0; k < 4; k++) {
+                val += probDist[4*j*pixelWidth + 4*i + k];
+            }
+            if (i >= i0 && j >= j0 && i < w + i0 && j < h + j0) {
+                reg += val;
+            }
+            tot += val;
+        }
+    }
+    return reg/tot;
+}
+
+function showProbInfo() {
+    let drawRect = data.drawRect;
+    let j0 = pixelHeight*(drawRect.y);
+    console.log(j0);
+    let h = pixelHeight*drawRect.h;
+    let i0 = pixelWidth*((drawRect.w < 0.0)? 
+                         drawRect.x + drawRect.w: drawRect.x);
+    j0 = (h < 0.0)? j0 + h: j0;
+    let w = pixelWidth*((drawRect.w < 0.0)? -drawRect.w: drawRect.w);
+    h = (h < 0.0)? -h: h;
+    if (w*w > 0.0 && h*h > 0.0) {
+        let prob = getUnnormalizedProbDist();
+        let val = getProbInRegion(prob, i0, j0, w, h);
+        data.probInRegion = `${Math.round(1000.0*val)/1000.0}`;
+    } else {
+        data.probInRegion = '0';
+    }
+    guiControls.probShow.updateDisplay();
+}
+
+function changeProbBoxDisplay() {
+    guiFrame.useProgram(guiRectProgram);
+    guiFrame.bind();
+    guiFrame.setFloatUniforms({
+        x0: data.drawRect.x, y0: data.drawRect.y,
+        w: data.drawRect.w, h: data.drawRect.h,
+        lineWidth: 0.003
     });
     draw();
     unbind();
 }
 
 function step() {
-    let dt = controls.dt;
-    controls.t += dt;
-    let w = controls.w, h = controls.h;
-    let hbar = controls.hbar;
-    let m = controls.m;
-    let c = controls.c;
+    let dt = data.dt;
+    data.t += dt;
+    let w = data.w, h = data.h;
+    let hbar = data.hbar;
+    let m = data.m;
+    let c = data.c;
     uFrames[1].useProgram(stepUpProgram);
     uFrames[1].bind();
     uFrames[1].setFloatUniforms(
@@ -315,35 +459,47 @@ function step() {
 let mouseUse = false;
 let mousePos = function(ev, mode) {
     if (mode == 'move') {
-        let prevBx = controls.bx;
-        let prevBy = controls.by;
-        controls.bx = Math.floor((ev.clientX 
+        let prevBx = data.bx;
+        let prevBy = data.by;
+        data.bx = Math.floor((ev.clientX 
                                   - canvas.offsetLeft))/canvasStyleWidth;
-        controls.by = 1.0 - Math.floor((ev.clientY
+        data.by = 1.0 - Math.floor((ev.clientY
                                          - canvas.offsetTop)
                                        )/canvasStyleHeight;
-        if (!controls.initMomentumByPxPySliders) {
-            controls.px = pixelWidth*parseFloat(controls.bx - prevBx);
-            if (Math.abs(controls.px) > 80.0) {
-                controls.px = Math.sign(controls.px)*80.0;
+        if (mouseUse && data.mouseSelect === 'Prob. in Box') {
+            data.drawRect.w = data.bx - data.drawRect.x; 
+            data.drawRect.h = data.by - data.drawRect.y;
+        }
+        if (!data.initMomentumByPxPySliders) {
+            data.px = pixelWidth*parseFloat(data.bx - prevBx);
+            if (Math.abs(data.px) > 80.0) {
+                data.px = Math.sign(data.px)*80.0;
             }
-            controls.py = pixelHeight*parseFloat(controls.by - prevBy);
-            if (Math.abs(controls.py) > 80.0) {
-                controls.py = Math.sign(controls.py)*80.0;
+            data.py = pixelHeight*parseFloat(data.by - prevBy);
+            if (Math.abs(data.py) > 80.0) {
+                data.py = Math.sign(data.py)*80.0;
             }
         }
     }
     if (mouseUse) {
-        controls.mouseAction = true;
+        data.mouseAction = true;
     }
 };
 canvas.addEventListener("mouseup", ev => {
-    pxControl.updateDisplay();
-    pyControl.updateDisplay();
+    guiControls.pxControl.updateDisplay();
+    guiControls.pyControl.updateDisplay();
     mousePos(ev, 'up');
     mouseUse = false;
 });
-canvas.addEventListener("mousedown", () => {
+canvas.addEventListener("mousedown", ev => {
+    data.drawRect.w = 0.0;
+    data.drawRect.h = 0.0;
+    data.drawRect.x = Math.floor((ev.clientX
+                                       - canvas.offsetLeft)
+                                    )/canvasStyleWidth;
+    data.drawRect.y = 1.0 - Math.floor((ev.clientY 
+                                           - canvas.offsetTop)
+                                          )/canvasStyleHeight;
     mouseUse = true;
 });
 canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
@@ -351,13 +507,23 @@ canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 initWavefunc();
 
 function animation() {
-    if (controls.mouseAction) {
-        if (controls.mouseSelect === 'new ψ(x, y)') initWavefunc();
-        else if (controls.mouseSelect === 'Draw Barrier') reshapePotential(0);
-        else if (controls.mouseSelect === 'Erase Barrier') reshapePotential(1);
-        controls.mouseAction = false;
+    if (data.mouseAction) {
+        if (data.mouseSelect === 'New ψ(x, y)') 
+            initWavefunc();
+        else if (data.mouseSelect === 'Draw Barrier')
+            reshapePotential(0);
+        else if (data.mouseSelect === 'Erase Barrier')
+            reshapePotential(1);
+        else if (data.mouseSelect === 'Prob. in Box')
+            changeProbBoxDisplay();
+        data.mouseAction = false;
     }
-    for (let i = 0; i < controls.stepsPerFrame; i++) step();
+    let showBox = false;
+    if (data.mouseSelect === 'Prob. in Box') {
+        showBox =true;
+        showProbInfo();
+    }
+    for (let i = 0; i < data.stepsPerFrame; i++) step();
     viewFrame.useProgram(viewProgram);
     viewFrame.bind();
     viewFrame.setIntUniforms(
@@ -365,17 +531,18 @@ function animation() {
          "vTex1": vFrames[0].frameNumber,
          "vTex2": vFrames[1].frameNumber, 
          "potTex": potFrame.frameNumber,
-         "displayMode": controls.phaseMode}
+         "guiTex": (showBox)? guiFrame.frameNumber: nullTex,
+         "displayMode": data.phaseMode}
     );
     viewFrame.setFloatUniforms(
-        {"constPhase": (controls.applyPhaseShift)? 
-                        controls.t*controls.m*controls.c**2: 0.0,
+        {"constPhase": (data.applyPhaseShift)? 
+                        data.t*data.m*data.c**2: 0.0,
          "pixelW": pixelWidth, "pixelH": pixelHeight,
-         "brightness": controls.brightness,
-         "showPsi1": (controls.showPsi1)? 1.0: 0.0, 
-         "showPsi2": (controls.showPsi2)? 1.0: 0.0,
-         "showPsi3": (controls.showPsi3)? 1.0: 0.0, 
-         "showPsi4": (controls.showPsi4)? 1.0: 0.0}
+         "brightness": data.brightness,
+         "showPsi1": (data.showPsi1)? 1.0: 0.0, 
+         "showPsi2": (data.showPsi2)? 1.0: 0.0,
+         "showPsi3": (data.showPsi3)? 1.0: 0.0, 
+         "showPsi4": (data.showPsi4)? 1.0: 0.0}
     )
     logFPS();
     draw();

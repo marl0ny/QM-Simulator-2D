@@ -120,7 +120,7 @@ function main() {
                                 tex2: swapFrames[t-3].frameNumber,
                                 tex3: swapFrames[t-2].frameNumber});
         draw();
-        probDensity = storeFrame.getTextureArray(
+        let probDensity = storeFrame.getTextureArray(
             {x: 0, y: 0, w: pixelWidth, h: pixelHeight});
         unbind();
         return probDensity;
