@@ -10,7 +10,8 @@ varying highp vec2 fragTexCoord;
 #endif
 
 uniform float constPhase;
-uniform float brightness;
+uniform float psiBrightness;
+uniform float potBrightness;
 uniform float pixelW;
 uniform float pixelH;
 uniform float showPsi1;
@@ -59,6 +60,7 @@ vec3 complexToColour(float re, float im) {
 
 void main () {
     vec4 gui = texture2D(guiTex, fragTexCoord);
+    vec4 vec = texture2D(vecTex, fragTexCoord);
     vec4 u = texture2D(uTex, fragTexCoord);
     vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
@@ -109,7 +111,7 @@ void main () {
                               + probs[2] + probs[3])*ones, 1.0);
         phaseProb = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    vec4 pixColor = brightness*(phaseProb + notPhaseProb)
-                                + vec4(10.0*pot/1000.0, 1.0);
-    fragColor = vec4(pixColor.rgb, 1.0) + gui;
+    vec4 pixColor = psiBrightness*(phaseProb + notPhaseProb)
+                    + vec4(10.0*potBrightness*pot/1000.0, 1.0);
+    fragColor = vec4(pixColor.rgb, 1.0) + gui + vec;
 }

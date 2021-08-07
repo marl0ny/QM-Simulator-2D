@@ -16,9 +16,9 @@ let probDensityShader = makeShader(gl.FRAGMENT_SHADER,
                                    diracProbDensityFragmentSource);
 let guiRectShader = makeShader(gl.FRAGMENT_SHADER, 
                                guiRectangleFragmentSource);
-{
-    let i = 0;
-}
+let currentShader = makeShader(gl.FRAGMENT_SHADER, 
+                               diracCurrentFragmentSource);
+let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
 let stepUpProgram = makeProgram(vShader, stepUpShader);
@@ -29,6 +29,8 @@ let reshapePotProgram = makeProgram(vShader, reshapePotShader);
 let copyOverProgram = makeProgram(vShader, copyOverShader);
 let probDensityProgram = makeProgram(vShader, probDensityShader);
 let guiRectProgram = makeProgram(vShader, guiRectShader);
+let currentProgram = makeProgram(vShader, currentShader);
+let onesProgram = makeProgram(vShader, onesShader);
 
 let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
 uFrames = [1, 2].map(e => new Frame(pixelWidth, pixelHeight, e));
@@ -37,8 +39,9 @@ vFrames = [3, 4].map(e => new Frame(pixelWidth, pixelHeight, e));
 let vSwap = () => vFrames = [vFrames[1], vFrames[0]];
 let potFrame = new Frame(pixelWidth, pixelHeight, 5);
 let guiFrame = new Frame(pixelWidth, pixelHeight, 6);
-let extraFrame = new Frame(pixelWidth, pixelHeight, 7);
-let nullTex = 8;
+let vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
+let extraFrame = new Frame(pixelWidth, pixelHeight, 8);
+let nullTex = 9;
 var frames = [];
 frames.push(viewFrame);
 uFrames.forEach(e => frames.push(e));
@@ -83,7 +86,9 @@ let data = {
                               "spacing": 0.03, "x1": 0.43, "x2": 0.57},
     measurePosition: e => {},
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
-    probInRegion: '0'
+    probInRegion: '0',
+    viewProbCurrent: false,
+    potBrightness: 1.0
 };
 
 let gui = new dat.GUI();
@@ -140,7 +145,8 @@ drawBarrierOptions.add(data, 'drawShape',
 drawBarrierOptions.add(data, 'drawSize', 0.0, 0.1).name('Size');
 drawBarrierOptions.add(data, 'drawValue', 0.0, 
                        11000.0/data.c).name('E');
-let viewOptions = gui.addFolder('ψ(x, y) Visualization Options');
+let viewOptionsFolder = gui.addFolder('Visualization Options');
+let viewOptions = viewOptionsFolder.addFolder('ψ(x, y)');
 viewOptions.add(data, 'brightness', 0.0, 10.0);
 phaseOptions = viewOptions.add(data, 'phaseOption', 
                                data.phaseOptions).name('Colour Options');
@@ -151,8 +157,13 @@ viewOptions.add(data, 'showPsi2').name('Show |ψ2|^2');
 viewOptions.add(data, 'showPsi3').name('Show |ψ3|^2');
 viewOptions.add(data, 'showPsi4').name('Show |ψ4|^2');
 viewOptions.add(data, 'applyPhaseShift').name('Adjust Global Phase');
+viewOptions.add(data, 'viewProbCurrent').name('Show Current');
+let potViewOptions = 
+    viewOptionsFolder.addFolder('Potential');
+potViewOptions.add(data, 'potBrightness', 0.0, 10.0).name('brightness');
 gui.add(data, 'dt', -0.00001, 0.000028).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
+// gui.add(data, 'c', 1.0, 140.0).name('c');
 gui.add(data, 'measurePosition').name('Measure Position');
 
 let guiControls = {
@@ -168,7 +179,8 @@ let guiControls = {
     drawBarrierOptions: drawBarrierOptions,
     viewOptions: viewOptions,
     probInBoxFolder: probInBoxFolder,
-    probShow: probShow
+    probShow: probShow,
+    potViewOptions: potViewOptions
 };
 
 guiControls.mouseSelect.onChange(e => {
@@ -417,6 +429,57 @@ function changeProbBoxDisplay() {
     unbind();
 }
 
+function showProbCurrent() {
+    extraFrame.useProgram(currentProgram);
+    extraFrame.bind();
+    extraFrame.setIntUniforms({uTex: uFrames[0].frameNumber,
+                               vTex1: vFrames[0].frameNumber, 
+                               vTex2: vFrames[1].frameNumber});
+    extraFrame.setFloatUniforms({pixelW: pixelWidth,
+                                 pixelH: pixelHeight});
+    draw();
+    let current = extraFrame.getTextureArray({x: 0,y: 0,
+                                              w: pixelWidth,
+                                              h: pixelHeight});
+    unbind();
+    let vecs = [];
+    let dst = 32;
+    let wSpacing = pixelWidth/dst, hSpacing = pixelHeight/dst;
+    let hEnd = pixelHeight;
+    let wEnd = pixelWidth;
+    let count = 0;
+    for (let i = hSpacing; i < hEnd; i += hSpacing) {
+        for (let j = wSpacing; j < wEnd; j += wSpacing) {
+            let vy = current[4*i*pixelHeight + 4*j + 1];
+            let vx = current[4*i*pixelHeight + 4*j + 2];
+            if (vx*vx + vy*vy > 1e-9) {
+                let x = 2.0*i/pixelHeight - 1.0;
+                let y = 2.0*j/pixelWidth - 1.0;
+                let maxSize = 0.05;
+                if (vx*vx + vy*vy > maxSize*maxSize) {
+                    let norm = 1.0/Math.sqrt(vx*vx + vy*vy);
+                    vx = vx*norm*maxSize;
+                    vy = vy*norm*maxSize; 
+                }
+                vecs.push(y - vy/2.0);
+                vecs.push(x - vx/2.0);
+                vecs.push(0.0);
+                vecs.push(y + vy/2.0);
+                vecs.push(x + vx/2.0);
+                vecs.push(0.0);
+                count += 2;
+            }
+        }
+    }
+    let vertices = new Float32Array(vecs);
+    vectorFieldFrame.useProgram(onesProgram);
+    vectorFieldFrame.bind(vertices);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    drawLines(count);
+    unbind();
+
+}
+
 function step() {
     let dt = data.dt;
     data.t += dt;
@@ -523,6 +586,9 @@ function animation() {
         showBox =true;
         showProbInfo();
     }
+    if (data.viewProbCurrent) {
+        showProbCurrent();
+    }
     for (let i = 0; i < data.stepsPerFrame; i++) step();
     viewFrame.useProgram(viewProgram);
     viewFrame.bind();
@@ -532,13 +598,16 @@ function animation() {
          "vTex2": vFrames[1].frameNumber, 
          "potTex": potFrame.frameNumber,
          "guiTex": (showBox)? guiFrame.frameNumber: nullTex,
-         "displayMode": data.phaseMode}
+         "displayMode": data.phaseMode,
+         "vecTex": (data.viewProbCurrent)? 
+                    vectorFieldFrame.frameNumber: nullTex}
     );
     viewFrame.setFloatUniforms(
         {"constPhase": (data.applyPhaseShift)? 
                         data.t*data.m*data.c**2: 0.0,
          "pixelW": pixelWidth, "pixelH": pixelHeight,
-         "brightness": data.brightness,
+         "psiBrightness": data.brightness,
+         "potBrightness": data.potBrightness,
          "showPsi1": (data.showPsi1)? 1.0: 0.0, 
          "showPsi2": (data.showPsi2)? 1.0: 0.0,
          "showPsi3": (data.showPsi3)? 1.0: 0.0, 

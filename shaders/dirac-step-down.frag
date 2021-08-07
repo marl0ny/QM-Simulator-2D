@@ -40,11 +40,6 @@ void main() {
                   dot(vec4(0.0, 0.0, -b, 1.0), uDerivatives)/den);
 
     vec4 prevV = texture2D(vTex, xy);
-    /* mat4 bTransform = mat4(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0)/den,
-                           vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0)/den,
-                           vec4(0.0, 0.0,  1.0 - b*b, 2.0*b)/den,
-                           vec4(0.0, 0.0, -2.0*b, 1.0 - b*b)/den);
-    vec4 tmp = prevV*bTransform; */
     vec4 v = vec4(dot(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0), prevV)/den,
                   dot(vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0), prevV)/den,
                   dot(vec4(0.0, 0.0,  1.0 - b*b, 2.0*b), prevV)/den,

@@ -228,7 +228,8 @@ varying highp vec2 fragTexCoord;
 #endif
 
 uniform float constPhase;
-uniform float brightness;
+uniform float psiBrightness;
+uniform float potBrightness;
 uniform float pixelW;
 uniform float pixelH;
 uniform float showPsi1;
@@ -240,6 +241,7 @@ uniform sampler2D vTex2;
 uniform sampler2D uTex;
 uniform sampler2D potTex;
 uniform sampler2D guiTex;
+uniform sampler2D vecTex;
 uniform int displayMode;
 
 
@@ -276,6 +278,7 @@ vec3 complexToColour(float re, float im) {
 
 void main () {
     vec4 gui = texture2D(guiTex, fragTexCoord);
+    vec4 vec = texture2D(vecTex, fragTexCoord);
     vec4 u = texture2D(uTex, fragTexCoord);
     vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
@@ -326,9 +329,9 @@ void main () {
                               + probs[2] + probs[3])*ones, 1.0);
         phaseProb = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    vec4 pixColor = brightness*(phaseProb + notPhaseProb)
-                                + vec4(10.0*pot/1000.0, 1.0);
-    fragColor = vec4(pixColor.rgb, 1.0) + gui;
+    vec4 pixColor = psiBrightness*(phaseProb + notPhaseProb)
+                    + vec4(10.0*potBrightness*pot/1000.0, 1.0);
+    fragColor = vec4(pixColor.rgb, 1.0) + gui + vec;
 }`;
 
 
@@ -568,11 +571,6 @@ void main() {
                   dot(vec4(0.0, 0.0, -b, 1.0), uDerivatives)/den);
 
     vec4 prevV = texture2D(vTex, xy);
-    /* mat4 bTransform = mat4(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0)/den,
-                           vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0)/den,
-                           vec4(0.0, 0.0,  1.0 - b*b, 2.0*b)/den,
-                           vec4(0.0, 0.0, -2.0*b, 1.0 - b*b)/den);
-    vec4 tmp = prevV*bTransform; */
     vec4 v = vec4(dot(vec4(1.0 - b*b, 2.0*b,  0.0, 0.0), prevV)/den,
                   dot(vec4(-2.0*b, 1.0 - b*b, 0.0, 0.0), prevV)/den,
                   dot(vec4(0.0, 0.0,  1.0 - b*b, 2.0*b), prevV)/den,
@@ -685,6 +683,71 @@ void main () {
     }
 }
 `;
+
+
+const diracCurrentFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float pixelW;
+uniform float pixelH;
+uniform sampler2D uTex;
+uniform sampler2D vTex1;
+uniform sampler2D vTex2;
+
+
+vec4 conjugate(vec4 x) {
+    return vec4(x[0], -x[1], x[2], -x[3]);
+}
+
+
+vec4 multiplyBySigmaX(vec4 x) {
+    return vec4(dot(vec4(0.0, 0.0, 1.0, 0.0), x),
+                dot(vec4(0.0, 0.0, 0.0, 1.0), x),
+                dot(vec4(1.0, 0.0, 0.0, 0.0), x),
+                dot(vec4(0.0, 1.0, 0.0, 0.0), x));
+}
+
+
+vec4 multiplyBySigmaY(vec4 x) {
+    return vec4(dot(vec4(0.0, 0.0, 0.0, 1.0), x),
+                dot(vec4(0.0, 0.0, -1.0, 0.0), x),
+                dot(vec4(0.0, -1.0, 0.0, 0.0), x),
+                dot(vec4(1.0, 0.0, 0.0, 0.0), x));
+}
+
+
+vec4 multiplyBySigmaZ(vec4 x) {
+    return vec4(dot(vec4(1.0, 0.0, 0.0, 0.0), x),
+                dot(vec4(0.0, 1.0, 0.0, 0.0), x),
+                dot(vec4(0.0, 0.0, -1.0, 0.0), x),
+                dot(vec4(0.0, 0.0, 0.0, -1.0), x));
+}
+
+
+void main() {
+    vec4 u = texture2D(uTex, fragTexCoord);
+    vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
+    vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
+    vec4 v2 = texture2D(vTex2, fragTexCoord + offset);
+    vec4 v = (v1 + v2)/2.0;
+    vec4 current;
+    current[0] = u[0]*u[0] + u[1]*u[1] + u[2]*u[2] + u[3]*u[3]
+                  + v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
+
+    current[1] = dot(u, multiplyBySigmaX(v)) 
+                  + dot(v, multiplyBySigmaX(u));
+    current[2] = dot(u, multiplyBySigmaY(v)) 
+                  + dot(v, multiplyBySigmaY(u));
+    current[3] = dot(u, multiplyBySigmaZ(v)) 
+                  + dot(v, multiplyBySigmaZ(u));
+    fragColor = current;
+}`;
 
 
 const viewFrameFragmentSource = `#define NAME viewFrameFragmentSource
