@@ -14,11 +14,6 @@ uniform sampler2D vTex1;
 uniform sampler2D vTex2;
 
 
-vec4 conjugate(vec4 x) {
-    return vec4(x[0], -x[1], x[2], -x[3]);
-}
-
-
 vec4 multiplyBySigmaX(vec4 x) {
     return vec4(dot(vec4(0.0, 0.0, 1.0, 0.0), x),
                 dot(vec4(0.0, 0.0, 0.0, 1.0), x),

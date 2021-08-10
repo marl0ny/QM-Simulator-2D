@@ -6,7 +6,7 @@ let imagTimeStepShader = makeShader(gl.FRAGMENT_SHADER,
                                     imagTimestepFragmentSource);
 let imagTimeStepProgram = makeProgram(vShader, imagTimeStepShader);
 let initialWaveShader = makeShader(gl.FRAGMENT_SHADER,
-                                    initialWaveFragmentSource);
+                                    initialWavepacketFragmentSource);
 let initialWaveProgram = makeProgram(vShader, initialWaveShader);
 let initPotentialShader = makeShader(gl.FRAGMENT_SHADER,
                                         initialPotentialFragmentSource);

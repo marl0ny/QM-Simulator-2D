@@ -1,3 +1,66 @@
+const initialUpperSpinorFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float bx;
+uniform float by;
+uniform float kx;
+uniform float ky;
+uniform float sx;
+uniform float sy;
+uniform float amp;
+uniform float m;
+uniform float c;
+uniform float w;
+uniform float h;
+uniform float pixelW;
+uniform float pixelH;
+uniform float t;
+uniform float hbar;
+float sqrt2 = 1.4142135623730951; 
+float pi = 3.141592653589793;
+
+void main () {
+    float x = fragTexCoord.x;
+    float y = fragTexCoord.y;
+    float u = ((x - bx)/(sx*sqrt2));
+    float v = ((y - by)/(sy*sqrt2));
+    float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(kx*x + ky*y));
+    float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(kx*x + ky*y));
+    if ((kx == 0.0 && ky == 0.0) || m == 0.0) {
+        fragColor = vec4(re, im, 0.0, 0.0);
+    } else {
+        float mc = m*c;
+        float px = 2.0*pi*kx/w;
+        float py = 2.0*pi*ky/h;
+        float p2 = px*px + py*py;
+        float p = sqrt(p2);
+        float omega = sqrt(mc*mc + p2);
+        float energy = omega*c;
+        float den = p*sqrt((mc + omega)*(mc + omega) + p2);
+        // The free particle positive energy normalized eigenstates are found
+        // by diagonalizing the alpha_i p_i + beta m c matrix.
+        // This can be done symbolically using a coputer algebra system
+        // like Sympy.
+        // More info found here: https://en.wikipedia.org/wiki/Dirac_spinor.
+        float reS1 = px*(mc + omega)/den;
+        float imS1 = -py*(mc + omega)/den;
+        float reExpEnergy = cos(t*energy/hbar);
+        float imExpEnergy = sin(t*energy/hbar);
+        float re2 = re*reExpEnergy - im*imExpEnergy;
+        float im2 = re*imExpEnergy + im*reExpEnergy;
+        fragColor = vec4(reS1*re2 - imS1*im2, reS1*im2 + imS1*re2, 0.0, 0.0);
+    }
+}
+`;
+
+
 const onesFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -11,38 +74,6 @@ varying highp vec2 fragTexCoord;
 
 void main () {
     fragColor = vec4(1.0, 1.0, 1.0, 1.0); 
-}
-`;
-
-
-const initialSpinorWaveFragmentSource = `precision highp float;
-#if __VERSION__ == 300
-#define texture2D texture
-in vec2 fragTexCoord;
-out vec4 fragColor;
-#else
-#define fragColor gl_FragColor
-varying highp vec2 fragTexCoord;
-#endif
-
-uniform float bx;
-uniform float by;
-uniform float px;
-uniform float py;
-uniform float sx;
-uniform float sy;
-uniform float amp;
-float sqrt2 = 1.4142135623730951; 
-float pi = 3.141592653589793;
-
-void main () {
-    float x = fragTexCoord.x;
-    float y = fragTexCoord.y;
-    float u = ((x - bx)/(sx*sqrt2));
-    float v = ((y - by)/(sy*sqrt2));
-    float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
-    float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
-    fragColor = vec4(re, im, 0.0, 0.0); 
 }
 `;
 
@@ -63,6 +94,66 @@ void main () {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
     fragColor = vec4(col1.rgb + col2.rgb, 1.0); 
+}
+`;
+
+
+const initialBottomSpinorFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float bx;
+uniform float by;
+uniform float kx;
+uniform float ky;
+uniform float sx;
+uniform float sy;
+uniform float amp;
+uniform float m;
+uniform float c;
+uniform float w;
+uniform float h;
+uniform float pixelW;
+uniform float pixelH;
+uniform float t;
+uniform float hbar;
+float sqrt2 = 1.4142135623730951; 
+float pi = 3.141592653589793;
+
+void main () {
+    float x = fragTexCoord.x - 0.5/pixelW;
+    float y = fragTexCoord.y - 0.5/pixelH;
+    float u = ((x - bx)/(sx*sqrt2));
+    float v = ((y - by)/(sy*sqrt2));
+    float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(kx*x + ky*y));
+    float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(kx*x + ky*y));
+    if ((kx == 0.0 && ky == 0.0) || m == 0.0) {
+        fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    } else {
+        float mc = m*c;
+        float px = 2.0*pi*kx/w;
+        float py = 2.0*pi*ky/h;
+        float p2 = px*px + py*py;
+        float p = sqrt(p2);
+        float omega = sqrt(mc*mc + p2);
+        float energy = omega*c;
+        float reExpEnergy = cos(t*energy/hbar);
+        float imExpEnergy = sin(t*energy/hbar);
+        float den = sqrt((mc + omega)*(mc + omega) + p2);
+        // The free particle positive energy normalized eigenstates are found
+        // by diagonalizing the alpha_i p_i + beta m c matrix.
+        // This can be done symbolically using a coputer algebra system
+        // like Sympy.
+        // More info found here: https://en.wikipedia.org/wiki/Dirac_spinor.
+        fragColor = vec4(0.0, 0.0, (re*reExpEnergy - im*imExpEnergy)*p/den,
+                                   (re*imExpEnergy + im*reExpEnergy)*p/den); 
+    }
 }
 `;
 
@@ -164,56 +255,6 @@ void main() {
     float probDensity = col2.r*col2.r + col1.g*col3.g;
     fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
 }`;
-
-
-const diracStepUpFragmentSource = `precision highp float;
-#if __VERSION__ == 300
-#define texture2D texture
-in vec2 fragTexCoord;
-out vec4 fragColor;
-#else
-#define fragColor gl_FragColor
-varying highp vec2 fragTexCoord;
-#endif
-
-uniform float dt;
-uniform float dx;
-uniform float dy;
-uniform float w;
-uniform float h;
-uniform float hbar;
-uniform float m;
-uniform float c;
-uniform sampler2D vTex;
-uniform sampler2D uTex;
-uniform sampler2D potTex;
-
-void main() {
-
-    vec2 xy = fragTexCoord;
-
-    vec4 dVdx = (texture2D(vTex, vec2(xy.x+dx/w, xy.y+0.5*dy/h))
-                 - texture2D(vTex, vec2(xy.x, xy.y+0.5*dy/h)))/dx;
-    vec4 dVdy = (texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y+dy/h))
-                 - texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y)))/dy;
-    vec4 vDerivatives = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
-                             -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
-    float a = 0.5*(dt/hbar)*(m*c*c + c*texture2D(potTex, xy)[0]);
-    float den = (1.0 + a*a);
-    vec4 v = vec4(dot(vec4(1.0, a,  0.0, 0.0), vDerivatives)/den,
-                  dot(vec4(-a, 1.0, 0.0, 0.0), vDerivatives)/den,
-                  dot(vec4(0.0, 0.0, 1.0, a),  vDerivatives)/den,
-                  dot(vec4(0.0, 0.0, -a, 1.0), vDerivatives)/den);
-
-    vec4 prevU = texture2D(uTex, xy);
-    vec4 u = vec4(dot(vec4(1.0 - a*a, 2.0*a,  0.0, 0.0), prevU)/den,
-                  dot(vec4(-2.0*a, 1.0 - a*a, 0.0, 0.0), prevU)/den,
-                  dot(vec4(0.0, 0.0,  1.0 - a*a, 2.0*a), prevU)/den,
-                  dot(vec4(0.0, 0.0, -2.0*a, 1.0 - a*a), prevU)/den);
-
-    fragColor = u + c*dt*v;
-}
-`;
 
 
 const diracViewFragmentSource = `#define NAME viewFrameFragmentSource
@@ -479,57 +520,7 @@ void main() {
 `;
 
 
-const guiRectangleFragmentSource = `precision highp float;
-#if __VERSION__ == 300
-#define texture2D texture
-in vec2 fragTexCoord;
-out vec4 fragColor;
-#else
-#define fragColor gl_FragColor
-varying highp vec2 fragTexCoord;
-#endif
-uniform float x0;
-uniform float y0;
-uniform float w;
-uniform float h;
-uniform float lineWidth;
-
-
-vec4 drawWindow(vec4 pix, float x, float y,
-                float x0, float y0, float w, float h,
-                float lineWidth) {
-    y0 = (h < 0.0)? y0 + h: y0;
-    h = (h < 0.0)? -h: h;
-    x0 = (w < 0.0)? x0 + w: x0;
-    w = (w < 0.0)? -w: w;
-    if ((x >= x0 && x <= (x0 + w)) &&
-        (
-            (abs(y - y0) <= lineWidth/2.0) ||
-            (abs(y - y0 - h) <= lineWidth/2.0)
-        )
-    ) {
-        return vec4(1.0, 1.0, 1.0, 1.0);
-    }
-    if ((y > y0 && y < (y0 + h)) &&
-        (
-            (abs(x - x0) <= lineWidth/2.0) ||
-            (abs(x - x0 - w) <= lineWidth/2.0)
-        )
-    ) {
-        return vec4(1.0, 1.0, 1.0, 1.0);
-    }
-    return pix;
-}
-
-
-void main() {
-    vec2 xy = fragTexCoord;
-    vec4 col = vec4(0.0, 0.0, 0.0, 0.0);
-    fragColor = drawWindow(col, xy.x, xy.y, x0, y0, w, h, lineWidth);
-}`;
-
-
-const diracStepDownFragmentSource = `precision highp float;
+const bottomSpinorTimestepFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
 in vec2 fragTexCoord;
@@ -579,6 +570,106 @@ void main() {
     fragColor = v + c*dt*u;
 }
 `;
+
+
+const upperSpinorTimestepFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform float dt;
+uniform float dx;
+uniform float dy;
+uniform float w;
+uniform float h;
+uniform float hbar;
+uniform float m;
+uniform float c;
+uniform sampler2D vTex;
+uniform sampler2D uTex;
+uniform sampler2D potTex;
+
+void main() {
+
+    vec2 xy = fragTexCoord;
+
+    vec4 dVdx = (texture2D(vTex, vec2(xy.x+dx/w, xy.y+0.5*dy/h))
+                 - texture2D(vTex, vec2(xy.x, xy.y+0.5*dy/h)))/dx;
+    vec4 dVdy = (texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y+dy/h))
+                 - texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y)))/dy;
+    vec4 vDerivatives = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
+                             -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
+    float a = 0.5*(dt/hbar)*(m*c*c + c*texture2D(potTex, xy)[0]);
+    float den = (1.0 + a*a);
+    vec4 v = vec4(dot(vec4(1.0, a,  0.0, 0.0), vDerivatives)/den,
+                  dot(vec4(-a, 1.0, 0.0, 0.0), vDerivatives)/den,
+                  dot(vec4(0.0, 0.0, 1.0, a),  vDerivatives)/den,
+                  dot(vec4(0.0, 0.0, -a, 1.0), vDerivatives)/den);
+
+    vec4 prevU = texture2D(uTex, xy);
+    vec4 u = vec4(dot(vec4(1.0 - a*a, 2.0*a,  0.0, 0.0), prevU)/den,
+                  dot(vec4(-2.0*a, 1.0 - a*a, 0.0, 0.0), prevU)/den,
+                  dot(vec4(0.0, 0.0,  1.0 - a*a, 2.0*a), prevU)/den,
+                  dot(vec4(0.0, 0.0, -2.0*a, 1.0 - a*a), prevU)/den);
+
+    fragColor = u + c*dt*v;
+}
+`;
+
+
+const guiRectangleFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float x0;
+uniform float y0;
+uniform float w;
+uniform float h;
+uniform float lineWidth;
+
+
+vec4 drawWindow(vec4 pix, float x, float y,
+                float x0, float y0, float w, float h,
+                float lineWidth) {
+    y0 = (h < 0.0)? y0 + h: y0;
+    h = (h < 0.0)? -h: h;
+    x0 = (w < 0.0)? x0 + w: x0;
+    w = (w < 0.0)? -w: w;
+    if ((x >= x0 && x <= (x0 + w)) &&
+        (
+            (abs(y - y0) <= lineWidth/2.0) ||
+            (abs(y - y0 - h) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    if ((y > y0 && y < (y0 + h)) &&
+        (
+            (abs(x - x0) <= lineWidth/2.0) ||
+            (abs(x - x0 - w) <= lineWidth/2.0)
+        )
+    ) {
+        return vec4(1.0, 1.0, 1.0, 1.0);
+    }
+    return pix;
+}
+
+
+void main() {
+    vec2 xy = fragTexCoord;
+    vec4 col = vec4(0.0, 0.0, 0.0, 0.0);
+    fragColor = drawWindow(col, xy.x, xy.y, x0, y0, w, h, lineWidth);
+}`;
 
 
 const realTimestepFragmentSource = `precision highp float;
@@ -645,46 +736,6 @@ void main () {
 }`;
 
 
-const initialWaveFragmentSource = `precision highp float;
-#if __VERSION__ == 300
-#define texture2D texture
-in vec2 fragTexCoord;
-out vec4 fragColor;
-#else
-#define fragColor gl_FragColor
-varying highp vec2 fragTexCoord;
-#endif
-uniform float dx;
-uniform float dy;
-uniform float bx;
-uniform float by;
-uniform float px;
-uniform float py;
-uniform float sx;
-uniform float sy;
-uniform float amp;
-uniform float borderAlpha;
-float sqrt2 = 1.4142135623730951; 
-float sqrtpi = 1.7724538509055159;
-float pi = 3.141592653589793;
-
-void main () {
-    if (fragTexCoord.x > dx && fragTexCoord.x < 1.0-dx &&
-        fragTexCoord.y > dy && fragTexCoord.y < 1.0-dy) {
-        float x = fragTexCoord.x;
-        float y = fragTexCoord.y;
-        float u = ((x - bx)/(sx*sqrt2));
-        float v = ((y - by)/(sy*sqrt2));
-        float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
-        float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
-        fragColor = vec4(re, im, 0.0, 1.0); 
-    } else {
-        fragColor = vec4(0.0, 0.0, 0.0, borderAlpha); 
-    }
-}
-`;
-
-
 const diracCurrentFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -699,11 +750,6 @@ uniform float pixelH;
 uniform sampler2D uTex;
 uniform sampler2D vTex1;
 uniform sampler2D vTex2;
-
-
-vec4 conjugate(vec4 x) {
-    return vec4(x[0], -x[1], x[2], -x[3]);
-}
 
 
 vec4 multiplyBySigmaX(vec4 x) {
@@ -747,7 +793,8 @@ void main() {
     current[3] = dot(u, multiplyBySigmaZ(v)) 
                   + dot(v, multiplyBySigmaZ(u));
     fragColor = current;
-}`;
+}
+`;
 
 
 const viewFrameFragmentSource = `#define NAME viewFrameFragmentSource
@@ -874,6 +921,46 @@ void main () {
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) +
                               texture2D(textTex, fragTexCoord);
+}
+`;
+
+
+const initialWavepacketFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;
+uniform float dy;
+uniform float bx;
+uniform float by;
+uniform float px;
+uniform float py;
+uniform float sx;
+uniform float sy;
+uniform float amp;
+uniform float borderAlpha;
+float sqrt2 = 1.4142135623730951; 
+float sqrtpi = 1.7724538509055159;
+float pi = 3.141592653589793;
+
+void main () {
+    if (fragTexCoord.x > dx && fragTexCoord.x < 1.0-dx &&
+        fragTexCoord.y > dy && fragTexCoord.y < 1.0-dy) {
+        float x = fragTexCoord.x;
+        float y = fragTexCoord.y;
+        float u = ((x - bx)/(sx*sqrt2));
+        float v = ((y - by)/(sy*sqrt2));
+        float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
+        float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
+        fragColor = vec4(re, im, 0.0, 1.0); 
+    } else {
+        fragColor = vec4(0.0, 0.0, 0.0, borderAlpha); 
+    }
 }
 `;
 

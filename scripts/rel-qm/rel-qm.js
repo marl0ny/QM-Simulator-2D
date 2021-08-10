@@ -1,10 +1,12 @@
 let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
 let initWaveShader = makeShader(gl.FRAGMENT_SHADER, 
-                                initialSpinorWaveFragmentSource);
+                                initialUpperSpinorFragmentSource);
+let initWave2Shader = makeShader(gl.FRAGMENT_SHADER, 
+                                initialBottomSpinorFragmentSource);
 let stepUpShader = makeShader(gl.FRAGMENT_SHADER, 
-                              diracStepUpFragmentSource);
+                              upperSpinorTimestepFragmentSource);
 let stepDownShader = makeShader(gl.FRAGMENT_SHADER,
-                                diracStepDownFragmentSource);
+                                bottomSpinorTimestepFragmentSource);
 let viewShader = makeShader(gl.FRAGMENT_SHADER,
                             diracViewFragmentSource);
 let potShader = makeShader(gl.FRAGMENT_SHADER, 
@@ -21,6 +23,7 @@ let currentShader = makeShader(gl.FRAGMENT_SHADER,
 let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
+let initWave2Program = makeProgram(vShader, initWave2Shader);
 let stepUpProgram = makeProgram(vShader, stepUpShader);
 let stepDownProgram = makeProgram(vShader, stepDownShader);
 let potProgram = makeProgram(vShader, potShader);
@@ -131,7 +134,7 @@ additions.push(presetPotOptions.add(data.presetPotentialSettings,
 presetPotOptions.additions = additions;
 let mouseOptions = gui.addFolder('Mouse Select Options')
 let newWavefuncOptions = mouseOptions.addFolder('New ψ(x, y)');
-newWavefuncOptions.add(data, 'sigma', 0.01, 0.08);
+newWavefuncOptions.add(data, 'sigma', 0.01, 0.1);
 let initPByMouse = newWavefuncOptions.add(data, 
                                           'initMomentumByPxPySliders'
                                           ).name('Use kx/ky sliders');
@@ -216,13 +219,29 @@ function initWavefunc(customData = null) {
                             customData: data;
     let sigma = wavefuncData.sigma;
     for (let f of frames) {
-        f.useProgram(initWaveProgram);
+        if (f.frameNumber === vFrames[0].frameNumber || 
+            f.frameNumber === vFrames[1].frameNumber) {
+            f.useProgram(initWave2Program);
+        } else {
+            f.useProgram(initWaveProgram);
+        }
         f.bind();
+        let t = 0.0;
+        if (f.frameNumber === uFrames[0].frameNumber) {
+            t = 2.0*wavefuncData.dt;
+        } else if (f.frameNumber === vFrames[0].frameNumber || 
+                   f.frameNumber === vFrames[1].frameNumber) {
+            t = wavefuncData.dt;
+        }
         f.setFloatUniforms(
             {"bx": wavefuncData.bx, "by": wavefuncData.by, 
             "sx": sigma, "sy": sigma, 
-            "amp": (f.frameNumber > 2)? 0.0: 2.0*30.0/(sigma*512.0),
-            "px": wavefuncData.px, "py": wavefuncData.py}
+            "amp": 2.0*30.0/(sigma*512.0),
+            "pixelW": pixelWidth, "pixelH": pixelHeight,
+            "m": wavefuncData.m, "c": wavefuncData.c,
+            "kx": wavefuncData.px, "ky": wavefuncData.py,
+            "w": wavefuncData.w, "h": wavefuncData.h,
+            "t": t, "hbar": wavefuncData.hbar}
         );
         draw();
         unbind();
