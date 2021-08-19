@@ -5,11 +5,10 @@
 
 let canvas = document.getElementById("sketch-canvas");
 let context = "webgl2";
-let gl = canvas.getContext(context);
+let gl = (useWebGL2IfAvailable)? canvas.getContext(context): null;
 let ext = null;
 let ext2 = null;
 if (gl === null) {
-    console.log("WebGL2 not available.");
     context = "webgl";
     gl = canvas.getContext(context);
     if (gl === null) {
@@ -103,7 +102,12 @@ function makeBlankTexture(buf, w, h, format, boundaries) {
             buf
         );
     }
-    let interpolation = (format===gl.FLOAT)? gl.NEAREST: gl.LINEAR;
+    let interpolation;
+    if (context === "webgl2") {
+        interpolation = (format === gl.FLOAT)? gl.NEAREST: gl.LINEAR;
+    } else {
+        interpolation = gl.LINEAR;
+    }
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, boundaries.s);
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, boundaries.t);
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, interpolation);

@@ -5,7 +5,7 @@ Write the shaders from the shaders folder into a shaders.js file.
 import glob
 
 
-with open('shaders.js', 'w') as f1:
+with open('./scripts/shaders.js', 'w') as f1:
     for shader in glob.glob("./shaders/*", recursive=True):
         with open(shader, 'r') as f2:
             shader_txt = ''.join([line for line in f2])

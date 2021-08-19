@@ -34,8 +34,13 @@ void main() {
             fragColor = vec4(v2, initialV, 0.0, 1.0);
         } else if (drawMode == DRAW_GAUSS) {
             float tmp = exp(-0.5*r2/(2.0*drawW2));
-            fragColor = vec4(max(tmp + initialV, initialV), 
-                             initialV, 0.0, 1.0);
+            if (eraseMode == 0) {
+                fragColor = vec4(max(tmp + initialV, initialV), 
+                                     initialV, 0.0, 1.0);
+            } else {
+                fragColor = vec4(max(initialV - tmp, 0.0), 
+                                     initialV, 0.0, 1.0);
+            }
         } else {
             fragColor = vec4(initialV, initialV, 0.0, 1.0);
         }

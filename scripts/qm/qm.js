@@ -21,6 +21,7 @@ function main() {
 
     let mouseUse = false;
     let mouseAction = false;
+    let mouseCount = 0;
 
     let potChanged = false;
 
@@ -120,7 +121,7 @@ function main() {
                                 tex2: swapFrames[t-3].frameNumber,
                                 tex3: swapFrames[t-2].frameNumber});
         draw();
-        probDensity = storeFrame.getTextureArray(
+        let probDensity = storeFrame.getTextureArray(
             {x: 0, y: 0, w: pixelWidth, h: pixelHeight});
         unbind();
         return probDensity;
@@ -433,7 +434,7 @@ function main() {
                 controls.py = 40.0/controls.scaleP;
                 controls.px = 0.0;
             } else {
-                potentialFrame.setIntUniforms({potentialType: 7});
+                potentialFrame.setIntUniforms({potentialType: 8});
                 controls.bx = pixelWidth/3;
                 controls.by = pixelHeight*0.75;
                 controls.py = 30.0/controls.scaleP;
@@ -451,7 +452,29 @@ function main() {
         // mouseControls.updateDisplay();
     }
 
-    function reshapePotential() {
+    let reshapePotentialRecLevel = 0;
+    function reshapePotential(controls) {
+        let drawWidth = mouseControls.values.width*canvas.width;
+        if (mouseCount > 1 && mouseControls.values.width > 0.0 && 
+            (Math.abs(controls.px) > drawWidth ||
+             Math.abs(controls.py) > drawWidth)) {
+            reshapePotentialRecLevel += 1;
+            if (reshapePotentialRecLevel > 100) {
+                reshapePotentialRecLevel = 0;
+            } else {
+                let newControls = Object.create(controls);
+                let dist = Math.sqrt(controls.px**2 + controls.py**2);
+                let dx = drawWidth*controls.px/dist;
+                let dy = drawWidth*controls.py/dist;
+                newControls.px -= dx;
+                newControls.py -= dy;
+                console.log('dx', dx);
+                console.log('by', newControls.by, 'px', newControls.px);
+                newControls.bx -= dx;
+                newControls.by += dy;
+                reshapePotential(newControls);
+            }
+        }
         storeFrame.useProgram(shapePotentialProgram);
         storeFrame.bind();
         console.log(mouseControls.values.v2);
@@ -710,13 +733,14 @@ function main() {
     }
 
     function animate() {
+        stats.begin();
         onPotentialChange();
         if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
             } else if ((controls.mouseMode[0] === SKETCH_BARRIER ||
                         controls.mouseMode[0] === ERASE_BARRIER) ){
-                reshapePotential();
+                reshapePotential(controls);
             } else {
                 drawRect.w = controls.bx - drawRect.x;
                 drawRect.h = controls.by - drawRect.y;
@@ -731,11 +755,13 @@ function main() {
         logFPS();
         display();
         measurePosition();
+        stats.end();
         requestAnimationFrame(animate);
     }
 
     let mousePos = function(ev, mode) {
         if (mode == 'move') {
+            mouseCount++;
             let prevBx = controls.bx;
             let prevBy = controls.by;
             controls.bx = Math.floor((ev.clientX 
@@ -774,10 +800,12 @@ function main() {
         let touches = ev.changedTouches;
         let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
         mousePos(mouseEv, 'up');
+        mouseCount = 0;
         mouseUse = false;
     });
     canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
+        mouseCount = 0;
         mouseUse = false;
     });
     canvas.addEventListener("mousedown", ev => {

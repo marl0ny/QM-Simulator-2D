@@ -25,6 +25,7 @@ uniform float x2;
 #define STEP 4
 #define INV_R 5
 #define TRIPLE_SLIT 6
+#define NEG_INV_R 7
 
 
 void main() {
@@ -43,6 +44,9 @@ void main() {
             fragColor = vec4(a, 0.0, 0.0, 1.0); 
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        }
+        if (y < 0.1 && y > 0.9) {
+            fragColor = vec4(0.0, 0.0, -20.0, 1.0); 
         }
     } else if (potentialType == SINGLE_SLIT) {
          if (y <= (y0 + w/2.0) &&
@@ -73,7 +77,19 @@ void main() {
         } else {
             fragColor = vec4(val, 0.0, 0.0, 1.0);
         }
-    }else {
+    } else if (potentialType == NEG_INV_R) {
+        float u = 2.0*(x - 0.5);        
+        float v = 2.0*(y - 0.5);
+        float oneOverR = -1.0/sqrt(u*u + v*v);
+        float val = (oneOverR < -150.0)? -150.0: oneOverR;
+        fragColor = vec4(val + 50.0, 0.0, 0.0, 1.0);
+    } else {
+        /*if (y < 0.025 || y > 0.975 ||
+	        x < 0.025 || x > 0.975) {
+            fragColor = vec4(0.0, 0.0, -1.0, 1.0); 
+        } else {*/
         fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        // }
     }
+
 }
