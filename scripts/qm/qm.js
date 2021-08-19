@@ -733,7 +733,7 @@ function main() {
     }
 
     function animate() {
-        stats.begin();
+        if (stats) stats.begin();
         onPotentialChange();
         if (mouseAction) {
             if (controls.mouseMode[0] === 'n') {
@@ -755,7 +755,7 @@ function main() {
         logFPS();
         display();
         measurePosition();
-        stats.end();
+        if (stats) stats.end();
         requestAnimationFrame(animate);
     }
 

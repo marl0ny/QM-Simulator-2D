@@ -95,9 +95,14 @@ let data = {
 };
 
 let gui = new dat.GUI();
-let stats = new Stats();
-stats.showPanel(0);
-document.body.appendChild(stats.dom);
+let stats = null;
+try {
+    stats = new Stats();
+    stats.showPanel(0);
+    document.body.appendChild(stats.dom);
+} catch (e) {
+    console.log(e);
+}
 // How to display only text:
 // https://stackoverflow.com/q/30834678
 // Question by Oggy (https://stackoverflow.com/users/2562154)
@@ -593,7 +598,7 @@ canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 initWavefunc();
 
 function animation() {
-    stats.begin();
+    if (stats) stats.begin();
     if (data.mouseAction) {
         if (data.mouseSelect === 'New ψ(x, y)') 
             initWavefunc();
@@ -640,7 +645,7 @@ function animation() {
     logFPS();
     draw();
     unbind();
-    stats.end();
+    if (stats) stats.end();
     requestAnimationFrame(animation);
 }
 

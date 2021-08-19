@@ -1,7 +1,13 @@
 let gui = new dat.GUI();
-let stats = new Stats();
-stats.showPanel(0);
-document.body.appendChild(stats.dom);
+let stats = null;
+try {
+    stats = new Stats();
+    stats.showPanel(0);
+    document.body.appendChild(stats.dom);
+} catch (e) {
+    console.log(e);
+}
+
 let drawRect = {x: 0.0, y: 0.0, w: 0.0, h: 0.0};
 let controls = {
     brightness: 4,
