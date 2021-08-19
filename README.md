@@ -3,7 +3,7 @@ This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simul
 
 The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step. 
 
-Also provided is a [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) described by the Dirac equation. This uses a numerical method where each of the two two-compenent spinors are defined at different selected time and spatial steps. The method is described in more detail in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
+Also provided is a still work in progress [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method where each of the two two-compenent spinors are placed at different time and spatial steps. The method is described in more detail in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
 # References
  - Gould, H., Tobochnik J., Christian W. (2007). Quantum Systems.
@@ -13,6 +13,8 @@ chapter 16. Pearson Addison-Wesley.
  - Visscher, P. (1991). A fast explicit algorithm for the time‐dependent Schrödinger equation. <em>Computers in Physics, 5</em>, 596-598. [https://doi.org/10.1063/1.168415](https://doi.org/10.1063/1.168415)
  
  - Schroeder D. [Quantum Scattering in Two Dimensions](https://physics.weber.edu/schroeder/software/QuantumScattering2D.html).
+
+ Dirac Equation:
 
  - Wikipedia contributors. (2021, June 16). [Dirac equation](https://en.wikipedia.org/wiki/Dirac_equation). In <em>Wikipedia, The Free Encyclopedia</em>.
 

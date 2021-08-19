@@ -1,4 +1,7 @@
 let gui = new dat.GUI();
+let stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 let drawRect = {x: 0.0, y: 0.0, w: 0.0, h: 0.0};
 let controls = {
     brightness: 4,
@@ -123,14 +126,14 @@ function mouseControlsCallback(e) {
         let items = mouseControls.values;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         let stencilTypesList = ['square', 'circle'];
-        if (e[0] === SKETCH_BARRIER) {
+        // if (e[0] === SKETCH_BARRIER) {
             stencilTypesList.push('gaussian');
-        }
+        // }
         let stencilTypes = mouseControls.add(items, 'stencilTypes',
                                              stencilTypesList
                                             ).name('Draw Type');
         let widthControl = mouseControls.add(items, 'width',
-                                             0.005, 0.03).name('Draw Width');
+                                             0.0, 0.03).name('Draw Width');
         let vControl;
         if (e[0] === SKETCH_BARRIER) {
             mouseControls.values.erase = false;

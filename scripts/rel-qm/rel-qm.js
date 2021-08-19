@@ -95,6 +95,9 @@ let data = {
 };
 
 let gui = new dat.GUI();
+let stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 // How to display only text:
 // https://stackoverflow.com/q/30834678
 // Question by Oggy (https://stackoverflow.com/users/2562154)
@@ -110,7 +113,7 @@ source.domElement.hidden = true;
 gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
 let potSelect = gui.add(data, 'presetPotentials', 
                         ['Free (Periodic)', 'SHO', 'Double Slit',
-                         'Single Slit', 'Step', 'Spike']
+                         'Single Slit', 'Step', 'Coulomb']
                         ).name('Preset Potential');
 let mouseSelect = gui.add(data, 'mouseSelect', ['New ψ(x, y)', 
                                                     'Draw Barrier', 
@@ -150,7 +153,7 @@ drawBarrierOptions.add(data, 'drawValue', 0.0,
                        11000.0/data.c).name('E');
 let viewOptionsFolder = gui.addFolder('Visualization Options');
 let viewOptions = viewOptionsFolder.addFolder('ψ(x, y)');
-viewOptions.add(data, 'brightness', 0.0, 10.0);
+viewOptions.add(data, 'brightness', 0.0, 8.0);
 phaseOptions = viewOptions.add(data, 'phaseOption', 
                                data.phaseOptions).name('Colour Options');
 phaseOptions.onChange(e => {data.phaseMode
@@ -163,11 +166,11 @@ viewOptions.add(data, 'applyPhaseShift').name('Adjust Global Phase');
 viewOptions.add(data, 'viewProbCurrent').name('Show Current');
 let potViewOptions = 
     viewOptionsFolder.addFolder('Potential');
-potViewOptions.add(data, 'potBrightness', 0.0, 10.0).name('brightness');
+potViewOptions.add(data, 'potBrightness', 0.0, 8.0).name('brightness');
 gui.add(data, 'dt', -0.00001, 0.000028).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
-gui.add(data, 'measurePosition').name('Measure Position');
+// gui.add(data, 'measurePosition').name('Measure Position');
 
 let guiControls = {
     gui: gui,
@@ -252,6 +255,7 @@ function initializePotential(type) {
     data.presetPotentialSettings.a = 10000/data.c
     potFrame.useProgram(potProgram);
     potFrame.bind();
+    data.potBrightness = (type == 'Coulomb')? 0.25: 1.0;
     if (type == 'SHO') {
         data.potentialType = 1;
         potFrame.setFloatUniforms(data.presetPotentialSettings);
@@ -292,15 +296,15 @@ function initializePotential(type) {
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
-    } else if (type == 'Spike') {
-        data.potentialType = 5;
+    } else if (type == 'Coulomb') {
+        data.potentialType = 7;
         potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else {
-        data.potentialType = 7;
+        data.potentialType = 8;
         potFrame.setIntUniforms({"potentialType": data.potentialType});
     }
     draw();
@@ -589,6 +593,7 @@ canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 initWavefunc();
 
 function animation() {
+    stats.begin();
     if (data.mouseAction) {
         if (data.mouseSelect === 'New ψ(x, y)') 
             initWavefunc();
@@ -635,6 +640,7 @@ function animation() {
     logFPS();
     draw();
     unbind();
+    stats.end();
     requestAnimationFrame(animation);
 }
 

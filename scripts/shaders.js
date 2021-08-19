@@ -222,8 +222,13 @@ void main() {
             fragColor = vec4(v2, initialV, 0.0, 1.0);
         } else if (drawMode == DRAW_GAUSS) {
             float tmp = exp(-0.5*r2/(2.0*drawW2));
-            fragColor = vec4(max(tmp + initialV, initialV), 
-                             initialV, 0.0, 1.0);
+            if (eraseMode == 0) {
+                fragColor = vec4(max(tmp + initialV, initialV), 
+                                     initialV, 0.0, 1.0);
+            } else {
+                fragColor = vec4(max(initialV - tmp, 0.0), 
+                                     initialV, 0.0, 1.0);
+            }
         } else {
             fragColor = vec4(initialV, initialV, 0.0, 1.0);
         }
@@ -403,6 +408,7 @@ uniform float x2;
 #define STEP 4
 #define INV_R 5
 #define TRIPLE_SLIT 6
+#define NEG_INV_R 7
 
 
 void main() {
@@ -421,6 +427,9 @@ void main() {
             fragColor = vec4(a, 0.0, 0.0, 1.0); 
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        }
+        if (y < 0.1 && y > 0.9) {
+            fragColor = vec4(0.0, 0.0, -20.0, 1.0); 
         }
     } else if (potentialType == SINGLE_SLIT) {
          if (y <= (y0 + w/2.0) &&
@@ -451,10 +460,23 @@ void main() {
         } else {
             fragColor = vec4(val, 0.0, 0.0, 1.0);
         }
-    }else {
+    } else if (potentialType == NEG_INV_R) {
+        float u = 2.0*(x - 0.5);        
+        float v = 2.0*(y - 0.5);
+        float oneOverR = -1.0/sqrt(u*u + v*v);
+        float val = (oneOverR < -150.0)? -150.0: oneOverR;
+        fragColor = vec4(val + 50.0, 0.0, 0.0, 1.0);
+    } else {
+        /*if (y < 0.025 || y > 0.975 ||
+	        x < 0.025 || x > 0.975) {
+            fragColor = vec4(0.0, 0.0, -1.0, 1.0); 
+        } else {*/
         fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
+        // }
     }
-}`;
+
+}
+`;
 
 
 const probCurrentFragmentSource = `precision highp float;
@@ -726,13 +748,39 @@ float getDiv2ImPsi(float imPsi) {
 void main () {
     float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
                 rScaleV*texture2D(texV, fragTexCoord).g;
+    float imV = texture2D(texV, fragTexCoord).b;
     vec4 psi = texture2D(texPsi, fragTexCoord);
     float rePsi = psi.r;
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2ImPsi = getDiv2ImPsi(imPsi);
+    // rePsi2 - rePsi1
+    //    = re(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
+    // rePsi2 - rePsi1
+    //    = re(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
+    //                     + i*V_re*imPsi + i*V_im*rePsi))
+    // rePsi2 - rePsi1
+    //    = re(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
+    //                     + V_re*imPsi + V_im*rePsi))
+    // rePsi2 - rePsi1 
+    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1 + rePsi2))
+    // rePsi2 - dt/hbar*V_im*rePsi2
+    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
+    // (1 - dt*V_im/hbar)*rePsi2
+    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
+    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))
+    //          *(T(imPsi1) + V_re*imPsi + V_im*(rePsi1))
+    //          + rePsi1/(1 - dt*V_im/hbar)
+    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi 
+    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*(rePsi1)
+    //          + rePsi1/(1 - dt*V_im/hbar)
+    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi
+    //          + ((dt*V_im/hbar)*rePsi1 + rePsi)/(1 - dt*V_im/hbar)
     float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
-    fragColor = vec4(rePsi + hamiltonImPsi*dt/hbar, imPsi, 0.0, alpha);
+    float f1 = 1.0 - dt*imV/hbar;
+    float f2 = 1.0 + dt*imV/hbar;
+    fragColor = vec4(rePsi*(f2/f1) + hamiltonImPsi*dt/(f1*hbar), imPsi, 
+                     0.0, alpha);
 }`;
 
 
@@ -1034,13 +1082,39 @@ void main () {
     float V = texture2D(texV, fragTexCoord).r;
     /*float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
                 rScaleV*texture2D(texV, fragTexCoord).g;*/
+    float imV = texture2D(texV, fragTexCoord).b;
     vec4 psi = texture2D(texPsi, fragTexCoord);
     float rePsi = psi.r;
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2RePsi = getDiv2RePsi(rePsi);
+    //imPsi2 - imPsi1
+    //    = im(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
+    //imPsi2 - imPsi1
+    //    = im(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
+    //                     + i*V_re*imPsi + i*V_im*rePsi))
+    //imPsi2 - imPsi1
+    //    = im(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
+    //                     + V_re*imPsi + V_im*rePsi))
+    // imPsi2 - imPsi1 
+    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1 + imPsi2))
+    // imPsi2 - dt/hbar*V_im*imPsi2
+    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
+    // (1 - dt*V_im/hbar)*imPsi2
+    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
+    // imPsi2 = dt/(hbar*(1 - dt*V_im/hbar))
+    //          *(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1))
+    //          + imPsi1/(1 - dt*V_im/hbar)
+    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*(T(rePsi1) + V_re*rePsi)
+    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*imPsi1
+    //          + imPsi1/(1 - dt*V_im/hbar)
+    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*HrePsi
+    //          + ((dt/hbar)*V_im*imPsi + imPsi)/(1 - dt*V_im/hbar)
+    float f1 = 1.0 - dt*imV/hbar;
+    float f2 = 1.0 + dt*imV/hbar;
     float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;
-    fragColor = vec4(rePsi, imPsi - hamiltonRePsi*dt/hbar, 0.0, alpha);
+    fragColor = vec4(rePsi, imPsi*(f2/f1) - hamiltonRePsi*dt/(f1*hbar),
+                     0.0, alpha);
 }`;
 
 
