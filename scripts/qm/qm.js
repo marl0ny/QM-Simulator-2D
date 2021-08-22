@@ -27,6 +27,40 @@ function main() {
 
     initializePotential('SHO');
 
+    controls.imageFunc = function () {
+        let canvas = document.getElementById('image-canvas');
+        let ctx = canvas.getContext("2d");
+        ctx.rect(0, 0, pixelWidth, pixelHeight);
+        ctx.fill();
+        let im = document.getElementById('image');
+        if (im.width > im.height) {
+            let heightOffset = parseInt(`${256.0
+                                           - 256.0*im.height/im.width}`);
+            ctx.drawImage(im, 0, heightOffset, 
+                          512, parseInt(`${512.0*im.height/im.width}`));
+        } else {
+            let widthOffset = parseInt(`${256.0
+                                          - 256.0*im.width/im.height}`);
+            ctx.drawImage(im, widthOffset, 0, 
+                          parseInt(`${512.0*im.width/im.height}`), 512);
+        }
+        let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
+                                                          512.0, 512.0
+                                                          ).data);
+        for (let i = 0; i < imageData.length; i++) {
+            imageData[i] *= (20.0/255.0);
+        }
+        console.log(pixelWidth, pixelHeight);
+        storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+                                          gl.FLOAT, imageData);
+        potentialFrame.useProgram(imagePotentialProgram);
+        potentialFrame.bind();
+        potentialFrame.setIntUniforms({"tex": storeFrame.frameNumber});
+        draw();
+        unbind();
+        potChanged = true;
+    }
+
     function changeBoundaries(s, t) {
         if (s === gl.REPEAT || t === gl.REPEAT) {
             if (pixelWidth !== 512 && pixelHeight !== 512) {
@@ -201,19 +235,6 @@ function main() {
             `${Math.round(1000.0*reg/tot)/1000.0}`;
         mouseControls.widgets[1].updateDisplay();
         return reg/tot;
-    }
-
-    function logFPS() {
-        if (showFPS) {
-            let date = new Date();
-            let time = date.getMilliseconds();
-            let interval = (timeMilliseconds > time)?
-                            1000 + time - timeMilliseconds:
-                            time - timeMilliseconds;
-            timeMilliseconds = time;
-            console.clear();
-            console.log(parseInt(1000/interval));
-        }
     }
 
     function measurePosition() {
@@ -468,8 +489,6 @@ function main() {
                 let dy = drawWidth*controls.py/dist;
                 newControls.px -= dx;
                 newControls.py -= dy;
-                console.log('dx', dx);
-                console.log('by', newControls.by, 'px', newControls.px);
                 newControls.bx -= dx;
                 newControls.by += dy;
                 reshapePotential(newControls);
@@ -477,7 +496,6 @@ function main() {
         }
         storeFrame.useProgram(shapePotentialProgram);
         storeFrame.bind();
-        console.log(mouseControls.values.v2);
         storeFrame.setFloatUniforms({bx: controls.bx/canvas.width,
                                      by: 1.0 - controls.by/canvas.height,
                                      v2: mouseControls.values.v2,
@@ -504,8 +522,6 @@ function main() {
         let py = (!mouseControls.values.fixInitialP)?
                   controls.scaleP*controls.py: mouseControls.values.py0;
         let sigma = mouseControls.values.sigma;
-        console.log(mouseControls.values.sigma)
-        // console.log(px, py);
         swapFrames[t-3].useProgram(initialWaveProgram);
         swapFrames[t-3].bind();
         swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth,
@@ -752,7 +768,6 @@ function main() {
             rScaleV = 0.0;
             swap();
         }
-        logFPS();
         display();
         measurePosition();
         if (stats) stats.end();
@@ -789,7 +804,7 @@ function main() {
         drawRect.h = 0;
         drawRect.x = Math.floor((mouseEv.clientX - canvas.offsetLeft))/scale.w;
         drawRect.y = Math.floor((mouseEv.clientY - canvas.offsetTop))/scale.h;
-        mousePos(mouseEv, 'move');
+        // mousePos(mouseEv, 'move');
     });
     canvas.addEventListener("touchmove", ev => {
         let touches = ev.changedTouches;

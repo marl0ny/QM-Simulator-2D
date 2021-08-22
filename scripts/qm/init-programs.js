@@ -26,6 +26,9 @@ let probCurrentShader = makeShader(gl.FRAGMENT_SHADER,
 let probCurrentProgram = makeProgram(vShader, probCurrentShader);
 let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
 let onesProgram = makeProgram(vShader, onesShader);
+let imagePotentialShader = makeShader(gl.FRAGMENT_SHADER, 
+                                      imageToGrayscaleFragmentSource);
+let imagePotentialProgram = makeProgram(vShader, imagePotentialShader);
 
 gl.deleteShader(vShader);
 gl.deleteShader(realTimeStepShader);
@@ -38,4 +41,5 @@ gl.deleteShader(copyToShader);
 gl.deleteShader(probDensityShader);
 gl.deleteShader(probCurrentShader);
 gl.deleteShader(onesShader);
+gl.deleteShader(imagePotentialShader);
 

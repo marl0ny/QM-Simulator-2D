@@ -45,9 +45,6 @@ void main() {
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
-        if (y < 0.1 && y > 0.9) {
-            fragColor = vec4(0.0, 0.0, -20.0, 1.0); 
-        }
     } else if (potentialType == SINGLE_SLIT) {
          if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&

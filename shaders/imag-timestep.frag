@@ -51,36 +51,12 @@ float getDiv2RePsi(float rePsi) {
 
 void main () {
     float V = texture2D(texV, fragTexCoord).r;
-    /*float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
-                rScaleV*texture2D(texV, fragTexCoord).g;*/
     float imV = texture2D(texV, fragTexCoord).b;
     vec4 psi = texture2D(texPsi, fragTexCoord);
     float rePsi = psi.r;
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2RePsi = getDiv2RePsi(rePsi);
-    //imPsi2 - imPsi1
-    //    = im(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
-    //imPsi2 - imPsi1
-    //    = im(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
-    //                     + i*V_re*imPsi + i*V_im*rePsi))
-    //imPsi2 - imPsi1
-    //    = im(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
-    //                     + V_re*imPsi + V_im*rePsi))
-    // imPsi2 - imPsi1 
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1 + imPsi2))
-    // imPsi2 - dt/hbar*V_im*imPsi2
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
-    // (1 - dt*V_im/hbar)*imPsi2
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
-    // imPsi2 = dt/(hbar*(1 - dt*V_im/hbar))
-    //          *(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1))
-    //          + imPsi1/(1 - dt*V_im/hbar)
-    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*(T(rePsi1) + V_re*rePsi)
-    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*imPsi1
-    //          + imPsi1/(1 - dt*V_im/hbar)
-    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*HrePsi
-    //          + ((dt/hbar)*V_im*imPsi + imPsi)/(1 - dt*V_im/hbar)
     float f1 = 1.0 - dt*imV/hbar;
     float f2 = 1.0 + dt*imV/hbar;
     float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;

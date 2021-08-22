@@ -61,6 +61,28 @@ void main () {
 `;
 
 
+const imageToGrayscaleFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+
+uniform sampler2D tex;
+
+
+void main() {
+    vec2 st = vec2(fragTexCoord.x, 1.0 - fragTexCoord.y);
+    vec4 col = texture2D(tex, st);
+    float avgCol = (col.r + col.g + col.b)/3.0;
+    fragColor = vec4(avgCol, avgCol/2.0, 0.0, 1.0);
+    // fragColor = vec4(col[0], col[1], col[2], 1.0);
+}`;
+
+
 const onesFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -428,9 +450,6 @@ void main() {
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
         }
-        if (y < 0.1 && y > 0.9) {
-            fragColor = vec4(0.0, 0.0, -20.0, 1.0); 
-        }
     } else if (potentialType == SINGLE_SLIT) {
          if (y <= (y0 + w/2.0) &&
             y >= (y0 - w/2.0) &&
@@ -754,28 +773,6 @@ void main () {
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2ImPsi = getDiv2ImPsi(imPsi);
-    // rePsi2 - rePsi1
-    //    = re(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
-    // rePsi2 - rePsi1
-    //    = re(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
-    //                     + i*V_re*imPsi + i*V_im*rePsi))
-    // rePsi2 - rePsi1
-    //    = re(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
-    //                     + V_re*imPsi + V_im*rePsi))
-    // rePsi2 - rePsi1 
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1 + rePsi2))
-    // rePsi2 - dt/hbar*V_im*rePsi2
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
-    // (1 - dt*V_im/hbar)*rePsi2
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))
-    //          *(T(imPsi1) + V_re*imPsi + V_im*(rePsi1))
-    //          + rePsi1/(1 - dt*V_im/hbar)
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi 
-    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*(rePsi1)
-    //          + rePsi1/(1 - dt*V_im/hbar)
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi
-    //          + ((dt*V_im/hbar)*rePsi1 + rePsi)/(1 - dt*V_im/hbar)
     float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
     float f1 = 1.0 - dt*imV/hbar;
     float f2 = 1.0 + dt*imV/hbar;
@@ -1080,36 +1077,12 @@ float getDiv2RePsi(float rePsi) {
 
 void main () {
     float V = texture2D(texV, fragTexCoord).r;
-    /*float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
-                rScaleV*texture2D(texV, fragTexCoord).g;*/
     float imV = texture2D(texV, fragTexCoord).b;
     vec4 psi = texture2D(texPsi, fragTexCoord);
     float rePsi = psi.r;
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2RePsi = getDiv2RePsi(rePsi);
-    //imPsi2 - imPsi1
-    //    = im(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
-    //imPsi2 - imPsi1
-    //    = im(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
-    //                     + i*V_re*imPsi + i*V_im*rePsi))
-    //imPsi2 - imPsi1
-    //    = im(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
-    //                     + V_re*imPsi + V_im*rePsi))
-    // imPsi2 - imPsi1 
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1 + imPsi2))
-    // imPsi2 - dt/hbar*V_im*imPsi2
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
-    // (1 - dt*V_im/hbar)*imPsi2
-    //    = dt/hbar*(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1)) + imPsi1
-    // imPsi2 = dt/(hbar*(1 - dt*V_im/hbar))
-    //          *(-T(rePsi1) - V_re*rePsi + V_im*(imPsi1))
-    //          + imPsi1/(1 - dt*V_im/hbar)
-    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*(T(rePsi1) + V_re*rePsi)
-    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*imPsi1
-    //          + imPsi1/(1 - dt*V_im/hbar)
-    // imPsi2 = -dt/(hbar*(1 - dt*V_im/hbar))*HrePsi
-    //          + ((dt/hbar)*V_im*imPsi + imPsi)/(1 - dt*V_im/hbar)
     float f1 = 1.0 - dt*imV/hbar;
     float f2 = 1.0 + dt*imV/hbar;
     float hamiltonRePsi = -(0.5*hbar*hbar/m)*div2RePsi + V*rePsi;

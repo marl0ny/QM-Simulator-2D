@@ -211,6 +211,12 @@ class Frame {
         gl.readPixels(x, y, w, h, gl.RGBA, gl.FLOAT, buf);
         return buf;
     }
+    substituteTextureArray(w, h, type, arr) {
+        gl.activeTexture(gl.TEXTURE0 + this.frameNumber);
+        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, w, h, gl.RGBA, type, arr);
+        gl.activeTexture(gl.TEXTURE0);
+    }
 }
 
 class VectorFieldFrame extends Frame {

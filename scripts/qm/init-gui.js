@@ -36,7 +36,9 @@ let controls = {
     borderAlpha: 0.0,
     boundaryType: "Dirichlet",
     probColour: [1.0, 1.0, 1.0],
-    potColour: [1.0, 1.0, 1.0]
+    potColour: [1.0, 1.0, 1.0],
+    imageName: '',
+    imageFunc: () => {},
     };
 let measurePosition = () => controls.measure = true;
 controls.measurePosition = measurePosition;
@@ -217,7 +219,7 @@ let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
 let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
                                             [
-                                             // '256x256', 
+                                             '256x256', 
                                              '400x400', '512x512',
                                              '640x640', '800x800',
                                              '1024x1024', '2048x2048'
@@ -236,6 +238,34 @@ let boundariesSelect = boundariesFolder.add(controls, 'boundaryType',
                                             ['Dirichlet', 'Neumann', 
                                              'Periodic']
                                             ).name('Type');
+let imagePotentialFolder = moreControlsFolder.addFolder('Upload Image');
+let uploadImageButton = imagePotentialFolder.add({'uploadImage': () => {}}, 
+                         'uploadImage', true).name(
+                             `<div>
+                             <input id="uploadImage" type="file" 
+                              style="color: #efefef; 
+                              text-decoration: none; font-size: 1em;">
+                             </div>`
+                         );
+uploadImageButton.domElement.hidden = true;
+let uploadImage = document.getElementById("uploadImage");
+let imageNameWidget = imagePotentialFolder.add(controls, 
+                                              'imageName'
+                                              ).name('File: ');
+function onUploadImage() {
+    let im = document.getElementById("image");
+    im.file = this.files[0];
+    controls.imageName = im.file.name;
+    imageNameWidget.updateDisplay();
+    const reader = new FileReader();
+    reader.onload = e => im.src = e.target.result;
+    reader.readAsDataURL(this.files[0]);
+}
+uploadImage.addEventListener("change", onUploadImage, false);
+imagePotentialFolder.add({'submit': () => controls.imageFunc()}, 
+                         'submit').name('Use for Pot.');
+// tmp.domElement.outerHTML = "<div class=\"c\"><div class=\"submit\"></div></div>";
+// tmp.domElement.innerHTML = "";
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
 editUniformsFolder.add(controls, 'dt', -0.01, 0.01);

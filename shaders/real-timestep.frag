@@ -58,28 +58,6 @@ void main () {
     float imPsi = psi.g;
     float alpha = psi.a;
     float div2ImPsi = getDiv2ImPsi(imPsi);
-    // rePsi2 - rePsi1
-    //    = re(-i*dt/hbar*(T(psi) + (V_re + i*V_im)*(rePsi + i*imPsi)))
-    // rePsi2 - rePsi1
-    //    = re(-i*dt/hbar*(T(psi) + V_re*rePsi - V_im*imPsi
-    //                     + i*V_re*imPsi + i*V_im*rePsi))
-    // rePsi2 - rePsi1
-    //    = re(dt/hbar*(-i*T(psi) - i*V_re*rePsi + i*V_im*imPsi
-    //                     + V_re*imPsi + V_im*rePsi))
-    // rePsi2 - rePsi1 
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1 + rePsi2))
-    // rePsi2 - dt/hbar*V_im*rePsi2
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
-    // (1 - dt*V_im/hbar)*rePsi2
-    //    = dt/hbar*(T(imPsi1) + V_re*imPsi + V_im*(rePsi1)) + rePsi1
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))
-    //          *(T(imPsi1) + V_re*imPsi + V_im*(rePsi1))
-    //          + rePsi1/(1 - dt*V_im/hbar)
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi 
-    //          + dt/(hbar*(1 - dt*V_im/hbar))*V_im*(rePsi1)
-    //          + rePsi1/(1 - dt*V_im/hbar)
-    // rePsi2 = dt/(hbar*(1 - dt*V_im/hbar))*HimPsi
-    //          + ((dt*V_im/hbar)*rePsi1 + rePsi)/(1 - dt*V_im/hbar)
     float hamiltonImPsi = -(0.5*hbar*hbar/m)*div2ImPsi + V*imPsi;
     float f1 = 1.0 - dt*imV/hbar;
     float f2 = 1.0 + dt*imV/hbar;
