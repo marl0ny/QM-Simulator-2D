@@ -23,6 +23,8 @@ uniform float v2;
 void main() {
     vec2 xy = fragTexCoord.xy;
     float initialV = texture2D(tex1, fragTexCoord).r;
+    // float imagV = texture2D(tex1, fragTexCoord).b;
+    float imagV = 0.0;
     float drawW2 = drawWidth*drawWidth;
     float r2 = (xy.x - bx)*(xy.x - bx) 
                 + (xy.y - by)*(xy.y - by);
@@ -36,15 +38,15 @@ void main() {
             float tmp = exp(-0.5*r2/(2.0*drawW2));
             if (eraseMode == 0) {
                 fragColor = vec4(max(tmp + initialV, initialV), 
-                                     initialV, 0.0, 1.0);
+                                     initialV, imagV, 1.0);
             } else {
                 fragColor = vec4(max(initialV - tmp, 0.0), 
-                                     initialV, 0.0, 1.0);
+                                     initialV, imagV, 1.0);
             }
         } else {
-            fragColor = vec4(initialV, initialV, 0.0, 1.0);
+            fragColor = vec4(initialV, initialV, imagV, 1.0);
         }
     } else {
-        fragColor = vec4(initialV, initialV, 0.0, 1.0);
+        fragColor = vec4(initialV, initialV, imagV, 1.0);
     }
 }

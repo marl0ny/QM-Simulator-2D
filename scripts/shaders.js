@@ -61,28 +61,6 @@ void main () {
 `;
 
 
-const imageToGrayscaleFragmentSource = `precision highp float;
-#if __VERSION__ == 300
-#define texture2D texture
-in vec2 fragTexCoord;
-out vec4 fragColor;
-#else
-#define fragColor gl_FragColor
-varying highp vec2 fragTexCoord;
-#endif
-
-uniform sampler2D tex;
-
-
-void main() {
-    vec2 st = vec2(fragTexCoord.x, 1.0 - fragTexCoord.y);
-    vec4 col = texture2D(tex, st);
-    float avgCol = (col.r + col.g + col.b)/3.0;
-    fragColor = vec4(avgCol, avgCol/2.0, 0.0, 1.0);
-    // fragColor = vec4(col[0], col[1], col[2], 1.0);
-}`;
-
-
 const onesFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -233,6 +211,8 @@ uniform float v2;
 void main() {
     vec2 xy = fragTexCoord.xy;
     float initialV = texture2D(tex1, fragTexCoord).r;
+    // float imagV = texture2D(tex1, fragTexCoord).b;
+    float imagV = 0.0;
     float drawW2 = drawWidth*drawWidth;
     float r2 = (xy.x - bx)*(xy.x - bx) 
                 + (xy.y - by)*(xy.y - by);
@@ -246,16 +226,16 @@ void main() {
             float tmp = exp(-0.5*r2/(2.0*drawW2));
             if (eraseMode == 0) {
                 fragColor = vec4(max(tmp + initialV, initialV), 
-                                     initialV, 0.0, 1.0);
+                                     initialV, imagV, 1.0);
             } else {
                 fragColor = vec4(max(initialV - tmp, 0.0), 
-                                     initialV, 0.0, 1.0);
+                                     initialV, imagV, 1.0);
             }
         } else {
-            fragColor = vec4(initialV, initialV, 0.0, 1.0);
+            fragColor = vec4(initialV, initialV, imagV, 1.0);
         }
     } else {
-        fragColor = vec4(initialV, initialV, 0.0, 1.0);
+        fragColor = vec4(initialV, initialV, imagV, 1.0);
     }
 }
 `;
@@ -486,14 +466,12 @@ void main() {
         float val = (oneOverR < -150.0)? -150.0: oneOverR;
         fragColor = vec4(val + 50.0, 0.0, 0.0, 1.0);
     } else {
-        /*if (y < 0.025 || y > 0.975 ||
-	        x < 0.025 || x > 0.975) {
-            fragColor = vec4(0.0, 0.0, -1.0, 1.0); 
-        } else {*/
-        fragColor = vec4(0.0, 0.0, 0.0, 1.0); 
-        // }
+        float val = 30.0*exp(-0.5*y*y/(0.01*0.01));
+        val += 30.0*exp(-0.5*(y-1.0)*(y-1.0)/(0.01*0.01));
+        val += 30.0*exp(-0.5*x*x/(0.01*0.01));
+        val += 30.0*exp(-0.5*(x-1.0)*(x-1.0)/(0.01*0.01));
+        fragColor = vec4(0.0, 0.0, -val, 1.0); 
     }
-
 }
 `;
 
@@ -778,6 +756,31 @@ void main () {
     float f2 = 1.0 + dt*imV/hbar;
     fragColor = vec4(rePsi*(f2/f1) + hamiltonImPsi*dt/(f1*hbar), imPsi, 
                      0.0, alpha);
+}`;
+
+
+const imagePotentialFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform int invert;
+uniform sampler2D tex;
+
+
+void main() {
+    vec2 st = vec2(fragTexCoord.x, 1.0 - fragTexCoord.y);
+    vec4 col = texture2D(tex, st);
+    float avgCol = (col.r + col.g + col.b)/3.0;
+    if (invert == 1) {
+        avgCol = 20.0 - avgCol;
+    }
+    fragColor = vec4(avgCol, avgCol/2.0, 0.0, 1.0);
+    // fragColor = vec4(col[0], col[1], col[2], 1.0);
 }`;
 
 

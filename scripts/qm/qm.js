@@ -1,5 +1,6 @@
-// new Promise(() => setTimeout(main, 500));
+
 main();
+
 function main() {
 
     let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
@@ -29,33 +30,36 @@ function main() {
 
     controls.imageFunc = function () {
         let canvas = document.getElementById('image-canvas');
+        console.log(canvas.width, canvas.height);
         let ctx = canvas.getContext("2d");
         ctx.rect(0, 0, pixelWidth, pixelHeight);
         ctx.fill();
         let im = document.getElementById('image');
+        let w = pixelWidth, h = pixelHeight;
         if (im.width > im.height) {
-            let heightOffset = parseInt(`${256.0
-                                           - 256.0*im.height/im.width}`);
+            let heightOffset = parseInt(`${0.5*w
+                                           - 0.5*w*im.height/im.width}`);
             ctx.drawImage(im, 0, heightOffset, 
-                          512, parseInt(`${512.0*im.height/im.width}`));
+                          w, parseInt(`${w*im.height/im.width}`));
         } else {
-            let widthOffset = parseInt(`${256.0
-                                          - 256.0*im.width/im.height}`);
+            let widthOffset = parseInt(`${0.5*w
+                                          - 0.5*w*im.width/im.height}`);
             ctx.drawImage(im, widthOffset, 0, 
-                          parseInt(`${512.0*im.width/im.height}`), 512);
+                          parseInt(`${w*im.width/im.height}`), w);
         }
         let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
-                                                          512.0, 512.0
+                                                          w, h
                                                           ).data);
         for (let i = 0; i < imageData.length; i++) {
-            imageData[i] *= (20.0/255.0);
+            imageData[i] *= (15.0/255.0);
         }
         console.log(pixelWidth, pixelHeight);
         storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
                                           gl.FLOAT, imageData);
         potentialFrame.useProgram(imagePotentialProgram);
         potentialFrame.bind();
-        potentialFrame.setIntUniforms({"tex": storeFrame.frameNumber});
+        potentialFrame.setIntUniforms({"tex": storeFrame.frameNumber,
+                                       "invert": controls.invertImage});
         draw();
         unbind();
         potChanged = true;
@@ -105,6 +109,8 @@ function main() {
     function setFrameDimensions(newWidth, newHeight) {
         document.getElementById('sketch-canvas').width = newWidth;
         document.getElementById('sketch-canvas').height = newHeight;
+        document.getElementById('image-canvas').width = newWidth;
+        document.getElementById('image-canvas').height = newHeight;
         width = (canvas.width/512)*64.0*Math.sqrt(2.0);
         height = (canvas.width/512)*64.0*Math.sqrt(2.0);
         scale = {w: canvasStyleWidth/canvas.width,

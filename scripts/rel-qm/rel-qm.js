@@ -91,8 +91,26 @@ let data = {
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
     probInRegion: '0',
     viewProbCurrent: false,
-    potBrightness: 1.0
+    potBrightness: 1.0,
+    gridDimensions: '512x512'
 };
+
+function setFrameDimensions(newWidth, newHeight) {
+    document.getElementById('sketch-canvas').width = newWidth;
+    document.getElementById('sketch-canvas').height = newHeight;
+    pixelWidth = newWidth;
+    pixelHeight = newHeight;
+    gl.viewport(0, 0, pixelWidth, pixelHeight);
+    let frames = [viewFrame, potFrame, guiFrame, 
+                  vectorFieldFrame, extraFrame];
+    uFrames.forEach(e => frames.push(e));
+    vFrames.forEach(e => frames.push(e));
+    for (let f of frames) {
+        f.setTexture(pixelWidth, pixelHeight, {s: gl.REPEAT, t: gl.REPEAT});
+        f.activateFramebuffer();
+        unbind();
+    }
+}
 
 let gui = new dat.GUI();
 let stats = null;
@@ -172,10 +190,16 @@ viewOptions.add(data, 'viewProbCurrent').name('Show Current');
 let potViewOptions = 
     viewOptionsFolder.addFolder('Potential');
 potViewOptions.add(data, 'potBrightness', 0.0, 8.0).name('brightness');
-gui.add(data, 'dt', -0.00001, 0.000028).name('dt');
+let dx = data.w/pixelWidth;
+dtControl = gui.add(data, 'dt', -0.5*dx/data.c, 0.9*dx/data.c).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
 // gui.add(data, 'measurePosition').name('Measure Position');
+let moreControls = gui.addFolder('More Controls');
+let changeGrid = moreControls.add(data, 'gridDimensions', 
+                                  ['256x256', '512x512', '1024x1024']
+                                 ).name('Grid Dimensions');
+
 
 let guiControls = {
     gui: gui,
@@ -191,8 +215,25 @@ let guiControls = {
     viewOptions: viewOptions,
     probInBoxFolder: probInBoxFolder,
     probShow: probShow,
-    potViewOptions: potViewOptions
+    potViewOptions: potViewOptions,
+    moreControls: moreControls,
+    dtControl: dtControl,
 };
+
+changeGrid.onChange(
+    e => {
+        let w = parseInt(e.split('x')[0]);
+        setFrameDimensions(w, w);
+        let dx = data.w/pixelWidth;
+        dtControl.min(-0.5*dx/data.c);
+        dtControl.max(0.9*dx/data.c);
+        dtControl.setValue(0.3508*dx/data.c);
+        dtControl.updateDisplay();
+        initializePotential(data.presetPotentials);
+        guiControls.drawBarrierOptions.close();
+        guiControls.probInBoxFolder.close();
+    }
+);
 
 guiControls.mouseSelect.onChange(e => {
     if (e === 'Prob. in Box') {

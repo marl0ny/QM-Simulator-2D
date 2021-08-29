@@ -27,7 +27,7 @@ let probCurrentProgram = makeProgram(vShader, probCurrentShader);
 let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
 let onesProgram = makeProgram(vShader, onesShader);
 let imagePotentialShader = makeShader(gl.FRAGMENT_SHADER, 
-                                      imageToGrayscaleFragmentSource);
+                                      imagePotentialFragmentSource);
 let imagePotentialProgram = makeProgram(vShader, imagePotentialShader);
 
 gl.deleteShader(vShader);

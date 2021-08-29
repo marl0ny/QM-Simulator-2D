@@ -39,6 +39,7 @@ let controls = {
     potColour: [1.0, 1.0, 1.0],
     imageName: '',
     imageFunc: () => {},
+    invertImage: false
     };
 let measurePosition = () => controls.measure = true;
 controls.measurePosition = measurePosition;
@@ -193,7 +194,7 @@ let moreControlsFolder = gui.addFolder('More Controls');
 let visualizationOptionsFolder = 
         moreControlsFolder.addFolder('More Visualization Options');
 visualizationOptionsFolder.add(controls, 'brightness2', 
-        1.0, 10.0).name('Pot. brightness');
+        0.0, 10.0).name('Pot. brightness');
 let potColourController
     = visualizationOptionsFolder.addColor({colour: [255.0, 255.0, 255.0]},
                                           'colour').name('Pot. Colour');
@@ -262,6 +263,8 @@ function onUploadImage() {
     reader.readAsDataURL(this.files[0]);
 }
 uploadImage.addEventListener("change", onUploadImage, false);
+let invertImageControl = imagePotentialFolder.add(controls, 
+    'invertImage', false).name('invert');
 imagePotentialFolder.add({'submit': () => controls.imageFunc()}, 
                          'submit').name('Use for Pot.');
 // tmp.domElement.outerHTML = "<div class=\"c\"><div class=\"submit\"></div></div>";
