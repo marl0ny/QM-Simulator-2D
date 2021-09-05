@@ -1,4 +1,6 @@
 let gui = new dat.GUI();
+
+
 let stats = null;
 try {
     stats = new Stats();
@@ -8,11 +10,11 @@ try {
     console.log(e);
 }
 
-let drawRect = {x: 0.0, y: 0.0, w: 0.0, h: 0.0};
+
 let controls = {
-    brightness: 4,
-    brightness2: 1.0,
-    speed: 6,
+    brightness: 4, // brightness for wavefunction
+    brightness2: 1.0, // brightness for potential
+    speed: 6, // number of steps per frame
     bx: 0.0,
     by: 0.0,
     px: 0.0,
@@ -21,15 +23,30 @@ let controls = {
     viewProbCurrent: false,
     displayOutline: false,
     mouseMode: 'new ψ(x, y)',
-    presetPotentials: 'SHO',
+    mouseData: {name: () => {},
+                stencilTypes: 'square',
+                erase: false,
+                stencilType: 0,
+                width: 0.01, v2: 10.0,
+                fixInitialP: false,
+                sigma: 0.05859375,
+                px0: 0.0, py0: 20.0,
+                probabilityInBox: '0.0',
+                mouseUse: false,
+                mouseAction: false,
+                mouseCount: 0},
+    drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
+    presetPotential: 'SHO',
     useTextureCoordinates: true,
     enterPotential: 'V(x, y)',
+    enterPotentialExpr: '',
     measure: false,
     dt: 0.01,
     m: 1.0,
     laplace: '5 point',
     laplaceVal: 5,
     scaleP: 1.0,
+    rScaleV: 0.0,
     object: "string",
     changeDimensions: '512x512',
     boundaries: 'default',
@@ -40,7 +57,7 @@ let controls = {
     imageName: '',
     imageFunc: () => {},
     invertImage: false
-    };
+};
 let measurePosition = () => controls.measure = true;
 controls.measurePosition = measurePosition;
 
@@ -83,21 +100,12 @@ let mouseMode = gui.add(controls, 'mouseMode',
                          'prob. in box']).name('Mouse Usage');
 // gui.add(controls, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
-gui.add(controls, 'presetPotentials', ['ISW', 'SHO', 'Double Slit',
-                                       'Single Slit', 'Step', 'Spike',
-                                       'Triple Slit']
-                                       ).name('Preset Potential');
+let presetPotentialSelect = gui.add(controls, 'presetPotential',
+                                    ['ISW', 'SHO', 'Double Slit',
+                                     'Single Slit', 'Step', 'Spike',
+                                     'Triple Slit']).name('Preset Potential');
 let mouseControls = gui.addFolder('Mouse Usage Controls');
 mouseControls.widgets = [];
-mouseControls.values = {name: () => {},
-                        stencilTypes: 'square',
-                        erase: false,
-                        stencilType: 0,
-                        width: 0.01, v2: 10.0,
-                        fixInitialP: false,
-                        sigma: 0.05859375,
-                        px0: 0.0, py0: 20.0,
-                        probabilityInBox: '0.0'};
 
 
 const NEW_PSI = 'n'; 
@@ -110,7 +118,7 @@ function mouseControlsCallback(e) {
             w.remove();
         }
         mouseControls.widgets = [];
-        let items = mouseControls.values;
+        let items = controls.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} controls`);
         let fixInitialP = mouseControls.add(items,
                                             'fixInitialP'
@@ -118,6 +126,7 @@ function mouseControlsCallback(e) {
         
         let sigma = mouseControls.add(items, 'sigma', 
                                       10.0/512.0, 40.0/512.0).name('sigma');
+        // let pVal = parseInt(80.0*pixelWidth/512.0);
         let pVal = parseInt(40.0*pixelWidth/512.0);
         let px0 = mouseControls.add(items, 'px0', -pVal, pVal).name('kx');
         let py0 = mouseControls.add(items, 'py0', -pVal, pVal).name('ky');
@@ -132,7 +141,7 @@ function mouseControlsCallback(e) {
             w.remove();
         }
         mouseControls.widgets = [];
-        let items = mouseControls.values;
+        let items = controls.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         let stencilTypesList = ['square', 'circle'];
         // if (e[0] === SKETCH_BARRIER) {
@@ -145,13 +154,13 @@ function mouseControlsCallback(e) {
                                              0.0, 0.03).name('Draw Width');
         let vControl;
         if (e[0] === SKETCH_BARRIER) {
-            mouseControls.values.erase = false;
-            mouseControls.values.v2 = 10.0;
+            controls.mouseData.erase = false;
+            controls.mouseData.v2 = 10.0;
             vControl = mouseControls.add(items, 'v2', 
                                          0.0, 10.0).name('E');
         } else {
-            mouseControls.values.v2 = 0.0;
-            mouseControls.values.erase = true;
+            controls.mouseData.v2 = 0.0;
+            controls.mouseData.erase = true;
         }
         stencilTypes.onChange(
             e => {
@@ -159,11 +168,11 @@ function mouseControlsCallback(e) {
                 let DRAW_CIRCLE = 1;
                 let DRAW_GAUSS = 2;
                 if (e === 'square') {
-                    mouseControls.values.stencilType = DRAW_SQUARE;
+                    controls.mouseData.stencilType = DRAW_SQUARE;
                 } else if (e === 'circle') {
-                    mouseControls.values.stencilType = DRAW_CIRCLE;
+                    controls.mouseData.stencilType = DRAW_CIRCLE;
                 } else if (e === 'gaussian') {
-                    mouseControls.values.stencilType = DRAW_GAUSS;
+                    controls.mouseData.stencilType = DRAW_GAUSS;
                 }
             }
         );
@@ -172,7 +181,7 @@ function mouseControlsCallback(e) {
         mouseControls.widgets.push(widthControl);
         if (e[0] === SKETCH_BARRIER) mouseControls.widgets.push(vControl);
     } else if (e[0] === PROB_IN_BOX) {
-        let items = mouseControls.values;
+        let items = controls.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         for (let w of mouseControls.widgets) {
             w.remove();
@@ -220,18 +229,19 @@ let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
 let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
                                             [
-                                             '256x256', 
-                                             '400x400', '512x512',
+                                             // '256x256', 
+                                             '400x400', '512x512', '585x585',
                                              '640x640', '800x800',
                                              '1024x1024', '2048x2048'
                                              // '4096x4096'
                                             ]
                                            ).name('Grid Size');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
-textEditPotential.add(controls,
-                      'useTextureCoordinates').name('Use Tex Coordinates');
-textEditPotential.add(controls,
-                      'enterPotential').name('Enter Potential V(x, y)');
+let useTex = textEditPotential.add(controls,
+                                   'useTextureCoordinates'
+                                  ).name('Use Tex Coordinates');
+let textEditPotentialEntry = textEditPotential.add(controls,
+    'enterPotential').name('Enter Potential V(x, y)');
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
@@ -271,7 +281,7 @@ imagePotentialFolder.add({'submit': () => controls.imageFunc()},
 // tmp.domElement.innerHTML = "";
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(controls, 'm', 0.75, 10.0);
-editUniformsFolder.add(controls, 'dt', -0.01, 0.01);
+editUniformsFolder.add(controls, 'dt', -0.01, 0.013);
 let laplaceSelect = editUniformsFolder.add(controls, 'laplace',
                                            ['5 point', '9 point'],
                                            10).name('Laplacian');
@@ -279,5 +289,3 @@ laplaceSelect.onChange(e => {
     controls.laplaceVal = parseInt(e.split(' ')[0]);
 });
 
-let rScaleV = 0.0;
-let timeMilliseconds = 0;

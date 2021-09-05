@@ -3,27 +3,7 @@ main();
 
 function main() {
 
-    let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
-
-    let swapFrames = [1, 2, 3, 4].map(i =>
-                                        new Frame(pixelWidth, pixelHeight, i));
-    let t = 3;
-    let swap = () => swapFrames = [swapFrames[2], swapFrames[3],
-                                   swapFrames[0], swapFrames[1]];
-
-    let storeFrame = new Frame(pixelWidth, pixelHeight, 5);
-    let nullTexNumber = 8;
-
-    let potentialFrame = new Frame(pixelWidth, pixelHeight, 6);
-    let vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
-    potentialFrame.presetPotentials = controls.presetPotentials;
-    potentialFrame.enterPotential = controls.enterPotential;
-    potentialFrame.useTextureCoordinates = controls.useTextureCoordinates;
-
-    let mouseUse = false;
-    let mouseAction = false;
-    let mouseCount = 0;
-
+    let view = new SimulationViewManager(pixelWidth, pixelHeight);
     let potChanged = false;
 
     initializePotential('SHO');
@@ -53,15 +33,7 @@ function main() {
         for (let i = 0; i < imageData.length; i++) {
             imageData[i] *= (15.0/255.0);
         }
-        console.log(pixelWidth, pixelHeight);
-        storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
-                                          gl.FLOAT, imageData);
-        potentialFrame.useProgram(imagePotentialProgram);
-        potentialFrame.bind();
-        potentialFrame.setIntUniforms({"tex": storeFrame.frameNumber,
-                                       "invert": controls.invertImage});
-        draw();
-        unbind();
+        view.imagePotential(imageData, controls.invertImage);
         potChanged = true;
     }
 
@@ -73,17 +45,8 @@ function main() {
                 gridSelect.updateDisplay();
             }
         }
-        viewFrame.setTexture(pixelWidth, pixelHeight, {s: s,
-            t: t});
-        unbind();
-        let frames = [].concat(swapFrames, storeFrame, potentialFrame);
-        for (let frame of frames) {
-        frame.setTexture(pixelWidth, pixelHeight, {s: s,
-                    t: t});
-        frame.activateFramebuffer();
-        unbind();
-        initializePotential(controls.presetPotentials);
-        }
+        view.changeBoundaries(s, t);
+        initializePotential(controls.presetPotential);
     }
     boundariesSelect.onChange(e => {
         // List of the names of different boundary conditions:
@@ -113,6 +76,7 @@ function main() {
         document.getElementById('image-canvas').height = newHeight;
         width = (canvas.width/512)*64.0*Math.sqrt(2.0);
         height = (canvas.width/512)*64.0*Math.sqrt(2.0);
+        console.log(width, height);
         scale = {w: canvasStyleWidth/canvas.width,
             h: canvasStyleHeight/canvas.height};
         pixelWidth = newWidth;
@@ -122,7 +86,6 @@ function main() {
         boxW.updateDisplay();
         boxH.updateDisplay();
 
-        gl.viewport(0, 0, pixelWidth, pixelHeight);
         // TODO if boundary is changed then changing the frame dimensions
         // causes the boundaries to go back to clamp_to_edge.
         // Change this behaviour.
@@ -134,95 +97,14 @@ function main() {
             controls.boundaryType = 'Neumann';
             boundariesSelect.updateDisplay();
         }
-        viewFrame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
-                                                       t: gl.CLAMP_TO_EDGE});
-        unbind();
-        let frames = [].concat(swapFrames, storeFrame, 
-                               potentialFrame, vectorFieldFrame);
-        for (let frame of frames) {
-            frame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
-                                                       t: gl.CLAMP_TO_EDGE});
-            frame.activateFramebuffer();
-            unbind();
-        }
-        initializePotential(controls.presetPotentials);
+        view.setFrameDimensions(pixelWidth, pixelHeight);
+        initializePotential(controls.presetPotential);
     }
     gridSelect.onChange(e => {
         xyDims = e.split('x');
         setFrameDimensions(parseInt(xyDims[0]), parseInt(xyDims[1]));
 
     });
-
-
-    function getUnnormalizedProbDist() {
-        storeFrame.useProgram(probDensityProgram);
-        storeFrame.bind();
-        storeFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
-                                tex2: swapFrames[t-3].frameNumber,
-                                tex3: swapFrames[t-2].frameNumber});
-        draw();
-        let probDensity = storeFrame.getTextureArray(
-            {x: 0, y: 0, w: pixelWidth, h: pixelHeight});
-        unbind();
-        return probDensity;
-    }
-
-    function getProbCurrent() {
-        storeFrame.useProgram(probCurrentProgram);
-        storeFrame.bind();
-        storeFrame.setFloatUniforms({dx: width/pixelWidth,
-                                     dy: height/pixelHeight,
-                                     w: width,
-                                     h: height,
-                                     hbar: 1.0,
-                                     m: controls.m,
-                                    });
-        storeFrame.setIntUniforms({tex1: swapFrames[t].frameNumber,
-                                   tex2: swapFrames[t-3].frameNumber,
-                                   tex3: swapFrames[t-2].frameNumber});
-        draw();
-        let probCurrent = storeFrame.getTextureArray({x: 0, y: 0,
-                                                      w: pixelWidth, 
-                                                      h: pixelHeight});
-        unbind();
-        let vecs = [];
-        let dst = 32;
-        if (pixelWidth === 400 && pixelHeight === 400) dst = 25;
-        let wSpacing = pixelWidth/dst, hSpacing = pixelHeight/dst;
-        let hEnd = pixelHeight; // - hSpacing;
-        let wEnd = pixelWidth; // - wSpacing;
-        let count = 0;
-        for (let i = hSpacing; i < hEnd; i += hSpacing) {
-            for (let j = wSpacing; j < wEnd; j += wSpacing) {
-                let vy = probCurrent[4*i*pixelHeight + 4*j]/60.0;
-                let vx = probCurrent[4*i*pixelHeight + 4*j + 1]/60.0;
-                if (vx*vx + vy*vy > 1e-9) {
-                    let x = 2.0*i/pixelHeight - 1.0;
-                    let y = 2.0*j/pixelWidth - 1.0;
-                    let max_size = 0.05;
-                    if (vx*vx + vy*vy > max_size*max_size) {
-                        let norm = 1.0/Math.sqrt(vx*vx + vy*vy);
-                        vx = vx*norm*max_size;
-                        vy = vy*norm*max_size; 
-                    }
-                    vecs.push(y - vy/2.0);
-                    vecs.push(x - vx/2.0);
-                    vecs.push(0.0);
-                    vecs.push(y + vy/2.0);
-                    vecs.push(x + vx/2.0);
-                    vecs.push(0.0);
-                    count += 2;
-                }
-
-            }
-        }
-        let vertices = new Float32Array(vecs);
-        vectorFieldFrame.useProgram(onesProgram);
-        vectorFieldFrame.bind(vertices);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        drawLines(count);
-        unbind();
-    }
 
     function getProbInRegion(probDist, i0, j0, w, h) {
         let reg = 0.0;
@@ -237,7 +119,7 @@ function main() {
                 tot += val;
             }
         }
-        mouseControls.values.probabilityInBox = 
+        controls.mouseData.probabilityInBox = 
             `${Math.round(1000.0*reg/tot)/1000.0}`;
         mouseControls.widgets[1].updateDisplay();
         return reg/tot;
@@ -245,7 +127,7 @@ function main() {
 
     function measurePosition() {
         if (controls.measure) {
-            let probDensity = getUnnormalizedProbDist();
+            let probDensity = view.getUnnormalizedProbDist();
             notNormalizedTot = 0.0;
             for (let i = 0; i < probDensity.length/4; i++) {
                 notNormalizedTot += probDensity[4*i];
@@ -265,31 +147,17 @@ function main() {
             let u = j%pixelHeight;
             unbind();
             controls.measure = false;
-            swapFrames[t-3].useProgram(initialWaveProgram);
-            swapFrames[t-3].bind();
-            swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth,
-                                              dy: 1.0/pixelHeight,
-                                              px: 0.0, py: 0.0,
-                                              amp: 37.5,
-                                              sx: 4.0/pixelWidth,
-                                              sy: 4.0/pixelHeight,
-                                              bx: u/canvas.width,
-                                              by: v/canvas.height,
-                                              borderAlpha: controls.borderAlpha});
-            draw();
-            unbind();
-            swapFrames[t-2].useProgram(imagTimeStepProgram);
-            swapFrames[t-2].bind();
-            swapFrames[t-2].setFloatUniforms({dx: width/pixelWidth,
-                                                dy: height/pixelHeight,
-                                                dt: controls.dt/2.0,
-                                                w: width, h: height,
-                                                m: controls.m, hbar: 1.0});
-            swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
-                                            texV: potentialFrame.frameNumber,
-                                            laplacePoints: controls.laplaceVal});
-            draw();
-            unbind();
+            let params = {dx: width/pixelWidth, dy: height/pixelHeight, 
+                          dt: controls.dt,
+                          m: controls.m, hbar: 1.0,
+                          borderAlpha: controls.borderAlpha,
+                          laplaceVal: controls.laplaceVal,
+                          width: width, height: height};
+            let wavefuncParams = {amp: 37.5,
+                                  sx: 4.0/pixelWidth, sy: 4.0/pixelHeight,
+                                  bx: u/canvas.width, by: v/canvas.height,
+                                  px: 0.0, py: 0.0};
+            view.initWavefunc(params, wavefuncParams);
         }
     }
 
@@ -301,45 +169,28 @@ function main() {
             e.remove();
         }
         presetControlsFolder.controls = [];
+        controls.mouseData.mouseAction = true;
         if (type === 'SHO') {
-            let f = (a) => {
-                potentialFrame.useProgram(initPotentialProgram);
-                potentialFrame.bind();
-                potentialFrame.setFloatUniforms({a: a});
-                potentialFrame.setIntUniforms({potentialType: 1});
-                draw();
-                unbind();
-            };
-            f(20.0);
             let items = {a: 20.0};
+            view.presetPotential(1, items);
             let aVar = presetControlsFolder.add(items,
                                                 'a', 0.0, 40.0).name('Strength');
-            aVar.onChange(f);
+            aVar.onChange(() => view.presetPotential(1, items));
             presetControlsFolder.controls.push(aVar);
-            mouseAction = true;
             controls.bx = pixelWidth/2;
             controls.by = pixelHeight*0.75;
             controls.py = 0.0;
             controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/controls.scaleP;
             controls.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
-
         } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
                                       spacing: 0.02, a: 30.0};
-            let f = (doubleSlitUniforms) => {
-                potentialFrame.useProgram(initPotentialProgram);
-                potentialFrame.bind();
-                potentialFrame.setFloatUniforms(doubleSlitUniforms);
-                potentialFrame.setIntUniforms({potentialType: 2});
-                draw();
-                unbind();
-            };
-            f(doubleSlitUniforms);
+            view.presetPotential(2, doubleSlitUniforms);
             for (let e of Object.keys(doubleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
-                    minVal = 0.0; maxVal = 36.0; name = 'Energy';
+                    minVal = 0.0; maxVal = 36.0; name = 'strength';
                 } else if (e === 'w') {
                     minVal = 0.0; maxVal = 0.05; name = 'width';
                 } else if (e === 'spacing') {
@@ -356,11 +207,10 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     doubleSlitUniforms[e] = val;
-                    f(doubleSlitUniforms);
+                    view.presetPotential(2, doubleSlitUniforms);
                 });
                 presetControlsFolder.controls.push(slider);
             }
-            mouseAction = true;
             controls.bx = pixelWidth/2;
             controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
@@ -371,19 +221,11 @@ function main() {
         } else if (type == 'Single Slit') {
             let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5,
                                       spacing: 0.02, a: 30.0};
-            let f = (singleSlitUniforms) => {
-                potentialFrame.useProgram(initPotentialProgram);
-                potentialFrame.bind();
-                potentialFrame.setFloatUniforms(singleSlitUniforms);
-                potentialFrame.setIntUniforms({potentialType: 3});
-                draw();
-                unbind();
-            };
-            f(singleSlitUniforms);
+            view.presetPotential(3, singleSlitUniforms);
             for (let e of Object.keys(singleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
-                    minVal = 0.0; maxVal = 36.0; name = 'Energy';
+                    minVal = 0.0; maxVal = 36.0; name = 'strength';
                 } else if (e === 'w') {
                     minVal = 0.0; maxVal = 0.05; name = 'width';
                 } else if (e === 'spacing') {
@@ -400,11 +242,10 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     singleSlitUniforms[e] = val;
-                    f(singleSlitUniforms);
+                    view.presetPotential(3, singleSlitUniforms);
                 });
                 presetControlsFolder.controls.push(slider);
             }
-            mouseAction = true;
             controls.bx = pixelWidth/2;
             controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
@@ -413,64 +254,46 @@ function main() {
             mouseMode.updateDisplay();
         } else if (type == 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
-            let f = (stepUniforms) => {
-                potentialFrame.useProgram(initPotentialProgram);
-                potentialFrame.bind();
-                potentialFrame.setFloatUniforms(stepUniforms);
-                potentialFrame.setIntUniforms({potentialType: 4});
-                draw();
-                unbind();
-            };
-            f(stepUniforms);
+            view.presetPotential(4, stepUniforms);
             let aSlider = presetControlsFolder.add(
                 stepUniforms, 'a', 0.0, 10.0
-            ).step(0.1).name('Energy');
+            ).step(0.1).name('strength');
             aSlider.onChange(val => {
                 stepUniforms['a'] = val;
-                f(stepUniforms);
+                view.presetPotential(4, stepUniforms);
             });
             let y0Slider = presetControlsFolder.add(
                 stepUniforms, 'y0', 0.25, 0.75
             );
             y0Slider.onChange(val => {
                 stepUniforms['y0'] = val;
-                f(stepUniforms);
+                view.presetPotential(4, stepUniforms);
             });
             presetControlsFolder.controls.push(y0Slider);
-            mouseAction = true;
+            presetControlsFolder.controls.push(aSlider);
             controls.bx = pixelWidth/2;
             controls.by = pixelHeight*0.75;
             controls.py = 40.0/controls.scaleP;
             controls.px = 0.0;
             controls.mouseMode = 'new ψ(x, y)';
-            presetControlsFolder.controls.push(aSlider);
             mouseMode.updateDisplay();
         } else {
-            potentialFrame.useProgram(initPotentialProgram);
-            potentialFrame.bind();
+            controls.bx = pixelWidth/2;
+            controls.by = pixelHeight*0.75;
+            controls.py = 40.0/controls.scaleP;
+            controls.px = 0.0;
             if (type == 'Spike') {
-                potentialFrame.setIntUniforms({potentialType: 5});
-                controls.bx = pixelWidth/2;
-                controls.by = pixelHeight*0.75;
-                controls.py = 40.0/controls.scaleP;
-                controls.px = 0.0;
+                view.presetPotential(5, {});
             } else if (type == 'Triple Slit') {
-                potentialFrame.setIntUniforms({potentialType: 6});
-                controls.bx = pixelWidth/2;
-                controls.by = pixelHeight*0.75;
-                controls.py = 40.0/controls.scaleP;
-                controls.px = 0.0;
+                view.presetPotential(6, {});
             } else {
-                potentialFrame.setIntUniforms({potentialType: 8});
+                view.presetPotential(8, {});
                 controls.bx = pixelWidth/3;
                 controls.by = pixelHeight*0.75;
                 controls.py = 30.0/controls.scaleP;
                 controls.px = -((Math.random() > 0.5)? -1.0: 1.0)*
                                 30.0/controls.scaleP;
             }
-            draw();
-            unbind();
-            mouseAction = true;
             controls.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         }
@@ -481,8 +304,9 @@ function main() {
 
     let reshapePotentialRecLevel = 0;
     function reshapePotential(controls) {
-        let drawWidth = mouseControls.values.width*canvas.width;
-        if (mouseCount > 1 && mouseControls.values.width > 0.0 && 
+        let drawWidth = controls.mouseData.width*canvas.width;
+        if (controls.mouseData.mouseCount > 1 && 
+            controls.mouseData.width > 0.0 && 
             (Math.abs(controls.px) > drawWidth ||
              Math.abs(controls.py) > drawWidth)) {
             reshapePotentialRecLevel += 1;
@@ -500,59 +324,34 @@ function main() {
                 reshapePotential(newControls);
             }
         }
-        storeFrame.useProgram(shapePotentialProgram);
-        storeFrame.bind();
-        storeFrame.setFloatUniforms({bx: controls.bx/canvas.width,
-                                     by: 1.0 - controls.by/canvas.height,
-                                     v2: mouseControls.values.v2,
-                                     drawWidth:
-                                     mouseControls.values.width});
-        storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber,
-                                   drawMode:
-                                   mouseControls.values.stencilType,
-                                    eraseMode: mouseControls.values.erase});
-        draw();
-        unbind();
-        potentialFrame.useProgram(copyToProgram);
-        potentialFrame.bind();
-        potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
-                                       tex2: nullTexNumber});
-        draw();
-        unbind();
-        rScaleV = 0.5;
+        view.reshapePotential(bx=controls.bx/canvas.width,
+                              by=1.0 - controls.by/canvas.height,
+                              v2=controls.mouseData.v2,
+                              drawWidth=controls.mouseData.width,
+                              stencilType=controls.mouseData.stencilType,
+                              eraseMode=controls.mouseData.erase);
+        controls.rScaleV = 0.5;
     }
 
     function createNewWave() {
-        let px = (!mouseControls.values.fixInitialP)?
-                  controls.scaleP*controls.px: mouseControls.values.px0;
-        let py = (!mouseControls.values.fixInitialP)?
-                  controls.scaleP*controls.py: mouseControls.values.py0;
-        let sigma = mouseControls.values.sigma;
-        swapFrames[t-3].useProgram(initialWaveProgram);
-        swapFrames[t-3].bind();
-        swapFrames[t-3].setFloatUniforms({dx: 1.0/pixelWidth,
-                                            dy: 1.0/pixelHeight,
-                                            px: px,
-                                            py: py,
-                                            amp: 5.0*30.0/(sigma*512.0),
-                                            sx: (sigma*512.0)/pixelWidth,
-                                            sy: (sigma*512.0)/pixelHeight,
-                                            bx: controls.bx/canvas.width,
-                                            by: 1.0 - controls.by/canvas.height,
-                                            borderAlpha: controls.borderAlpha});
-        draw();
-        unbind();
-        swapFrames[t-2].useProgram(imagTimeStepProgram);
-        swapFrames[t-2].bind();
-        swapFrames[t-2].setFloatUniforms({dx: width/pixelWidth,
-                                          dy: height/pixelHeight,
-                                          dt: controls.dt/2.0,
-                                          w: width, h: height, m: controls.m,
-                                          hbar: 1.0});
-        swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
-            texV: potentialFrame.frameNumber, laplacePoints: controls.laplaceVal});
-        draw();
-        unbind();
+        let px = (!controls.mouseData.fixInitialP)?
+                  controls.scaleP*controls.px: controls.mouseData.px0;
+        let py = (!controls.mouseData.fixInitialP)?
+                  controls.scaleP*controls.py: controls.mouseData.py0;
+        let sigma = controls.mouseData.sigma;
+        let params = {dx: width/pixelWidth, dy: height/pixelHeight, 
+                      dt: controls.dt,
+                      m: controls.m, hbar: 1.0,
+                      borderAlpha: controls.borderAlpha,
+                      laplaceVal: controls.laplaceVal,
+                      width: width, height: height};
+        let wavefuncParams = {amp: 5.0*30.0/(sigma*512.0),
+                              sx: (sigma*512.0)/pixelWidth,
+                              sy: (sigma*512.0)/pixelHeight,
+                              bx: controls.bx/canvas.width,
+                              by: 1.0 - controls.by/canvas.height,
+                              px: px, py: py};
+        view.initWavefunc(params, wavefuncParams);
     }
 
     function timeStepWave() {
@@ -561,30 +360,13 @@ function main() {
             dt = controls.dt/2.0;
             potChanged = false;
         }
-        swapFrames[t-1].useProgram(realTimeStepProgram);
-        swapFrames[t-1].bind();
-        swapFrames[t-1].setFloatUniforms({dx: width/pixelWidth,
-                                          dy: height/pixelHeight,
-                                          dt: controls.dt, w: width, h: height,
-                                          m: controls.m, hbar: 1.0,
-                                        rScaleV: rScaleV});
-        swapFrames[t-1].setIntUniforms({texPsi: swapFrames[t-2].frameNumber,
-                                        texV: potentialFrame.frameNumber,
-                                        laplacePoints: controls.laplaceVal});
-        draw();
-        rScaleV = 0.0;
-        unbind();
-        swapFrames[t].useProgram(imagTimeStepProgram);
-        swapFrames[t].bind();
-        swapFrames[t].setFloatUniforms({dx: width/pixelWidth,
-                                        dy: height/pixelHeight,
-                                        dt: controls.dt, w: width, h: height,
-                                        m: controls.m, hbar: 1.0});
-        swapFrames[t].setIntUniforms({texPsi: swapFrames[t-1].frameNumber,
-                                      texV: potentialFrame.frameNumber,
-                                      laplacePoints: controls.laplaceVal});
-        draw();
-        unbind();
+        params = {dx: width/pixelWidth, dy: height/pixelHeight, 
+                  dt: controls.dt,
+                  m: controls.m, hbar: 1.0, 
+                  laplaceVal: controls.laplaceVal, rScaleV: controls.rScaleV,
+                  width: width, height: height};
+        view.step(params);
+        controls.rScaleV = 0.0;
     }
 
     function display() {
@@ -592,54 +374,49 @@ function main() {
         const DISPLAY_PHASE = 1;
         const DISPLAY_CURRENT_WITH_PROB = 2
         const DISPLAY_CURRENT_WITH_PHASE = 3;
-        let intUniforms = {tex1: swapFrames[t].frameNumber,
-                           tex2: swapFrames[t-3].frameNumber,
-                           tex3: swapFrames[t-2].frameNumber,
-                           texV: potentialFrame.frameNumber,
-                           displayMode: DISPLAY_PHASE};
+        let intUniforms = {displayMode: DISPLAY_PHASE};
         if (!controls.colourPhase) {
             intUniforms['displayMode'] = DISPLAY_ONLY_PROB_DENSITY;
         }
         if (controls.viewProbCurrent) {
-            getProbCurrent(showLines=true);
+            view.probCurrent({width: width, height: height,
+                              hbar: 1.0, m: controls.m});
             let displayMode = (controls.colourPhase)?
                                 DISPLAY_CURRENT_WITH_PHASE:
                                 DISPLAY_CURRENT_WITH_PROB;
             intUniforms['displayMode'] = displayMode;
-            let tex = vectorFieldFrame.frameNumber;
-            intUniforms['vecTex'] = tex;
         }
-        viewFrame.useProgram(displayProgram);
-        viewFrame.bind();
-        viewFrame.setIntUniforms(intUniforms);
-        viewFrame.setVec3Uniforms({probColour: controls.probColour,
-                                   potColour: controls.potColour});
+        let vec3Uniforms = {probColour: controls.probColour,
+                            potColour: controls.potColour};
+        let floatUniforms;
         if (controls.mouseMode[0] == 'p') {
-            viewFrame.setFloatUniforms({
-                x0: drawRect.x/pixelWidth,
-                y0: (pixelHeight - drawRect.y)/pixelHeight,
-                w: drawRect.w/pixelWidth,
-                h: -drawRect.h/pixelHeight,
-                lineWidth: 0.002,
-                brightness: controls.brightness,
-                brightness2: controls.brightness2
-            });
+            floatUniforms = {x0: controls.drawRect.x/pixelWidth,
+                             y0: (pixelHeight 
+                                   - controls.drawRect.y)/pixelHeight,
+                             w: controls.drawRect.w/pixelWidth,
+                             h: -controls.drawRect.h/pixelHeight,
+                             lineWidth: 0.002,
+                             brightness: controls.brightness,
+                             brightness2: controls.brightness2};
         } else {
-            viewFrame.setFloatUniforms({lineWidth: 0.0,
-                                         brightness: controls.brightness,
-                                         brightness2: controls.brightness2});
+            floatUniforms = {lineWidth: 0.0,
+                             brightness: controls.brightness,
+                             brightness2: controls.brightness2};
         }
-        draw();
-        unbind();
+        view.display(floatUniforms, intUniforms, vec3Uniforms);
         if (controls.mouseMode[0] == 'p') {
-            let prob = getUnnormalizedProbDist();
-            let j0 = pixelHeight - drawRect.y;
-            let h = -drawRect.h;
-            let i0 = (drawRect.w < 0.0)? drawRect.x + drawRect.w: drawRect.x;
+            let prob = view.getUnnormalizedProbDist();
+            let j0 = pixelHeight - controls.drawRect.y;
+            let h = -controls.drawRect.h;
+            let i0 = ((controls.drawRect.w < 0.0)? 
+                      controls.drawRect.x + controls.drawRect.w:
+                      controls.drawRect.x);
             j0 = (h < 0.0)? j0 + h: j0;
-            let w = (drawRect.w < 0.0)? -drawRect.w: drawRect.w;
+            let w = ((controls.drawRect.w < 0.0)? 
+                     -controls.drawRect.w: controls.drawRect.w);
             h = (h < 0.0)? -h: h;
-            let reg = getProbInRegion(prob, i0, j0, w, h);
+            // let reg = 
+            getProbInRegion(prob, i0, j0, w, h);
             // console.log(reg);
         }
     }
@@ -647,132 +424,104 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
 
+    let requestInitializePotential = false;
+    presetPotentialSelect.onChange(() => {
+        requestInitializePotential = true;
+    });
+    let requestTextEditPotential = false;
+    textEditPotentialEntry.onChange(e => {
+        requestTextEditPotential = true;
+    });
+    useTex.onChange(() => {
+        requestTextEditPotential = true;
+    });
     function onPotentialChange() {
-        if (controls.presetPotentials !== potentialFrame.presetPotentials) {
-            potentialFrame.presetPotentials = controls.presetPotentials;
-            initializePotential(controls.presetPotentials);
-            potChanged = true;
-            // rScaleV = 0.5;
+        if (requestInitializePotential) {
+            initializePotential(controls.presetPotential);
+            potChange = true;
+            requestInitializePotential = false;
+        }
+        if (requestTextEditPotential) {
+            textEditPotentialFunc();
+            requestTextEditPotential = false;
+        }
+    }
+    function textEditPotentialFunc() {
+        if (textEditSubFolder.closed) {
+            textEditSubFolder.open();
+        }
+        let expr = controls.enterPotential;
+        if (expr.includes('^') || expr.includes('**')) {
+            expr = powerOpsToCallables(expr, false);
+        }
+        expr = replaceIntsToFloats(expr);
+        if (expr === controls.enterPotentialExpr) return;
+        controls.enterPotentialExpr = expr;
+        for (let e of textEditSubFolder.controls) {
+            console.log(e);
+            e.remove();
+        }
+        textEditSubFolder.controls = [];
+        controls.enterPotentialExpr = expr;
+        let uniforms = getVariables(expr);
+        uniforms.delete('x');
+        uniforms.delete('y');
+        let shader = createFunctionShader(expr, uniforms);
+        if (shader === null) {
             return;
         }
-        if ((controls.enterPotential !== potentialFrame.enterPotential) ||
-           (controls.useTextureCoordinates !==
-            potentialFrame.useTextureCoordinates)) {
-            for (let e of textEditSubFolder.controls) {
-                e.remove();
-            }
-            textEditSubFolder.controls = [];
-            if (textEditSubFolder.closed) {
-                textEditSubFolder.open();
-            }
+        let program = makeProgram(vShader, shader);
 
-            potentialFrame.useTextureCoordinates =
-                                                controls.useTextureCoordinates;
-            potentialFrame.enterPotential = controls.enterPotential;
-            let expr = potentialFrame.enterPotential;
-            if (expr.includes('^') || expr.includes('**')) {
-                expr = powerOpsToCallables(expr, false);
-            }
-            expr = replaceIntsToFloats(expr);
-            console.log(expr);
-            let uniforms = getVariables(expr);
-            uniforms.delete('x');
-            uniforms.delete('y');
-            console.log(uniforms);
-            let shader = createFunctionShader(expr, uniforms);
-            if (shader === null) {
-                return;
-            }
-            let program = makeProgram(vShader, shader);
-            storeFrame.useProgram(program);
-            storeFrame.bind();
+        let f = (uniforms) => {
+            xyScales = {};
             if (controls.useTextureCoordinates) {
-                floatUniforms = {xScale: 1.0, yScale: 1.0};
+                xyScales = {xScale: 1.0, yScale: 1.0};
             } else {
-                floatUniforms = {xScale: width, yScale: height};
+                xyScales = {xScale: width, yScale: height};
             }
-
-            let f = (uniforms) => {
-                if (controls.useTextureCoordinates) {
-                    floatUniforms = {xScale: 1.0, yScale: 1.0};
-                } else {
-                    floatUniforms = {xScale: width, yScale: height};
-                }
-                for (let e of Object.keys(floatUniforms)) {
-                    uniforms[e] = floatUniforms[e];
-                }
-                storeFrame.useProgram(program);
-                storeFrame.bind();
-                storeFrame.setFloatUniforms(uniforms);
-                storeFrame.setIntUniforms({prevV: potentialFrame.frameNumber});
-                draw();
-                unbind();
-                potentialFrame.useProgram(copyToProgram);
-                potentialFrame.bind();
-                potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
-                                               tex2: nullTexNumber});
-                draw();
-                unbind();
-                potChanged = true;
-                rScaleV = 0.5;
-            };
-            console.log(uniforms);
-            let uniformsObj = {};
-            for (let u of uniforms) {
-                uniformsObj[u] = 0.0;
+            for (let e of Object.keys(xyScales)) {
+                uniforms[e] = xyScales[e];
             }
-            for (let e of uniforms) {
-                console.log(e);
-                let slider = textEditSubFolder.add(
-                    uniformsObj, e,
-                    0.0, 10.0
-                );
-                slider.onChange(val => {
-                    uniformsObj[e] = val;
-                    f(uniformsObj);
-                });
-                textEditSubFolder.controls.push(slider);
-            }
-
-            for (let u of uniforms) {
-                floatUniforms[u] = 1.0;
-            }
-
-            storeFrame.setFloatUniforms(floatUniforms);
-            storeFrame.setIntUniforms({prevV: potentialFrame.frameNumber});
-            draw();
-            unbind();
-            potentialFrame.useProgram(copyToProgram);
-            potentialFrame.bind();
-            potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
-                                           tex2: nullTexNumber});
-            draw();
-            unbind();
+            view.textPotential(program, uniforms);
             potChanged = true;
-            rScaleV = 0.5;
+            controls.rScaleV = 0.5;
+        };
+        let newUniformVals = {};
+        for (let u of uniforms) {
+            newUniformVals[u] = 1.0;
         }
-
+        f(newUniformVals);
+        for (let e of uniforms) {
+            let slider = textEditSubFolder.add(
+                newUniformVals, e,
+                0.0, 10.0
+            );
+            slider.onChange(val => {
+                newUniformVals[e] = val;
+                f(newUniformVals);
+            });
+            textEditSubFolder.controls.push(slider);
+        }
     }
 
     function animate() {
         if (stats) stats.begin();
         onPotentialChange();
-        if (mouseAction) {
+        if (controls.mouseData.mouseAction) {
             if (controls.mouseMode[0] === 'n') {
                 createNewWave();
             } else if ((controls.mouseMode[0] === SKETCH_BARRIER ||
                         controls.mouseMode[0] === ERASE_BARRIER) ){
                 reshapePotential(controls);
             } else {
-                drawRect.w = controls.bx - drawRect.x;
-                drawRect.h = controls.by - drawRect.y;
+                controls.drawRect.w = controls.bx - controls.drawRect.x;
+                controls.drawRect.h = controls.by - controls.drawRect.y;
             }
-            mouseAction = false;
+            controls.mouseData.mouseAction = false;
         }
         for (let i = 0; i < controls.speed; i++) {
             timeStepWave();
-            rScaleV = 0.0;
-            swap();
+            view.swap();
         }
         display();
         measurePosition();
@@ -782,7 +531,7 @@ function main() {
 
     let mousePos = function(ev, mode) {
         if (mode == 'move') {
-            mouseCount++;
+            controls.mouseData.mouseCount++;
             let prevBx = controls.bx;
             let prevBy = controls.by;
             controls.bx = Math.floor((ev.clientX 
@@ -797,19 +546,22 @@ function main() {
                 controls.py = Math.sign(controls.py)*50.0/controls.scaleP;
             }
         }
-        if (mouseUse) {
+        if (controls.mouseData.mouseUse) {
             if (controls.bx < canvas.width && controls.by < canvas.height &&
-                controls.bx >= 0 && controls.by >= 0) mouseAction = true;
+                controls.bx >= 0 && 
+                controls.by >= 0) controls.mouseData.mouseAction = true;
         }
     };
     canvas.addEventListener("touchstart", ev => {
-        mouseUse = true;
+        controls.mouseData.mouseUse = true;
         let touches = ev.changedTouches;
         let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
-        drawRect.w = 0;
-        drawRect.h = 0;
-        drawRect.x = Math.floor((mouseEv.clientX - canvas.offsetLeft))/scale.w;
-        drawRect.y = Math.floor((mouseEv.clientY - canvas.offsetTop))/scale.h;
+        controls.drawRect.w = 0;
+        controls.drawRect.h = 0;
+        controls.drawRect.x = Math.floor((mouseEv.clientX
+                                          - canvas.offsetLeft))/scale.w;
+        controls.drawRect.y = Math.floor((mouseEv.clientY
+                                          - canvas.offsetTop))/scale.h;
         // mousePos(mouseEv, 'move');
     });
     canvas.addEventListener("touchmove", ev => {
@@ -821,20 +573,22 @@ function main() {
         let touches = ev.changedTouches;
         let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
         mousePos(mouseEv, 'up');
-        mouseCount = 0;
-        mouseUse = false;
+        controls.mouseData.mouseCount = 0;
+        controls.mouseData.mouseUse = false;
     });
     canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
-        mouseCount = 0;
-        mouseUse = false;
+        controls.mouseData.mouseCount = 0;
+        controls.mouseData.mouseUse = false;
     });
     canvas.addEventListener("mousedown", ev => {
-        mouseUse = true;
-        drawRect.w = 0;
-        drawRect.h = 0;
-        drawRect.x = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
-        drawRect.y = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+        controls.mouseData.mouseUse = true;
+        controls.drawRect.w = 0;
+        controls.drawRect.h = 0;
+        controls.drawRect.x = Math.floor((ev.clientX
+                                           - canvas.offsetLeft))/scale.w;
+        controls.drawRect.y = Math.floor((ev.clientY
+                                           - canvas.offsetTop))/scale.h;
     });
     canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
     window.addEventListener("orientationchange", () => {

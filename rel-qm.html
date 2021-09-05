@@ -4,15 +4,16 @@
     <!--<center>-->
     <title>Interactive Single-Particle Quantum Mechanics in 2D</title>
     <body style="font-family: Arial; background-color: black; touch-action: none;">
-        <!-- <h2 style="color: white;">Single Particle QM in 2D Box</h2> -->
         <center>
-        <canvas id="sketch-canvas",
-        width="512", height="512", 
-        text="WebGL not supported",
-        style = "touch-action: none; width: 512px; height: 512px; 
-                 border: solid white 1px; top: 0px; bottom: 0px;">
-        </canvas>
-        <div id="error-text", style="font-family: Arial; color: white;"></div>
+            <canvas id="sketch-canvas",
+            width="512", height="512", 
+            text="WebGL not supported",
+            style = "touch-action: none; width: 512px; height: 512px; 
+                     border: solid white 1px; top: 0px; bottom: 0px;">
+            </canvas>
+            <div id="error-text", style="font-family: Arial; color: white;"></div>
+            <div> <img id="image" hidden="true"></im> </div>
+            <div> <canvas id="image-canvas" hidden="true" width="512" height="512"></canvas> </div>
         </center>
     </body>
     <script src="./scripts/shaders.js"> </script>
@@ -23,5 +24,6 @@
     </script>
     <script src="./scripts/gl-wrappers.js"> </script>
     <script src="./scripts/rel-qm/init-canvas.js"> </script>
+    <script src="./scripts/rel-qm/init-programs.js"> </script>
     <script src="./scripts/rel-qm/rel-qm.js"> </script>
 </html>

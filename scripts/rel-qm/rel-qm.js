@@ -1,39 +1,3 @@
-let vShader = makeShader(gl.VERTEX_SHADER, vertexShaderSource);
-let initWaveShader = makeShader(gl.FRAGMENT_SHADER, 
-                                initialUpperSpinorFragmentSource);
-let initWave2Shader = makeShader(gl.FRAGMENT_SHADER, 
-                                initialBottomSpinorFragmentSource);
-let stepUpShader = makeShader(gl.FRAGMENT_SHADER, 
-                              upperSpinorTimestepFragmentSource);
-let stepDownShader = makeShader(gl.FRAGMENT_SHADER,
-                                bottomSpinorTimestepFragmentSource);
-let viewShader = makeShader(gl.FRAGMENT_SHADER,
-                            diracViewFragmentSource);
-let potShader = makeShader(gl.FRAGMENT_SHADER, 
-                            initialPotentialFragmentSource);
-let reshapePotShader = makeShader(gl.FRAGMENT_SHADER,
-                                  reshapePotentialFragmentSource);
-let copyOverShader = makeShader(gl.FRAGMENT_SHADER, copyOverFragmentSource);
-let probDensityShader = makeShader(gl.FRAGMENT_SHADER, 
-                                   diracProbDensityFragmentSource);
-let guiRectShader = makeShader(gl.FRAGMENT_SHADER, 
-                               guiRectangleFragmentSource);
-let currentShader = makeShader(gl.FRAGMENT_SHADER, 
-                               diracCurrentFragmentSource);
-let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
-
-let initWaveProgram = makeProgram(vShader, initWaveShader);
-let initWave2Program = makeProgram(vShader, initWave2Shader);
-let stepUpProgram = makeProgram(vShader, stepUpShader);
-let stepDownProgram = makeProgram(vShader, stepDownShader);
-let potProgram = makeProgram(vShader, potShader);
-let viewProgram = makeProgram(vShader, viewShader);
-let reshapePotProgram = makeProgram(vShader, reshapePotShader);
-let copyOverProgram = makeProgram(vShader, copyOverShader);
-let probDensityProgram = makeProgram(vShader, probDensityShader);
-let guiRectProgram = makeProgram(vShader, guiRectShader);
-let currentProgram = makeProgram(vShader, currentShader);
-let onesProgram = makeProgram(vShader, onesShader);
 
 let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
 uFrames = [1, 2].map(e => new Frame(pixelWidth, pixelHeight, e));
@@ -60,7 +24,7 @@ let data = {
     w: 2.0, h: 2.0,
     bx: 0.5, by: 0.5, px: 0.0, py: 40.0,
     initMomentumByPxPySliders: false,
-    dt: 0.00001,
+    dt: 0.3508*(2.0/pixelWidth)/137.036,
     // dt: 0.001,
     sigma: 0.05859375,
     // The fundamental constants used are expressed
@@ -92,7 +56,9 @@ let data = {
     probInRegion: '0',
     viewProbCurrent: false,
     potBrightness: 1.0,
-    gridDimensions: '512x512'
+    gridDimensions: '512x512',
+    imageName: '',
+    imageFunc: () => {}
 };
 
 function setFrameDimensions(newWidth, newHeight) {
@@ -170,7 +136,7 @@ let drawBarrierOptions = mouseOptions.addFolder('Draw/Erase Barrier');
 let probInBoxFolder = mouseOptions.addFolder('Probability in Box');
 let probShow = probInBoxFolder.add(data, 'probInRegion').name('Probability');
 drawBarrierOptions.add(data, 'drawShape',
-                       ['circle', 'square']).name('Draw Shape');
+                       ['circle', 'square', 'gaussian']).name('Draw Shape');
 drawBarrierOptions.add(data, 'drawSize', 0.0, 0.1).name('Size');
 drawBarrierOptions.add(data, 'drawValue', 0.0, 
                        11000.0/data.c).name('E');
@@ -198,7 +164,32 @@ gui.add(data, 'm', 0.0, 2.0).name('m');
 let moreControls = gui.addFolder('More Controls');
 let changeGrid = moreControls.add(data, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
-                                 ).name('Grid Dimensions');
+                                ).name('Grid Dimensions');
+let imageOptions = moreControls.addFolder('Upload Image');
+var htmlTxt = `<div>
+<input id="uploadImage" type="file" 
+style="color: #efefef; 
+text-decoration: none; font-size: 1em;">
+</div>`
+let uploadImageButton = imageOptions.add({'uploadImage': () => {}}, 
+                                        'uploadImage', true).name(htmlTxt);
+uploadImageButton.domElement.hidden = true;
+let uploadImage = document.getElementById("uploadImage");
+let imageNameDisplay = imageOptions.add(data, 'imageName').name('File: ');
+
+
+function onUploadImage() {
+    let im = document.getElementById("image");
+    im.file = this.files[0];
+    data.imageName = im.file.name;
+    imageNameDisplay.updateDisplay();
+    const reader = new FileReader();
+    reader.onload = e => im.src = e.target.result;
+    reader.readAsDataURL(this.files[0]);
+}
+uploadImage.addEventListener("change", onUploadImage, false);
+imageOptions.add({'submit': () => data.imageFunc()},
+                 'submit').name('Use for Pot.');
 
 
 let guiControls = {
@@ -218,12 +209,16 @@ let guiControls = {
     potViewOptions: potViewOptions,
     moreControls: moreControls,
     dtControl: dtControl,
+    changeGrid: changeGrid,
+    imageOptions: imageOptions,
+    imageNameDisplay: imageNameDisplay
 };
 
 changeGrid.onChange(
     e => {
         let w = parseInt(e.split('x')[0]);
-        setFrameDimensions(w, w);
+        let h = w;
+        setFrameDimensions(w, h);
         let dx = data.w/pixelWidth;
         dtControl.min(-0.5*dx/data.c);
         dtControl.max(0.9*dx/data.c);
@@ -232,6 +227,10 @@ changeGrid.onChange(
         initializePotential(data.presetPotentials);
         guiControls.drawBarrierOptions.close();
         guiControls.probInBoxFolder.close();
+        document.getElementById('sketch-canvas').width = w;
+        document.getElementById('sketch-canvas').height = h;
+        document.getElementById('image-canvas').width = w;
+        document.getElementById('image-canvas').height = h;
     }
 );
 
@@ -245,6 +244,41 @@ guiControls.mouseSelect.onChange(e => {
         guiControls.probInBoxFolder.close();
     }
 });
+
+data.imageFunc = function () {
+    let canvas = document.getElementById('image-canvas');
+    console.log(canvas.width, canvas.height);
+    let ctx = canvas.getContext("2d");
+    ctx.rect(0, 0, pixelWidth, pixelHeight);
+    ctx.fill();
+    let im = document.getElementById('image');
+    let w = pixelWidth, h = pixelHeight;
+    if (im.width > im.height) {
+        let heightOffset = parseInt(`${0.5*w
+                                       - 0.5*w*im.height/im.width}`);
+        ctx.drawImage(im, 0, heightOffset, 
+                      w, parseInt(`${w*im.height/im.width}`));
+    } else {
+        let widthOffset = parseInt(`${0.5*w
+                                      - 0.5*w*im.width/im.height}`);
+        ctx.drawImage(im, widthOffset, 0, 
+                      parseInt(`${w*im.width/im.height}`), w);
+    }
+    let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
+                                                      w, h
+                                                      ).data);
+    for (let i = 0; i < imageData.length; i++) {
+        imageData[i] *= (100.0/255.0);
+    }
+    extraFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+                                      gl.FLOAT, imageData);
+    potFrame.useProgram(imagePotentialProgram);
+    potFrame.bind();
+    potFrame.setIntUniforms({tex: extraFrame.frameNumber,
+                             invert: false});
+    draw();
+    unbind();
+}
 
 function logFPS() {
     if (data.showFPS) {
@@ -386,6 +420,9 @@ function reshapePotential(mode) {
     let drawMode = 0;
     if (data.drawShape === 'circle') {
         drawMode = 1;
+    }
+    else if (data.drawShape === 'gaussian') {
+        drawMode = 2;
     }
     extraFrame.useProgram(copyOverProgram);
     extraFrame.bind();
@@ -664,6 +701,7 @@ function animation() {
     viewFrame.bind();
     viewFrame.setIntUniforms(
         {"uTex": uFrames[0].frameNumber,
+         // "uTex2": uFrames[1].frameNumber,
          "vTex1": vFrames[0].frameNumber,
          "vTex2": vFrames[1].frameNumber, 
          "potTex": potFrame.frameNumber,

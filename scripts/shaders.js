@@ -327,8 +327,8 @@ vec3 complexToColour(float re, float im) {
 void main () {
     vec4 gui = texture2D(guiTex, fragTexCoord);
     vec4 vec = texture2D(vecTex, fragTexCoord);
-    vec4 u = texture2D(uTex, fragTexCoord);
     vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
+    vec4 u = texture2D(uTex, fragTexCoord);
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
     vec4 v2 = texture2D(vTex2, fragTexCoord + offset);
     vec4 v = (v1 + v2)/2.0;
@@ -466,10 +466,11 @@ void main() {
         float val = (oneOverR < -150.0)? -150.0: oneOverR;
         fragColor = vec4(val + 50.0, 0.0, 0.0, 1.0);
     } else {
-        float val = 30.0*exp(-0.5*y*y/(0.01*0.01));
-        val += 30.0*exp(-0.5*(y-1.0)*(y-1.0)/(0.01*0.01));
-        val += 30.0*exp(-0.5*x*x/(0.01*0.01));
-        val += 30.0*exp(-0.5*(x-1.0)*(x-1.0)/(0.01*0.01));
+        float val = 0.0;
+        // val += 30.0*exp(-0.5*y*y/(0.01*0.01));
+        // val += 30.0*exp(-0.5*(y-1.0)*(y-1.0)/(0.01*0.01));
+        // val += 30.0*exp(-0.5*x*x/(0.01*0.01));
+        // val += 30.0*exp(-0.5*(x-1.0)*(x-1.0)/(0.01*0.01));
         fragColor = vec4(0.0, 0.0, -val, 1.0); 
     }
 }
