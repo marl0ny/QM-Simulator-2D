@@ -24,7 +24,7 @@ let data = {
     w: 2.0, h: 2.0,
     bx: 0.5, by: 0.5, px: 0.0, py: 40.0,
     initMomentumByPxPySliders: false,
-    dt: 0.3508*(2.0/pixelWidth)/137.036,
+    dt: 0.00001,
     // dt: 0.001,
     sigma: 0.05859375,
     // The fundamental constants used are expressed
