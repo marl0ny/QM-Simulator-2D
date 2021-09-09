@@ -8,7 +8,7 @@ function main() {
 
     initializePotential('SHO');
 
-    controls.imageFunc = function () {
+    guiData.imageFunc = function () {
         let canvas = document.getElementById('image-canvas');
         console.log(canvas.width, canvas.height);
         let ctx = canvas.getContext("2d");
@@ -33,7 +33,7 @@ function main() {
         for (let i = 0; i < imageData.length; i++) {
             imageData[i] *= (15.0/255.0);
         }
-        view.imagePotential(imageData, controls.invertImage);
+        view.imagePotential(imageData, guiData.invertImage);
         potChanged = true;
     }
 
@@ -41,12 +41,12 @@ function main() {
         if (s === gl.REPEAT || t === gl.REPEAT) {
             if (pixelWidth !== 512 && pixelHeight !== 512) {
                 setFrameDimensions(512, 512);
-                controls.changeDimensions = '512x512';
+                guiData.changeDimensions = '512x512';
                 gridSelect.updateDisplay();
             }
         }
         view.changeBoundaries(s, t);
-        initializePotential(controls.presetPotential);
+        initializePotential(guiData.presetPotential);
     }
     boundariesSelect.onChange(e => {
         // List of the names of different boundary conditions:
@@ -56,13 +56,13 @@ function main() {
         // #Types of boundary value problems#Examples
         console.log('update');
         if (e === 'Dirichlet') {
-            controls.borderAlpha = 0.0;
+            guiData.borderAlpha = 0.0;
             changeBoundaries(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
         } else if (e === 'Neumann') {
-            controls.borderAlpha = 1.0;
+            guiData.borderAlpha = 1.0;
             changeBoundaries(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
         } else if (e === 'Periodic') {
-            controls.borderAlpha = 1.0;
+            guiData.borderAlpha = 1.0;
             changeBoundaries(gl.REPEAT, gl.REPEAT);
 
         }
@@ -89,16 +89,16 @@ function main() {
         // TODO if boundary is changed then changing the frame dimensions
         // causes the boundaries to go back to clamp_to_edge.
         // Change this behaviour.
-        if (controls.borderAlpha === 0.0) {
-            controls.boundaryType = 'Dirichlet';
+        if (guiData.borderAlpha === 0.0) {
+            guiData.boundaryType = 'Dirichlet';
             boundariesSelect.updateDisplay();
         }
-        else if (controls.borderAlpha === 1.0) {
-            controls.boundaryType = 'Neumann';
+        else if (guiData.borderAlpha === 1.0) {
+            guiData.boundaryType = 'Neumann';
             boundariesSelect.updateDisplay();
         }
         view.setFrameDimensions(pixelWidth, pixelHeight);
-        initializePotential(controls.presetPotential);
+        initializePotential(guiData.presetPotential);
     }
     gridSelect.onChange(e => {
         xyDims = e.split('x');
@@ -119,39 +119,22 @@ function main() {
                 tot += val;
             }
         }
-        controls.mouseData.probabilityInBox = 
+        guiData.mouseData.probabilityInBox = 
             `${Math.round(1000.0*reg/tot)/1000.0}`;
         mouseControls.widgets[1].updateDisplay();
         return reg/tot;
     }
 
     function measurePosition() {
-        if (controls.measure) {
-            let probDensity = view.getUnnormalizedProbDist();
-            notNormalizedTot = 0.0;
-            for (let i = 0; i < probDensity.length/4; i++) {
-                notNormalizedTot += probDensity[4*i];
-            }
-            console.log(notNormalizedTot);
-            let randNum = Math.random()*notNormalizedTot;
-            let j = 0;
-            notNormalizedProb = 0;
-            for (let i = 0; i < probDensity.length/4; i++) {
-                notNormalizedProb += probDensity[4*i];
-                if (randNum <= notNormalizedProb) {
-                    j = i;
-                    break;
-                }
-            }
-            let v = j/pixelHeight;
-            let u = j%pixelHeight;
-            unbind();
-            controls.measure = false;
+        if (guiData.measure) {
+            let uv = view.selectPositionFromProbDist();
+            let u = uv[0], v = uv[1];
+            guiData.measure = false;
             let params = {dx: width/pixelWidth, dy: height/pixelHeight, 
-                          dt: controls.dt,
-                          m: controls.m, hbar: 1.0,
-                          borderAlpha: controls.borderAlpha,
-                          laplaceVal: controls.laplaceVal,
+                          dt: guiData.dt,
+                          m: guiData.m, hbar: 1.0,
+                          borderAlpha: guiData.borderAlpha,
+                          laplaceVal: guiData.laplaceVal,
                           width: width, height: height};
             let wavefuncParams = {amp: 37.5,
                                   sx: 4.0/pixelWidth, sy: 4.0/pixelHeight,
@@ -162,14 +145,11 @@ function main() {
     }
 
     function initializePotential(type) {
-        // Possible presets:
-        // 10 - inversesqrt(4*(x-0.5)*(x-0.5) + 4*(y-0.5)*(y-0.5))
-        // -20*(x-0.5) + 20.0*circle(x,y,0.6,0.5,0.01)
         for (let e of presetControlsFolder.controls) {
             e.remove();
         }
         presetControlsFolder.controls = [];
-        controls.mouseData.mouseAction = true;
+        guiData.mouseData.mouseAction = true;
         if (type === 'SHO') {
             let items = {a: 20.0};
             view.presetPotential(1, items);
@@ -177,11 +157,11 @@ function main() {
                                                 'a', 0.0, 40.0).name('Strength');
             aVar.onChange(() => view.presetPotential(1, items));
             presetControlsFolder.controls.push(aVar);
-            controls.bx = pixelWidth/2;
-            controls.by = pixelHeight*0.75;
-            controls.py = 0.0;
-            controls.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/controls.scaleP;
-            controls.mouseMode = 'new ψ(x, y)';
+            guiData.bx = pixelWidth/2;
+            guiData.by = pixelHeight*0.75;
+            guiData.py = 0.0;
+            guiData.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/guiData.scaleP;
+            guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
@@ -211,11 +191,11 @@ function main() {
                 });
                 presetControlsFolder.controls.push(slider);
             }
-            controls.bx = pixelWidth/2;
-            controls.by = pixelHeight*0.75;
-            controls.py = 40.0/controls.scaleP;
-            controls.px = 0.0;
-            controls.mouseMode = 'new ψ(x, y)';
+            guiData.bx = pixelWidth/2;
+            guiData.by = pixelHeight*0.75;
+            guiData.py = 40.0/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
 
         } else if (type == 'Single Slit') {
@@ -246,11 +226,11 @@ function main() {
                 });
                 presetControlsFolder.controls.push(slider);
             }
-            controls.bx = pixelWidth/2;
-            controls.by = pixelHeight*0.75;
-            controls.py = 40.0/controls.scaleP;
-            controls.px = 0.0;
-            controls.mouseMode = 'new ψ(x, y)';
+            guiData.bx = pixelWidth/2;
+            guiData.by = pixelHeight*0.75;
+            guiData.py = 40.0/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         } else if (type == 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
@@ -271,30 +251,30 @@ function main() {
             });
             presetControlsFolder.controls.push(y0Slider);
             presetControlsFolder.controls.push(aSlider);
-            controls.bx = pixelWidth/2;
-            controls.by = pixelHeight*0.75;
-            controls.py = 40.0/controls.scaleP;
-            controls.px = 0.0;
-            controls.mouseMode = 'new ψ(x, y)';
+            guiData.bx = pixelWidth/2;
+            guiData.by = pixelHeight*0.75;
+            guiData.py = 40.0/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         } else {
-            controls.bx = pixelWidth/2;
-            controls.by = pixelHeight*0.75;
-            controls.py = 40.0/controls.scaleP;
-            controls.px = 0.0;
+            guiData.bx = pixelWidth/2;
+            guiData.by = pixelHeight*0.75;
+            guiData.py = 40.0/guiData.scaleP;
+            guiData.px = 0.0;
             if (type == 'Spike') {
                 view.presetPotential(5, {});
             } else if (type == 'Triple Slit') {
                 view.presetPotential(6, {});
             } else {
                 view.presetPotential(8, {});
-                controls.bx = pixelWidth/3;
-                controls.by = pixelHeight*0.75;
-                controls.py = 30.0/controls.scaleP;
-                controls.px = -((Math.random() > 0.5)? -1.0: 1.0)*
-                                30.0/controls.scaleP;
+                guiData.bx = pixelWidth/3;
+                guiData.by = pixelHeight*0.75;
+                guiData.py = 30.0/guiData.scaleP;
+                guiData.px = -((Math.random() > 0.5)? -1.0: 1.0)*
+                                30.0/guiData.scaleP;
             }
-            controls.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         }
         mouseControls.close();
@@ -303,20 +283,20 @@ function main() {
     }
 
     let reshapePotentialRecLevel = 0;
-    function reshapePotential(controls) {
-        let drawWidth = controls.mouseData.width*canvas.width;
-        if (controls.mouseData.mouseCount > 1 && 
-            controls.mouseData.width > 0.0 && 
-            (Math.abs(controls.px) > drawWidth ||
-             Math.abs(controls.py) > drawWidth)) {
+    function reshapePotential(guiData) {
+        let drawWidth = guiData.mouseData.width*canvas.width;
+        if (guiData.mouseData.mouseCount > 1 && 
+            guiData.mouseData.width > 0.0 && 
+            (Math.abs(guiData.px) > drawWidth ||
+             Math.abs(guiData.py) > drawWidth)) {
             reshapePotentialRecLevel += 1;
             if (reshapePotentialRecLevel > 100) {
                 reshapePotentialRecLevel = 0;
             } else {
-                let newControls = Object.create(controls);
-                let dist = Math.sqrt(controls.px**2 + controls.py**2);
-                let dx = drawWidth*controls.px/dist;
-                let dy = drawWidth*controls.py/dist;
+                let newControls = Object.create(guiData);
+                let dist = Math.sqrt(guiData.px**2 + guiData.py**2);
+                let dx = drawWidth*guiData.px/dist;
+                let dy = drawWidth*guiData.py/dist;
                 newControls.px -= dx;
                 newControls.py -= dy;
                 newControls.bx -= dx;
@@ -324,49 +304,49 @@ function main() {
                 reshapePotential(newControls);
             }
         }
-        view.reshapePotential(bx=controls.bx/canvas.width,
-                              by=1.0 - controls.by/canvas.height,
-                              v2=controls.mouseData.v2,
-                              drawWidth=controls.mouseData.width,
-                              stencilType=controls.mouseData.stencilType,
-                              eraseMode=controls.mouseData.erase);
-        controls.rScaleV = 0.5;
+        view.reshapePotential(bx=guiData.bx/canvas.width,
+                              by=1.0 - guiData.by/canvas.height,
+                              v2=guiData.mouseData.v2,
+                              drawWidth=guiData.mouseData.width,
+                              stencilType=guiData.mouseData.stencilType,
+                              eraseMode=guiData.mouseData.erase);
+        guiData.rScaleV = 0.5;
     }
 
     function createNewWave() {
-        let px = (!controls.mouseData.fixInitialP)?
-                  controls.scaleP*controls.px: controls.mouseData.px0;
-        let py = (!controls.mouseData.fixInitialP)?
-                  controls.scaleP*controls.py: controls.mouseData.py0;
-        let sigma = controls.mouseData.sigma;
+        let px = (!guiData.mouseData.fixInitialP)?
+                  guiData.scaleP*guiData.px: guiData.mouseData.px0;
+        let py = (!guiData.mouseData.fixInitialP)?
+                  guiData.scaleP*guiData.py: guiData.mouseData.py0;
+        let sigma = guiData.mouseData.sigma;
         let params = {dx: width/pixelWidth, dy: height/pixelHeight, 
-                      dt: controls.dt,
-                      m: controls.m, hbar: 1.0,
-                      borderAlpha: controls.borderAlpha,
-                      laplaceVal: controls.laplaceVal,
+                      dt: guiData.dt,
+                      m: guiData.m, hbar: 1.0,
+                      borderAlpha: guiData.borderAlpha,
+                      laplaceVal: guiData.laplaceVal,
                       width: width, height: height};
         let wavefuncParams = {amp: 5.0*30.0/(sigma*512.0),
                               sx: (sigma*512.0)/pixelWidth,
                               sy: (sigma*512.0)/pixelHeight,
-                              bx: controls.bx/canvas.width,
-                              by: 1.0 - controls.by/canvas.height,
+                              bx: guiData.bx/canvas.width,
+                              by: 1.0 - guiData.by/canvas.height,
                               px: px, py: py};
         view.initWavefunc(params, wavefuncParams);
     }
 
     function timeStepWave() {
-        let dt = controls.dt;
+        let dt = guiData.dt;
         if (potChanged) {
-            dt = controls.dt/2.0;
+            dt = guiData.dt/2.0;
             potChanged = false;
         }
         params = {dx: width/pixelWidth, dy: height/pixelHeight, 
-                  dt: controls.dt,
-                  m: controls.m, hbar: 1.0, 
-                  laplaceVal: controls.laplaceVal, rScaleV: controls.rScaleV,
+                  dt: guiData.dt,
+                  m: guiData.m, hbar: 1.0, 
+                  laplaceVal: guiData.laplaceVal, rScaleV: guiData.rScaleV,
                   width: width, height: height};
         view.step(params);
-        controls.rScaleV = 0.0;
+        guiData.rScaleV = 0.0;
     }
 
     function display() {
@@ -375,45 +355,45 @@ function main() {
         const DISPLAY_CURRENT_WITH_PROB = 2
         const DISPLAY_CURRENT_WITH_PHASE = 3;
         let intUniforms = {displayMode: DISPLAY_PHASE};
-        if (!controls.colourPhase) {
+        if (!guiData.colourPhase) {
             intUniforms['displayMode'] = DISPLAY_ONLY_PROB_DENSITY;
         }
-        if (controls.viewProbCurrent) {
+        if (guiData.viewProbCurrent) {
             view.probCurrent({width: width, height: height,
-                              hbar: 1.0, m: controls.m});
-            let displayMode = (controls.colourPhase)?
+                              hbar: 1.0, m: guiData.m});
+            let displayMode = (guiData.colourPhase)?
                                 DISPLAY_CURRENT_WITH_PHASE:
                                 DISPLAY_CURRENT_WITH_PROB;
             intUniforms['displayMode'] = displayMode;
         }
-        let vec3Uniforms = {probColour: controls.probColour,
-                            potColour: controls.potColour};
+        let vec3Uniforms = {probColour: guiData.probColour,
+                            potColour: guiData.potColour};
         let floatUniforms;
-        if (controls.mouseMode[0] == 'p') {
-            floatUniforms = {x0: controls.drawRect.x/pixelWidth,
+        if (guiData.mouseMode[0] == 'p') {
+            floatUniforms = {x0: guiData.drawRect.x/pixelWidth,
                              y0: (pixelHeight 
-                                   - controls.drawRect.y)/pixelHeight,
-                             w: controls.drawRect.w/pixelWidth,
-                             h: -controls.drawRect.h/pixelHeight,
+                                   - guiData.drawRect.y)/pixelHeight,
+                             w: guiData.drawRect.w/pixelWidth,
+                             h: -guiData.drawRect.h/pixelHeight,
                              lineWidth: 0.002,
-                             brightness: controls.brightness,
-                             brightness2: controls.brightness2};
+                             brightness: guiData.brightness,
+                             brightness2: guiData.brightness2};
         } else {
             floatUniforms = {lineWidth: 0.0,
-                             brightness: controls.brightness,
-                             brightness2: controls.brightness2};
+                             brightness: guiData.brightness,
+                             brightness2: guiData.brightness2};
         }
         view.display(floatUniforms, intUniforms, vec3Uniforms);
-        if (controls.mouseMode[0] == 'p') {
+        if (guiData.mouseMode[0] == 'p') {
             let prob = view.getUnnormalizedProbDist();
-            let j0 = pixelHeight - controls.drawRect.y;
-            let h = -controls.drawRect.h;
-            let i0 = ((controls.drawRect.w < 0.0)? 
-                      controls.drawRect.x + controls.drawRect.w:
-                      controls.drawRect.x);
+            let j0 = pixelHeight - guiData.drawRect.y;
+            let h = -guiData.drawRect.h;
+            let i0 = ((guiData.drawRect.w < 0.0)? 
+                      guiData.drawRect.x + guiData.drawRect.w:
+                      guiData.drawRect.x);
             j0 = (h < 0.0)? j0 + h: j0;
-            let w = ((controls.drawRect.w < 0.0)? 
-                     -controls.drawRect.w: controls.drawRect.w);
+            let w = ((guiData.drawRect.w < 0.0)? 
+                     -guiData.drawRect.w: guiData.drawRect.w);
             h = (h < 0.0)? -h: h;
             // let reg = 
             getProbInRegion(prob, i0, j0, w, h);
@@ -437,7 +417,7 @@ function main() {
     });
     function onPotentialChange() {
         if (requestInitializePotential) {
-            initializePotential(controls.presetPotential);
+            initializePotential(guiData.presetPotential);
             potChange = true;
             requestInitializePotential = false;
         }
@@ -450,19 +430,19 @@ function main() {
         if (textEditSubFolder.closed) {
             textEditSubFolder.open();
         }
-        let expr = controls.enterPotential;
+        let expr = guiData.enterPotential;
         if (expr.includes('^') || expr.includes('**')) {
             expr = powerOpsToCallables(expr, false);
         }
         expr = replaceIntsToFloats(expr);
-        if (expr === controls.enterPotentialExpr) return;
-        controls.enterPotentialExpr = expr;
+        if (expr === guiData.enterPotentialExpr) return;
+        guiData.enterPotentialExpr = expr;
         for (let e of textEditSubFolder.controls) {
             console.log(e);
             e.remove();
         }
         textEditSubFolder.controls = [];
-        controls.enterPotentialExpr = expr;
+        guiData.enterPotentialExpr = expr;
         let uniforms = getVariables(expr);
         uniforms.delete('x');
         uniforms.delete('y');
@@ -474,7 +454,7 @@ function main() {
 
         let f = (uniforms) => {
             xyScales = {};
-            if (controls.useTextureCoordinates) {
+            if (guiData.useTextureCoordinates) {
                 xyScales = {xScale: 1.0, yScale: 1.0};
             } else {
                 xyScales = {xScale: width, yScale: height};
@@ -484,7 +464,7 @@ function main() {
             }
             view.textPotential(program, uniforms);
             potChanged = true;
-            controls.rScaleV = 0.5;
+            guiData.rScaleV = 0.5;
         };
         let newUniformVals = {};
         for (let u of uniforms) {
@@ -507,60 +487,67 @@ function main() {
     function animate() {
         if (stats) stats.begin();
         onPotentialChange();
-        if (controls.mouseData.mouseAction) {
-            if (controls.mouseMode[0] === 'n') {
+        if (guiData.mouseData.mouseAction) {
+            if (guiData.mouseMode[0] === 'n') {
                 createNewWave();
-            } else if ((controls.mouseMode[0] === SKETCH_BARRIER ||
-                        controls.mouseMode[0] === ERASE_BARRIER) ){
-                reshapePotential(controls);
+            } else if ((guiData.mouseMode[0] === SKETCH_BARRIER ||
+                        guiData.mouseMode[0] === ERASE_BARRIER) ){
+                reshapePotential(guiData);
             } else {
-                controls.drawRect.w = controls.bx - controls.drawRect.x;
-                controls.drawRect.h = controls.by - controls.drawRect.y;
+                guiData.drawRect.w = guiData.bx - guiData.drawRect.x;
+                guiData.drawRect.h = guiData.by - guiData.drawRect.y;
             }
-            controls.mouseData.mouseAction = false;
+            guiData.mouseData.mouseAction = false;
         }
-        for (let i = 0; i < controls.speed; i++) {
+        for (let i = 0; i < guiData.speed; i++) {
             timeStepWave();
             view.swap();
         }
         display();
         measurePosition();
         if (stats) stats.end();
+        if (guiData.takeScreenshot) {
+            guiData.screenshots.push(canvas.toDataURL('image/png', 1));
+            if (guiData.screenshots.length === guiData.nScreenshots) {
+                guiData.takeScreenshot = false;
+                downloadScreenshots();
+            }
+        }
         requestAnimationFrame(animate);
     }
 
     let mousePos = function(ev, mode) {
         if (mode == 'move') {
-            controls.mouseData.mouseCount++;
-            let prevBx = controls.bx;
-            let prevBy = controls.by;
-            controls.bx = Math.floor((ev.clientX 
+            guiData.mouseData.mouseCount++;
+            let prevBx = guiData.bx;
+            let prevBy = guiData.by;
+            guiData.bx = Math.floor((ev.clientX 
                                       - canvas.offsetLeft))/scale.w;
-            controls.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            controls.px = parseInt(controls.bx - prevBx);
-            if (Math.abs(controls.px) > 50.0/controls.scaleP) {
-                controls.px = Math.sign(controls.px)*50.0/controls.scaleP;
+            guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            guiData.px = parseInt(guiData.bx - prevBx);
+            if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
+                guiData.px = Math.sign(guiData.px)*50.0/guiData.scaleP;
             }
-            controls.py = -parseInt(controls.by - prevBy);
-            if (Math.abs(controls.py) > 50.0/controls.scaleP) {
-                controls.py = Math.sign(controls.py)*50.0/controls.scaleP;
+            guiData.py = -parseInt(guiData.by - prevBy);
+            if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
+                guiData.py = Math.sign(guiData.py)*50.0/guiData.scaleP;
             }
         }
-        if (controls.mouseData.mouseUse) {
-            if (controls.bx < canvas.width && controls.by < canvas.height &&
-                controls.bx >= 0 && 
-                controls.by >= 0) controls.mouseData.mouseAction = true;
+        if (guiData.mouseData.mouseUse) {
+            if (guiData.bx < canvas.width && guiData.by < canvas.height &&
+                guiData.bx >= 0 && 
+                guiData.by >= 0) guiData.mouseData.mouseAction = true;
         }
     };
     canvas.addEventListener("touchstart", ev => {
-        controls.mouseData.mouseUse = true;
+        guiData.mouseData.mouseUse = true;
         let touches = ev.changedTouches;
         let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
-        controls.drawRect.w = 0;
-        controls.drawRect.h = 0;
-        controls.drawRect.x = Math.floor((mouseEv.clientX
+        guiData.drawRect.w = 0;
+        guiData.drawRect.h = 0;
+        guiData.drawRect.x = Math.floor((mouseEv.clientX
                                           - canvas.offsetLeft))/scale.w;
-        controls.drawRect.y = Math.floor((mouseEv.clientY
+        guiData.drawRect.y = Math.floor((mouseEv.clientY
                                           - canvas.offsetTop))/scale.h;
         // mousePos(mouseEv, 'move');
     });
@@ -573,21 +560,21 @@ function main() {
         let touches = ev.changedTouches;
         let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
         mousePos(mouseEv, 'up');
-        controls.mouseData.mouseCount = 0;
-        controls.mouseData.mouseUse = false;
+        guiData.mouseData.mouseCount = 0;
+        guiData.mouseData.mouseUse = false;
     });
     canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
-        controls.mouseData.mouseCount = 0;
-        controls.mouseData.mouseUse = false;
+        guiData.mouseData.mouseCount = 0;
+        guiData.mouseData.mouseUse = false;
     });
     canvas.addEventListener("mousedown", ev => {
-        controls.mouseData.mouseUse = true;
-        controls.drawRect.w = 0;
-        controls.drawRect.h = 0;
-        controls.drawRect.x = Math.floor((ev.clientX
+        guiData.mouseData.mouseUse = true;
+        guiData.drawRect.w = 0;
+        guiData.drawRect.h = 0;
+        guiData.drawRect.x = Math.floor((ev.clientX
                                            - canvas.offsetLeft))/scale.w;
-        controls.drawRect.y = Math.floor((ev.clientY
+        guiData.drawRect.y = Math.floor((ev.clientY
                                            - canvas.offsetTop))/scale.h;
     });
     canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
@@ -607,6 +594,6 @@ function main() {
                  h: canvasStyleHeight/canvas.height};
     });
 
-    mouseControlsCallback(controls.mouseMode);
+    mouseControlsCallback(guiData.mouseMode);
     animate();
 }

@@ -19,7 +19,7 @@ class SimulationViewManager {
             t: t});
         unbind();
         let frames = [].concat(this.swapFrames, this.storeFrame, 
-                               this.potentialFrame);
+                               this.potentialFrame, this.vectorFieldFrame);
         for (let frame of frames) {
             frame.setTexture(pixelWidth, pixelHeight, {s: s,
                         t: t});
@@ -55,6 +55,29 @@ class SimulationViewManager {
         unbind();
         return probDensity;
     }
+    selectPositionFromProbDist() {
+        // TODO: get this to work for nonequal side lengths.
+        let probDensity = this.getUnnormalizedProbDist();
+        let notNormalizedTot = 0.0;
+        for (let i = 0; i < probDensity.length/4; i++) {
+            notNormalizedTot += probDensity[4*i];
+        }
+        console.log(notNormalizedTot);
+        let randNum = Math.random()*notNormalizedTot;
+        let j = 0;
+        let notNormalizedProb = 0;
+        for (let i = 0; i < probDensity.length/4; i++) {
+            notNormalizedProb += probDensity[4*i];
+            if (randNum <= notNormalizedProb) {
+                j = i;
+                break;
+            }
+        }
+        let v = j/pixelHeight;
+        let u = j%pixelHeight;
+        unbind();
+        return [u, v];
+    }
     probCurrent(params) {
         let swapFrames = this.swapFrames;
         let t = this.t;
@@ -77,7 +100,8 @@ class SimulationViewManager {
         let vecs = [];
         let dst = 32;
         if (pixelWidth === 400 && pixelHeight === 400) dst = 25;
-        let wSpacing = pixelWidth/dst, hSpacing = pixelHeight/dst;
+        let wSpacing = parseInt(pixelWidth/dst);
+        let hSpacing = parseInt(pixelHeight/dst);
         let hEnd = pixelHeight; // - hSpacing;
         let wEnd = pixelWidth; // - wSpacing;
         let count = 0;

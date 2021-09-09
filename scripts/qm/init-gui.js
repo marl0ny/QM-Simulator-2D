@@ -11,7 +11,7 @@ try {
 }
 
 
-let controls = {
+let guiData = {
     brightness: 4, // brightness for wavefunction
     brightness2: 1.0, // brightness for potential
     speed: 6, // number of steps per frame
@@ -56,10 +56,13 @@ let controls = {
     potColour: [1.0, 1.0, 1.0],
     imageName: '',
     imageFunc: () => {},
-    invertImage: false
+    invertImage: false,
+    takeScreenshot: false,
+    nScreenshots: 1,
+    screenshots: []
 };
-let measurePosition = () => controls.measure = true;
-controls.measurePosition = measurePosition;
+let measurePosition = () => guiData.measure = true;
+guiData.measurePosition = measurePosition;
 
 
 let palette0 = {color: '#1b191b'};
@@ -83,24 +86,24 @@ source = gui.addColor(palette, 'color').name(
 );
 source.domElement.hidden = true;
 
-gui.add(controls , 'brightness', 0, 10).name('Brightness');
-let iter = gui.add(controls, 'speed', 0, 20).name('Speed');
+gui.add(guiData , 'brightness', 0, 10).name('Brightness');
+let iter = gui.add(guiData, 'speed', 0, 20).name('Speed');
 iter.step(1.0);
-gui.add(controls, 'colourPhase').name('Colour Phase');
+gui.add(guiData, 'colourPhase').name('Colour Phase');
 
 // How to do dropdowns in dat.gui:
 // https://stackoverflow.com/questions/30372761/
 // Question by Adi Shavit (https://stackoverflow.com/users/135862/adi-shavit)
 // Answer (https://stackoverflow.com/a/31000465)
 // by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
-let mouseMode = gui.add(controls, 'mouseMode',
+let mouseMode = gui.add(guiData, 'mouseMode',
                         ['new ψ(x, y)', 
                          'sketch barrier',
                          'erase barrier',
                          'prob. in box']).name('Mouse Usage');
-// gui.add(controls, 'changeDimensions', ['400x400', '512x512',
+// gui.add(guiData, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
-let presetPotentialSelect = gui.add(controls, 'presetPotential',
+let presetPotentialSelect = gui.add(guiData, 'presetPotential',
                                     ['ISW', 'SHO', 'Double Slit',
                                      'Single Slit', 'Step', 'Spike',
                                      'Triple Slit']).name('Preset Potential');
@@ -118,8 +121,8 @@ function mouseControlsCallback(e) {
             w.remove();
         }
         mouseControls.widgets = [];
-        let items = controls.mouseData;
-        let name = mouseControls.add(items, 'name').name(`${e} controls`);
+        let items = guiData.mouseData;
+        let name = mouseControls.add(items, 'name').name(`${e} guiData`);
         let fixInitialP = mouseControls.add(items,
                                             'fixInitialP'
                                            ).name('Fix Init. Mom.');
@@ -141,7 +144,7 @@ function mouseControlsCallback(e) {
             w.remove();
         }
         mouseControls.widgets = [];
-        let items = controls.mouseData;
+        let items = guiData.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         let stencilTypesList = ['square', 'circle'];
         // if (e[0] === SKETCH_BARRIER) {
@@ -154,13 +157,13 @@ function mouseControlsCallback(e) {
                                              0.0, 0.03).name('Draw Width');
         let vControl;
         if (e[0] === SKETCH_BARRIER) {
-            controls.mouseData.erase = false;
-            controls.mouseData.v2 = 10.0;
+            guiData.mouseData.erase = false;
+            guiData.mouseData.v2 = 10.0;
             vControl = mouseControls.add(items, 'v2', 
                                          0.0, 10.0).name('E');
         } else {
-            controls.mouseData.v2 = 0.0;
-            controls.mouseData.erase = true;
+            guiData.mouseData.v2 = 0.0;
+            guiData.mouseData.erase = true;
         }
         stencilTypes.onChange(
             e => {
@@ -168,11 +171,11 @@ function mouseControlsCallback(e) {
                 let DRAW_CIRCLE = 1;
                 let DRAW_GAUSS = 2;
                 if (e === 'square') {
-                    controls.mouseData.stencilType = DRAW_SQUARE;
+                    guiData.mouseData.stencilType = DRAW_SQUARE;
                 } else if (e === 'circle') {
-                    controls.mouseData.stencilType = DRAW_CIRCLE;
+                    guiData.mouseData.stencilType = DRAW_CIRCLE;
                 } else if (e === 'gaussian') {
-                    controls.mouseData.stencilType = DRAW_GAUSS;
+                    guiData.mouseData.stencilType = DRAW_GAUSS;
                 }
             }
         );
@@ -181,7 +184,7 @@ function mouseControlsCallback(e) {
         mouseControls.widgets.push(widthControl);
         if (e[0] === SKETCH_BARRIER) mouseControls.widgets.push(vControl);
     } else if (e[0] === PROB_IN_BOX) {
-        let items = controls.mouseData;
+        let items = guiData.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
         for (let w of mouseControls.widgets) {
             w.remove();
@@ -198,36 +201,36 @@ function mouseControlsCallback(e) {
 mouseMode.onChange(mouseControlsCallback);
 let presetControlsFolder = gui.addFolder('Preset Potential Controls');
 presetControlsFolder.controls = [];
-gui.add(controls, 'measurePosition').name('Measure Position');
+gui.add(guiData, 'measurePosition').name('Measure Position');
 let moreControlsFolder = gui.addFolder('More Controls');
 let visualizationOptionsFolder = 
         moreControlsFolder.addFolder('More Visualization Options');
-visualizationOptionsFolder.add(controls, 'brightness2', 
+visualizationOptionsFolder.add(guiData, 'brightness2', 
         0.0, 10.0).name('Pot. brightness');
 let potColourController
     = visualizationOptionsFolder.addColor({colour: [255.0, 255.0, 255.0]},
                                           'colour').name('Pot. Colour');
 potColourController.onChange(e => {
-    controls.potColour[0] = e[0]/255.0;
-    controls.potColour[1] = e[1]/255.0;
-    controls.potColour[2] = e[2]/255.0;
+    guiData.potColour[0] = e[0]/255.0;
+    guiData.potColour[1] = e[1]/255.0;
+    guiData.potColour[2] = e[2]/255.0;
 });
-visualizationOptionsFolder.add(controls, 'viewProbCurrent', 
+visualizationOptionsFolder.add(guiData, 'viewProbCurrent', 
                                false).name('Prob. Current');
 let probColourController
      = visualizationOptionsFolder.addColor({colour: [255.0, 255.0, 255.0]},
                                             'colour').name('Prob. Colour');
 probColourController.onChange(e => {
-    controls.probColour[0] = e[0]/255.0;
-    controls.probColour[1] = e[1]/255.0;
-    controls.probColour[2] = e[2]/255.0;
+    guiData.probColour[0] = e[0]/255.0;
+    guiData.probColour[1] = e[1]/255.0;
+    guiData.probColour[2] = e[2]/255.0;
 });
 let showFolder = moreControlsFolder.addFolder('Show Dimensions');
 let showValues = {w: width, h: height};
 let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
 let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
-let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
+let gridSelect = changeDimensionsFolder.add(guiData, 'changeDimensions',
                                             [
                                              // '256x256', 
                                              '400x400', '512x512', '585x585',
@@ -237,15 +240,15 @@ let gridSelect = changeDimensionsFolder.add(controls, 'changeDimensions',
                                             ]
                                            ).name('Grid Size');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
-let useTex = textEditPotential.add(controls,
+let useTex = textEditPotential.add(guiData,
                                    'useTextureCoordinates'
                                   ).name('Use Tex Coordinates');
-let textEditPotentialEntry = textEditPotential.add(controls,
+let textEditPotentialEntry = textEditPotential.add(guiData,
     'enterPotential').name('Enter Potential V(x, y)');
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
-let boundariesSelect = boundariesFolder.add(controls, 'boundaryType', 
+let boundariesSelect = boundariesFolder.add(guiData, 'boundaryType', 
                                             ['Dirichlet', 'Neumann', 
                                              'Periodic']
                                             ).name('Type');
@@ -260,32 +263,69 @@ let uploadImageButton = imagePotentialFolder.add({'uploadImage': () => {}},
                          );
 uploadImageButton.domElement.hidden = true;
 let uploadImage = document.getElementById("uploadImage");
-let imageNameWidget = imagePotentialFolder.add(controls, 
+let imageNameWidget = imagePotentialFolder.add(guiData, 
                                               'imageName'
                                               ).name('File: ');
 function onUploadImage() {
     let im = document.getElementById("image");
     im.file = this.files[0];
-    controls.imageName = im.file.name;
+    guiData.imageName = im.file.name;
     imageNameWidget.updateDisplay();
     const reader = new FileReader();
     reader.onload = e => im.src = e.target.result;
     reader.readAsDataURL(this.files[0]);
 }
 uploadImage.addEventListener("change", onUploadImage, false);
-let invertImageControl = imagePotentialFolder.add(controls, 
+let invertImageControl = imagePotentialFolder.add(guiData, 
     'invertImage', false).name('invert');
-imagePotentialFolder.add({'submit': () => controls.imageFunc()}, 
+imagePotentialFolder.add({'submit': () => guiData.imageFunc()}, 
                          'submit').name('Use for Pot.');
 // tmp.domElement.outerHTML = "<div class=\"c\"><div class=\"submit\"></div></div>";
 // tmp.domElement.innerHTML = "";
+let recordFolder = moreControlsFolder.addFolder('Take Screenshots');
+// recordFolder.add(guiData, 'takeScreenshot').name('screenshots');
+
+function downloadScreenshot(dataURL, num, total) {
+    let time = Date.now();
+    let numStr = `${num + 1}`, totalStr = `${total}`;
+    let numZeros = totalStr.length - numStr.length;
+    for (let i = 0; i < numZeros; i++) {
+        numStr = '0' + numStr;
+    }
+    let name = `image_${numStr}_${time}.png`;
+    let div = document.getElementById('image-download');
+    // Download with javascript: https://stackoverflow.com/a/16302092
+    // Origianl question: https://stackoverflow.com/questions/2408146
+    // Question by Pierre (https://stackoverflow.com/users/206808)
+    // Answer by Francisco Costa (https://stackoverflow.com/users/621727)
+    div.innerHTML += `<a href="${dataURL}" hidden="true" 
+                        id="a-download-${num}" download="${name}"></a>`;
+    let aDownload = document.getElementById(`a-download-${num}`);
+    aDownload.click();
+}
+function downloadScreenshots() {
+    for (let i = 0; i < guiData.screenshots.length; i++) {
+        downloadScreenshot(guiData.screenshots[i], i,
+                           guiData.screenshots.length);
+    }
+    let div = document.getElementById('image-download');
+    div.innerHTML = '';
+    guiData.screenshots = [];
+}
+
+let numberOfFramesEntry = recordFolder.add(guiData, 
+                                           'nScreenshots'
+                                          ).name('Number of frames');
+let downloadScreenshotsButton = 
+    recordFolder.add({download: () => guiData.takeScreenshot = true},
+                     'download').name('Start');
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
-editUniformsFolder.add(controls, 'm', 0.75, 10.0);
-editUniformsFolder.add(controls, 'dt', -0.01, 0.013);
-let laplaceSelect = editUniformsFolder.add(controls, 'laplace',
+editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
+editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
+let laplaceSelect = editUniformsFolder.add(guiData, 'laplace',
                                            ['5 point', '9 point'],
                                            10).name('Laplacian');
 laplaceSelect.onChange(e => {
-    controls.laplaceVal = parseInt(e.split(' ')[0]);
+    guiData.laplaceVal = parseInt(e.split(' ')[0]);
 });
 
