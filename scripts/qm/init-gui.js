@@ -59,7 +59,10 @@ let guiData = {
     invertImage: false,
     takeScreenshot: false,
     nScreenshots: 1,
-    screenshots: []
+    screenshotCount: 0,
+    screenshotDownloadCount: 0,
+    screenshots: [],
+    screenshotProgress: ''
 };
 let measurePosition = () => guiData.measure = true;
 guiData.measurePosition = measurePosition;
@@ -285,7 +288,8 @@ imagePotentialFolder.add({'submit': () => guiData.imageFunc()},
 let recordFolder = moreControlsFolder.addFolder('Take Screenshots');
 // recordFolder.add(guiData, 'takeScreenshot').name('screenshots');
 
-function downloadScreenshot(dataURL, num, total) {
+
+function createDownloadTag(dataURL, num, total) {
     let time = Date.now();
     let numStr = `${num + 1}`, totalStr = `${total}`;
     let numZeros = totalStr.length - numStr.length;
@@ -300,18 +304,50 @@ function downloadScreenshot(dataURL, num, total) {
     // Answer by Francisco Costa (https://stackoverflow.com/users/621727)
     div.innerHTML += `<a href="${dataURL}" hidden="true" 
                         id="a-download-${num}" download="${name}"></a>`;
-    let aDownload = document.getElementById(`a-download-${num}`);
-    aDownload.click();
+    // let aDownload = document.getElementById(`a-download-${num}`);
+    // aDownload.click();
 }
+
+// let w = new Worker('./scripts/qm/worker.js');
+/*
 function downloadScreenshots() {
-    for (let i = 0; i < guiData.screenshots.length; i++) {
-        downloadScreenshot(guiData.screenshots[i], i,
-                           guiData.screenshots.length);
+    let res1 = () => {
+        for (let i = 0; i < guiData.screenshots.length; i++) {
+            createDownloadTag(guiData.screenshots[i], i,
+                              guiData.screenshots.length);
+        }
     }
-    let div = document.getElementById('image-download');
-    div.innerHTML = '';
-    guiData.screenshots = [];
-}
+    res1();
+    let downloadScreenshot = i => {
+        let aTag = document.getElementById(`a-download-${i}`);
+        aTag.click();
+    }
+    let promises = [];
+    for (let i = 0; i < guiData.screenshots.length; i++) {
+        promises.push(new Promise((res, rej) => downloadScreenshot(i)));
+    }
+    let res2 = () => {
+        for (let i = 0; i < guiData.screenshots.length; i++) {
+            let aTag = document.getElementById(`a-download-${i}`);
+            aTag.click();
+        }
+    }
+    // let rej = () => console.log('Unable to save screenshots.');
+    let res3 = () => {
+        let div = document.getElementById('image-download');
+        div.innerHTML = '';
+        guiData.screenshots = [];
+    }
+    Promise.all(promises);
+    res3();
+    // let p = new Promise((res, rej) => res());
+    // p.then(res1).then(res2).then(res3);
+    // let aTags   = [];
+    // for (let i = 0; i < guiData.screenshots.length; i++) {
+    //     aTags.push(document.getElementById(`a-download-${i}`));
+    // }
+    // w.postMessage(aTags);
+}*/
 
 let numberOfFramesEntry = recordFolder.add(guiData, 
                                            'nScreenshots'
@@ -319,6 +355,43 @@ let numberOfFramesEntry = recordFolder.add(guiData,
 let downloadScreenshotsButton = 
     recordFolder.add({download: () => guiData.takeScreenshot = true},
                      'download').name('Start');
+let screenshotProgress = recordFolder.add(guiData, 
+                                          'screenshotProgress'
+                                         ).name('Progress');
+
+function downloadScreenshot() {
+    if (guiData.screenshots.length === 30 || 
+        guiData.screenshotCount === guiData.nScreenshots) {
+        guiData.screenshots.reverse();
+        while (guiData.screenshots.length > 0) {
+            let dataURL = guiData.screenshots.pop();
+            let downloadCount = guiData.screenshotDownloadCount;
+            createDownloadTag(dataURL, downloadCount,
+                               guiData.nScreenshots);
+            document.getElementById(`a-download-${downloadCount}`).click();
+            let div = document.getElementById('image-download');
+            div.innerHTML = '';
+            guiData.screenshotDownloadCount++;
+        }
+    }
+    screenshotProgress.setValue(
+        `${guiData.screenshotDownloadCount}/${guiData.nScreenshots}`);
+}
+
+function handleRecording(canvas) {
+    if (guiData.takeScreenshot) {
+        guiData.screenshots.push(canvas.toDataURL('image/png', 1));
+        guiData.screenshotCount++;
+        downloadScreenshot();
+        if (guiData.screenshotCount === guiData.nScreenshots) {
+            guiData.screenshotCount = 0;
+            guiData.screenshotDownloadCount = 0;
+            guiData.takeScreenshot = false;
+            screenshotProgress.setValue('');
+        }
+    }
+}
+
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
 editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);

@@ -506,13 +506,7 @@ function main() {
         display();
         measurePosition();
         if (stats) stats.end();
-        if (guiData.takeScreenshot) {
-            guiData.screenshots.push(canvas.toDataURL('image/png', 1));
-            if (guiData.screenshots.length === guiData.nScreenshots) {
-                guiData.takeScreenshot = false;
-                downloadScreenshots();
-            }
-        }
+        handleRecording(canvas);
         requestAnimationFrame(animate);
     }
 
