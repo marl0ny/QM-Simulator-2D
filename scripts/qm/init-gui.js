@@ -58,11 +58,16 @@ let guiData = {
     imageFunc: () => {},
     invertImage: false,
     takeScreenshot: false,
+    recordVideo: false,
+    mediaRecorder: null,
+    nVideoFrames: 0,
+    videoData: [],
     nScreenshots: 1,
     screenshotCount: 0,
     screenshotDownloadCount: 0,
     screenshots: [],
-    screenshotProgress: ''
+    screenshotProgress: '',
+    streams: []
 };
 let measurePosition = () => guiData.measure = true;
 guiData.measurePosition = measurePosition;
@@ -283,10 +288,8 @@ let invertImageControl = imagePotentialFolder.add(guiData,
     'invertImage', false).name('invert');
 imagePotentialFolder.add({'submit': () => guiData.imageFunc()}, 
                          'submit').name('Use for Pot.');
-// tmp.domElement.outerHTML = "<div class=\"c\"><div class=\"submit\"></div></div>";
-// tmp.domElement.innerHTML = "";
-let recordFolder = moreControlsFolder.addFolder('Take Screenshots');
-// recordFolder.add(guiData, 'takeScreenshot').name('screenshots');
+let recordVideoFolder = moreControlsFolder.addFolder('Record Video');
+let screenshotsFolder = moreControlsFolder.addFolder('Take Screenshots');
 
 
 function createDownloadTag(dataURL, num, total) {
@@ -308,56 +311,46 @@ function createDownloadTag(dataURL, num, total) {
     // aDownload.click();
 }
 
-// let w = new Worker('./scripts/qm/worker.js');
-/*
-function downloadScreenshots() {
-    let res1 = () => {
-        for (let i = 0; i < guiData.screenshots.length; i++) {
-            createDownloadTag(guiData.screenshots[i], i,
-                              guiData.screenshots.length);
-        }
-    }
-    res1();
-    let downloadScreenshot = i => {
-        let aTag = document.getElementById(`a-download-${i}`);
-        aTag.click();
-    }
-    let promises = [];
-    for (let i = 0; i < guiData.screenshots.length; i++) {
-        promises.push(new Promise((res, rej) => downloadScreenshot(i)));
-    }
-    let res2 = () => {
-        for (let i = 0; i < guiData.screenshots.length; i++) {
-            let aTag = document.getElementById(`a-download-${i}`);
-            aTag.click();
-        }
-    }
-    // let rej = () => console.log('Unable to save screenshots.');
-    let res3 = () => {
-        let div = document.getElementById('image-download');
-        div.innerHTML = '';
-        guiData.screenshots = [];
-    }
-    Promise.all(promises);
-    res3();
-    // let p = new Promise((res, rej) => res());
-    // p.then(res1).then(res2).then(res3);
-    // let aTags   = [];
-    // for (let i = 0; i < guiData.screenshots.length; i++) {
-    //     aTags.push(document.getElementById(`a-download-${i}`));
-    // }
-    // w.postMessage(aTags);
-}*/
 
-let numberOfFramesEntry = recordFolder.add(guiData, 
-                                           'nScreenshots'
-                                          ).name('Number of frames');
+let numberOfFramesEntry = screenshotsFolder.add(guiData,
+                                                'nScreenshots'
+                                               ).name('Number of frames');
 let downloadScreenshotsButton = 
-    recordFolder.add({download: () => guiData.takeScreenshot = true},
-                     'download').name('Start');
-let screenshotProgress = recordFolder.add(guiData, 
+    screenshotsFolder.add({download: () => guiData.takeScreenshot = true},
+                          'download').name('Start');
+let screenshotProgress = screenshotsFolder.add(guiData, 
                                           'screenshotProgress'
                                          ).name('Progress');
+
+
+recordVideoFolder.add({'func': () => {
+    guiData.recordVideo = true;
+}}, 'func').name('Start');
+let finishRecordingVideo = () => {
+    guiData.recordVideo = false;
+    let div = document.getElementById('video-download');
+    guiData.mediaRecorder.stop();
+    // To use the MediaRecorder to record video, the example
+    // provided here from the Mozilla Web documentation
+    // was particularly helpful
+    // https://developer.mozilla.org/en-US/
+    // docs/Web/API/MediaStream_Recording_API
+    let f = () => {
+        let a = document.createElement('a');
+        div.appendChild(a);
+        let blob = new Blob(guiData.videoData, {type: "video/webm"});
+        let url = URL.createObjectURL(blob);
+        a.href = url;
+        let time = Date.now();
+        a.download = `${time}.webm`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+    setTimeout(f, 1000);
+    guiData.videoData = [];
+};
+recordVideoFolder.add({'func': finishRecordingVideo}, 'func').name('Finish');
+
 
 function downloadScreenshot() {
     if (guiData.screenshots.length === 30 || 
@@ -388,6 +381,24 @@ function handleRecording(canvas) {
             guiData.screenshotDownloadCount = 0;
             guiData.takeScreenshot = false;
             screenshotProgress.setValue('');
+        }
+    }
+    if (guiData.recordVideo) {
+        if (guiData.mediaRecorder === null || 
+            guiData.mediaRecorder.state === 'inactive') {
+            let stream = canvas.captureStream();
+            let dimensions = guiData.changeDimensions.split('x');
+            let width = parseInt(dimensions[0]);
+            let height = parseInt(dimensions[1]);
+            let options = {bitsPerSecond: parseInt(width*height*8*15/4.0)};
+            guiData.mediaRecorder = new MediaRecorder(stream, options);
+            guiData.mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) guiData.videoData.push(e.data);
+            }
+            guiData.mediaRecorder.onerror = e => {
+                console.log(e);
+            }
+            guiData.mediaRecorder.start();
         }
     }
 }
