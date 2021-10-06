@@ -1,9 +1,9 @@
 # Quantum Mechanics in 2D
-This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simulates the quantum mechanics of a single particle confined to a 2D box, where inside this box the user can draw new potential barriers and scatter gaussian wavepackets off them. The full instructions for using this app are found [here](https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md).
+This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simulates the quantum mechanics of a single particle confined in a 2D box, where inside this box the user can create new potential barriers and scatter gaussian wavepackets off them. The full instructions are found [here](https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md).
 
 The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step. 
 
-Also provided is a still work in progress [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method where each of the two two-compenent spinors are placed at different time and spatial steps. The method is described in more detail in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
+Also provided is a (work in progress) [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method that involves updating the two two-component spinors at staggered time and spatial steps, which is found in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
 # References
  - Gould, H., Tobochnik J., Christian W. (2007). Quantum Systems.

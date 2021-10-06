@@ -16,16 +16,17 @@ function main() {
         ctx.fill();
         let im = document.getElementById('image');
         let w = pixelWidth, h = pixelHeight;
-        if (im.width > im.height) {
-            let heightOffset = parseInt(`${0.5*w
-                                           - 0.5*w*im.height/im.width}`);
+        console.log(im.width/im.height, w/h);
+        if (im.width/im.height > w/h) {
+            let r = (im.height/im.width)/(h/w);
+            let heightOffset = parseInt(`${0.5*h*(1.0 - r)}`);
             ctx.drawImage(im, 0, heightOffset, 
                           w, parseInt(`${w*im.height/im.width}`));
         } else {
-            let widthOffset = parseInt(`${0.5*w
-                                          - 0.5*w*im.width/im.height}`);
+            let r = (im.width/im.height)/(w/h);
+            let widthOffset = parseInt(`${0.5*w*(1.0 - r)}`);
             ctx.drawImage(im, widthOffset, 0, 
-                          parseInt(`${w*im.width/im.height}`), w);
+                          parseInt(`${h*im.width/im.height}`), h);
         }
         let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
                                                           w, h
@@ -75,7 +76,7 @@ function main() {
         document.getElementById('image-canvas').width = newWidth;
         document.getElementById('image-canvas').height = newHeight;
         width = (canvas.width/512)*64.0*Math.sqrt(2.0);
-        height = (canvas.width/512)*64.0*Math.sqrt(2.0);
+        height = (canvas.height/512)*64.0*Math.sqrt(2.0);
         console.log(width, height);
         scale = {w: canvasStyleWidth/canvas.width,
             h: canvasStyleHeight/canvas.height};
@@ -150,6 +151,8 @@ function main() {
         }
         presetControlsFolder.controls = [];
         guiData.mouseData.mouseAction = true;
+        let pxMax = pixelWidth/512.0*40.0;
+        let pyMax = pixelHeight/512.0*40.0;
         if (type === 'SHO') {
             let items = {a: 20.0};
             view.presetPotential(1, items);
@@ -160,7 +163,8 @@ function main() {
             guiData.bx = pixelWidth/2;
             guiData.by = pixelHeight*0.75;
             guiData.py = 0.0;
-            guiData.px = ((Math.random() > 0.5)? -1.0: 1.0)*30.0/guiData.scaleP;
+            guiData.px = ((Math.random() > 0.5)? -1.0: 1.0)*
+                          (pxMax*0.75)/guiData.scaleP;
             guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         } else if (type == 'Double Slit') {
@@ -193,7 +197,7 @@ function main() {
             }
             guiData.bx = pixelWidth/2;
             guiData.by = pixelHeight*0.75;
-            guiData.py = 40.0/guiData.scaleP;
+            guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
@@ -228,7 +232,7 @@ function main() {
             }
             guiData.bx = pixelWidth/2;
             guiData.by = pixelHeight*0.75;
-            guiData.py = 40.0/guiData.scaleP;
+            guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
@@ -253,14 +257,14 @@ function main() {
             presetControlsFolder.controls.push(aSlider);
             guiData.bx = pixelWidth/2;
             guiData.by = pixelHeight*0.75;
-            guiData.py = 40.0/guiData.scaleP;
+            guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
         } else {
             guiData.bx = pixelWidth/2;
             guiData.by = pixelHeight*0.75;
-            guiData.py = 40.0/guiData.scaleP;
+            guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             if (type == 'Spike') {
                 view.presetPotential(5, {});
@@ -270,9 +274,9 @@ function main() {
                 view.presetPotential(8, {});
                 guiData.bx = pixelWidth/3;
                 guiData.by = pixelHeight*0.75;
-                guiData.py = 30.0/guiData.scaleP;
+                guiData.py = (0.75*pyMax)/guiData.scaleP;
                 guiData.px = -((Math.random() > 0.5)? -1.0: 1.0)*
-                                30.0/guiData.scaleP;
+                                (0.75*pxMax)/guiData.scaleP;
             }
             guiData.mouseMode = 'new ψ(x, y)';
             mouseMode.updateDisplay();
@@ -308,6 +312,7 @@ function main() {
                               by=1.0 - guiData.by/canvas.height,
                               v2=guiData.mouseData.v2,
                               drawWidth=guiData.mouseData.width,
+                              drawHeight=guiData.mouseData.width*(width/height),
                               stencilType=guiData.mouseData.stencilType,
                               eraseMode=guiData.mouseData.erase);
         guiData.rScaleV = 0.5;
@@ -520,11 +525,13 @@ function main() {
             guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
             guiData.px = parseInt(guiData.bx - prevBx);
             if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
-                guiData.px = Math.sign(guiData.px)*50.0/guiData.scaleP;
+                guiData.px = Math.sign(guiData.px)*
+                             50.0*(pixelWidth/512.0)/guiData.scaleP;
             }
             guiData.py = -parseInt(guiData.by - prevBy);
             if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
-                guiData.py = Math.sign(guiData.py)*50.0/guiData.scaleP;
+                guiData.py = Math.sign(guiData.py)*
+                             50.0*(pixelHeight/512.0)/guiData.scaleP;
             }
         }
         if (guiData.mouseData.mouseUse) {

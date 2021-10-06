@@ -3,7 +3,7 @@
 * various WebGL interfaces.
 */
 
-let canvas = document.getElementById("sketch-canvas");
+canvas = document.getElementById("sketch-canvas");
 let context = "webgl2";
 let gl = (useWebGL2IfAvailable)? canvas.getContext(context): null;
 let ext = null;

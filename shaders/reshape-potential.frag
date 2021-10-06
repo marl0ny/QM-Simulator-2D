@@ -11,6 +11,7 @@ uniform sampler2D tex1;
 uniform int drawMode;
 uniform int eraseMode;
 uniform float drawWidth;
+uniform float drawHeight;
 uniform float bx;
 uniform float by;
 uniform float v2;
@@ -26,16 +27,17 @@ void main() {
     // float imagV = texture2D(tex1, fragTexCoord).b;
     float imagV = 0.0;
     float drawW2 = drawWidth*drawWidth;
-    float r2 = (xy.x - bx)*(xy.x - bx) 
-                + (xy.y - by)*(xy.y - by);
+    float drawH2 = drawHeight*drawHeight;
+    float x2 = (xy.x - bx)*(xy.x - bx);
+    float y2 = (xy.y - by)*(xy.y - by);
+    // float r2 = x2 + y2;
     if (initialV < v2 || eraseMode == 1) {
         if ((drawMode == DRAW_SQUARE && 
-            (xy.x - bx)*(xy.x - bx) < drawW2 && 
-            (xy.y - by)*(xy.y - by) < drawW2) ||
-            (drawMode == DRAW_CIRCLE && r2 < drawW2)) {
+            x2 < drawW2 && y2 < drawH2) ||
+            (drawMode == DRAW_CIRCLE && x2*(drawH2/drawW2) + y2 < drawH2)) {
             fragColor = vec4(v2, initialV, 0.0, 1.0);
         } else if (drawMode == DRAW_GAUSS) {
-            float tmp = exp(-0.5*r2/(2.0*drawW2));
+            float tmp = exp(-0.25*(x2/drawW2 + y2/drawH2));
             if (eraseMode == 0) {
                 fragColor = vec4(max(tmp + initialV, initialV), 
                                      initialV, imagV, 1.0);

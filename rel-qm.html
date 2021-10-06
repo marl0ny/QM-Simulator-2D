@@ -5,6 +5,7 @@
     <title>Interactive Single-Particle Quantum Mechanics in 2D</title>
     <body style="font-family: Arial; background-color: black; touch-action: none;">
         <center>
+            <!--<div id="div-canvas"></div>-->
             <canvas id="sketch-canvas",
             width="512", height="512", 
             text="WebGL not supported",
@@ -20,7 +21,8 @@
     <script src="./scripts/dat.gui/dat.gui.min.js"> </script>
     <script src="./scripts/stats/stats.min.js"> </script>
     <script>
-    const useWebGL2IfAvailable = false; 
+    const useWebGL2IfAvailable = false;
+    let canvas;
     </script>
     <script src="./scripts/gl-wrappers.js"> </script>
     <script src="./scripts/rel-qm/init-canvas.js"> </script>

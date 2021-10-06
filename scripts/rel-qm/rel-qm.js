@@ -435,7 +435,8 @@ function reshapePotential(mode) {
                              "eraseMode": mode,
                              "drawMode" : drawMode});
     potFrame.setFloatUniforms({
-        "drawWidth": data.drawSize, 
+        "drawWidth": data.drawSize,
+        "drawHeight": data.drawSize,
         "bx": data.bx, "by": data.by, 
         "v2": (mode === 0)? data.drawValue: 0.0
     });

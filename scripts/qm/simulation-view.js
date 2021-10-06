@@ -73,8 +73,8 @@ class SimulationViewManager {
                 break;
             }
         }
-        let v = j/pixelHeight;
-        let u = j%pixelHeight;
+        let v = j/pixelWidth;
+        let u = j%pixelWidth;
         unbind();
         return [u, v];
     }
@@ -107,8 +107,8 @@ class SimulationViewManager {
         let count = 0;
         for (let i = hSpacing; i < hEnd; i += hSpacing) {
             for (let j = wSpacing; j < wEnd; j += wSpacing) {
-                let vy = probCurrent[4*i*pixelHeight + 4*j]/60.0;
-                let vx = probCurrent[4*i*pixelHeight + 4*j + 1]/60.0;
+                let vy = probCurrent[4*i*pixelWidth + 4*j]/60.0;
+                let vx = probCurrent[4*i*pixelWidth + 4*j + 1]/60.0;
                 if (vx*vx + vy*vy > 1e-9) {
                     let x = 2.0*i/pixelHeight - 1.0;
                     let y = 2.0*j/pixelWidth - 1.0;
@@ -136,7 +136,8 @@ class SimulationViewManager {
         drawLines(count);
         unbind();
     }
-    reshapePotential(bx, by, v2, drawWidth, stencilType, eraseMode) {
+    reshapePotential(bx, by, v2, drawWidth, drawHeight, 
+                     stencilType, eraseMode) {
         let storeFrame = this.storeFrame;
         let potentialFrame = this.potentialFrame;
         let nullTexNumber = this.nullTexNumber;
@@ -144,7 +145,8 @@ class SimulationViewManager {
         storeFrame.bind();
         storeFrame.setFloatUniforms({bx: bx, by: by,
                                      v2: v2,
-                                     drawWidth: drawWidth});
+                                     drawWidth: drawWidth,
+                                     drawHeight: drawHeight});
         storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber,
                                    drawMode: stencilType,
                                     eraseMode: eraseMode});

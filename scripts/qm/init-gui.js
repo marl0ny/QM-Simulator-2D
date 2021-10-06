@@ -10,7 +10,7 @@ try {
     console.log(e);
 }
 
-
+console.log(pixelWidth, pixelHeight);
 let guiData = {
     brightness: 4, // brightness for wavefunction
     brightness2: 1.0, // brightness for potential
@@ -48,7 +48,7 @@ let guiData = {
     scaleP: 1.0,
     rScaleV: 0.0,
     object: "string",
-    changeDimensions: '512x512',
+    changeDimensions: `${pixelWidth}x${pixelHeight}`,
     boundaries: 'default',
     borderAlpha: 0.0,
     boundaryType: "Dirichlet",
@@ -138,9 +138,10 @@ function mouseControlsCallback(e) {
         let sigma = mouseControls.add(items, 'sigma', 
                                       10.0/512.0, 40.0/512.0).name('sigma');
         // let pVal = parseInt(80.0*pixelWidth/512.0);
-        let pVal = parseInt(40.0*pixelWidth/512.0);
-        let px0 = mouseControls.add(items, 'px0', -pVal, pVal).name('kx');
-        let py0 = mouseControls.add(items, 'py0', -pVal, pVal).name('ky');
+        let pxVal = parseInt(40.0*pixelWidth/512.0);
+        let pyVal = parseInt(40.0*pixelHeight/512.0);
+        let px0 = mouseControls.add(items, 'px0', -pxVal, pxVal).name('kx');
+        let py0 = mouseControls.add(items, 'py0', -pyVal, pyVal).name('ky');
         mouseControls.widgets.push(name);
         mouseControls.widgets.push(fixInitialP);
         mouseControls.widgets.push(sigma);
@@ -238,14 +239,19 @@ let showValues = {w: width, h: height};
 let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
 let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
+let gridSizes = [];
+if (pixelWidth === pixelHeight && pixelWidth == 512) {
+    gridSizes = [// '256x256', 
+                 '400x400', '512x512', '640x640', '800x800',
+                 '1024x1024', '2048x2048', // '4096x4096'
+                ];
+} else {
+    gridSizes = [`${pixelWidth}x${pixelHeight}`, 
+                 `${2*pixelWidth}x${2*pixelHeight}`,
+                `${4*pixelWidth}x${4*pixelHeight}`];
+}
 let gridSelect = changeDimensionsFolder.add(guiData, 'changeDimensions',
-                                            [
-                                             // '256x256', 
-                                             '400x400', '512x512', '585x585',
-                                             '640x640', '800x800',
-                                             '1024x1024', '2048x2048'
-                                             // '4096x4096'
-                                            ]
+                                            gridSizes
                                            ).name('Grid Size');
 let textEditPotential = moreControlsFolder.addFolder('Text Edit Potential');
 let useTex = textEditPotential.add(guiData,
