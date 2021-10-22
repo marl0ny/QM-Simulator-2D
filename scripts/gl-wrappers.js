@@ -4,45 +4,52 @@
 */
 
 canvas = document.getElementById("sketch-canvas");
-let context = "webgl2";
-let gl = (useWebGL2IfAvailable)? canvas.getContext(context): null;
-let ext = null;
-let ext2 = null;
-if (gl === null) {
-    context = "webgl";
-    gl = canvas.getContext(context);
+let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
+
+function initializeCanvasGL(canvas, context) {
+    let gl = (useWebGL2IfAvailable)? canvas.getContext(context): null;
+    let ext = null;
+    let ext2 = null;
     if (gl === null) {
-        let msg = "Your browser does not support WebGL.";
-        alert(msg);
-        throw msg;
+        context = "webgl";
+        gl = canvas.getContext(context);
+        if (gl === null) {
+            let msg = "Your browser does not support WebGL.";
+            alert(msg);
+            throw msg;
+        }
+        ext = gl.getExtension('OES_texture_float');
+        ext2 = gl.getExtension('OES_texture_float_linear');
+        if (ext === null && ext2 === null) {
+            let msg = "Your browser does not support "
+                      + "the necessary WebGL extensions.";
+            alert(msg);
+            throw msg;
+        }
+    } else {
+        ext = gl.getExtension('EXT_color_buffer_float');
+        if (ext === null) {
+            let msg = "Your browser does not support "
+                       + "the necessary WebGL extensions.";
+            alert(msg);
+            throw msg;
+        }
     }
-    ext = gl.getExtension('OES_texture_float');
-    ext2 = gl.getExtension('OES_texture_float_linear');
-    if (ext === null && ext2 === null) {
-        let msg = "Your browser does not support the necessary WebGL extensions.";
-        alert(msg);
-        throw msg;
-    }
-} else {
-    ext = gl.getExtension('EXT_color_buffer_float');
-    if (ext === null) {
-        let msg = "Your browser does not support the necessary WebGL extensions.";
-        alert(msg);
-        throw msg;
-    }
-}
 
-if (gl === null) {
-    document.getElementById("error-text").textContent =
-                                                `<br>Unable to display canvas.`;
-}
+    if (gl === null) {
+        document.getElementById("error-text").textContent =
+            `<br>Unable to display canvas.`;
+    }
 
-if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,
-                                gl.HIGH_FLOAT).precision < 23) {
-    let msg = "Your GPU does not support 32 bit floats or higher. "
-               + "You may see solutions quickly decay to zero.";
-    alert(msg);
+    if (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,
+                                    gl.HIGH_FLOAT).precision < 23) {
+        let msg = "Your GPU does not support 32 bit floats or higher. "
+                + "You may see solutions quickly decay to zero.";
+        alert(msg);
+    }
+    return gl;
 }
+let gl = initializeCanvasGL(canvas, context);
 
 function makeShader(shaderType, shaderSource) {
     let shaderID = gl.createShader(shaderType);

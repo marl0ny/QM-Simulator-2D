@@ -1,6 +1,7 @@
 
 main();
 
+
 function main() {
 
     let view = new SimulationViewManager(pixelWidth, pixelHeight);
@@ -71,6 +72,33 @@ function main() {
 
 
     function setFrameDimensions(newWidth, newHeight) {
+        if (Math.abs(newWidth/newHeight - pixelWidth/pixelHeight) > 1e-10) {
+            let divCanvas = document.getElementById('div-canvas');
+            // divCanvas.innerHTML = ``;
+            document.getElementById('sketch-canvas').remove();
+            divCanvas.innerHTML = `<canvas id="sketch-canvas",
+                                    width="${newWidth}", height="${newHeight}",
+                                    text="WebGL not supported",
+                                    style = "touch-action: none; 
+                                    width: 700px; height: 512px; 
+                                    border: solid white 1px;
+                                    top: 0px; bottom: 0px;">`;
+            canvas = document.getElementById("sketch-canvas");
+            let divImageCanvas = document.getElementById("div-image-canvas");
+            divImageCanvas.innerHTML = `<canvas id="image-canvas" 
+                                        hidden="true"
+                                        width="${newWidth}" 
+                                        height="${newHeight}"></canvas>`;
+            width = (canvas.width/512)*64.0*Math.sqrt(2.0);
+            height = (canvas.height/512)*64.0*Math.sqrt(2.0);
+            setCanvasStyleWidthAndHeight(width, height);
+            let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
+            gl = initializeCanvasGL(canvas, context);
+            initPrograms();
+            view = new SimulationViewManager(pixelWidth, pixelHeight);
+            initializePotential('SHO');
+            setMouseInput();
+        }
         document.getElementById('sketch-canvas').width = newWidth;
         document.getElementById('sketch-canvas').height = newHeight;
         document.getElementById('image-canvas').width = newWidth;
@@ -312,7 +340,8 @@ function main() {
                               by=1.0 - guiData.by/canvas.height,
                               v2=guiData.mouseData.v2,
                               drawWidth=guiData.mouseData.width,
-                              drawHeight=guiData.mouseData.width*(width/height),
+                              drawHeight=guiData.mouseData.width*
+                                         (width/height),
                               stencilType=guiData.mouseData.stencilType,
                               eraseMode=guiData.mouseData.erase);
         guiData.rScaleV = 0.5;
@@ -514,71 +543,7 @@ function main() {
         handleRecording(canvas);
         requestAnimationFrame(animate);
     }
-
-    let mousePos = function(ev, mode) {
-        if (mode == 'move') {
-            guiData.mouseData.mouseCount++;
-            let prevBx = guiData.bx;
-            let prevBy = guiData.by;
-            guiData.bx = Math.floor((ev.clientX 
-                                      - canvas.offsetLeft))/scale.w;
-            guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            guiData.px = parseInt(guiData.bx - prevBx);
-            if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
-                guiData.px = Math.sign(guiData.px)*
-                             50.0*(pixelWidth/512.0)/guiData.scaleP;
-            }
-            guiData.py = -parseInt(guiData.by - prevBy);
-            if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
-                guiData.py = Math.sign(guiData.py)*
-                             50.0*(pixelHeight/512.0)/guiData.scaleP;
-            }
-        }
-        if (guiData.mouseData.mouseUse) {
-            if (guiData.bx < canvas.width && guiData.by < canvas.height &&
-                guiData.bx >= 0 && 
-                guiData.by >= 0) guiData.mouseData.mouseAction = true;
-        }
-    };
-    canvas.addEventListener("touchstart", ev => {
-        guiData.mouseData.mouseUse = true;
-        let touches = ev.changedTouches;
-        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
-        guiData.drawRect.w = 0;
-        guiData.drawRect.h = 0;
-        guiData.drawRect.x = Math.floor((mouseEv.clientX
-                                          - canvas.offsetLeft))/scale.w;
-        guiData.drawRect.y = Math.floor((mouseEv.clientY
-                                          - canvas.offsetTop))/scale.h;
-        // mousePos(mouseEv, 'move');
-    });
-    canvas.addEventListener("touchmove", ev => {
-        let touches = ev.changedTouches;
-        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
-        mousePos(mouseEv, 'move');
-    });
-    canvas.addEventListener("touchend", ev => {
-        let touches = ev.changedTouches;
-        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
-        mousePos(mouseEv, 'up');
-        guiData.mouseData.mouseCount = 0;
-        guiData.mouseData.mouseUse = false;
-    });
-    canvas.addEventListener("mouseup", ev => {
-        mousePos(ev, 'up');
-        guiData.mouseData.mouseCount = 0;
-        guiData.mouseData.mouseUse = false;
-    });
-    canvas.addEventListener("mousedown", ev => {
-        guiData.mouseData.mouseUse = true;
-        guiData.drawRect.w = 0;
-        guiData.drawRect.h = 0;
-        guiData.drawRect.x = Math.floor((ev.clientX
-                                           - canvas.offsetLeft))/scale.w;
-        guiData.drawRect.y = Math.floor((ev.clientY
-                                           - canvas.offsetTop))/scale.h;
-    });
-    canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
+    setMouseInput();
     window.addEventListener("orientationchange", () => {
         canvasStyleWidth = parseInt(canvas.style.width);
         canvasStyleHeight = parseInt(canvas.style.height);

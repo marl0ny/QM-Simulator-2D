@@ -239,16 +239,24 @@ let showValues = {w: width, h: height};
 let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
 let boxH = showFolder.add(showValues, 'h', `${height}`).name('Box Height');
 let changeDimensionsFolder = moreControlsFolder.addFolder('Change Grid Size');
-let gridSizes = [];
-if (pixelWidth === pixelHeight && pixelWidth == 512) {
-    gridSizes = [// '256x256', 
-                 '400x400', '512x512', '640x640', '800x800',
-                 '1024x1024', '2048x2048', // '4096x4096'
-                ];
-} else {
-    gridSizes = [`${pixelWidth}x${pixelHeight}`, 
-                 `${2*pixelWidth}x${2*pixelHeight}`,
-                `${4*pixelWidth}x${4*pixelHeight}`];
+let screenFitW = parseInt(3.0*window.innerWidth*windowScale/5.0);
+let screenFitH = parseInt(3.0*window.innerHeight*windowScale/5.0);
+let screenFitWLarge = parseInt(window.innerWidth*windowScale);
+let screenFitHLarge = parseInt(window.innerHeight*windowScale);
+let aspectRatiosWidths = {'1:1': [400, 512, 640, 800, 1024, 2048],
+                          '16:9': [683, 1024, 1280, 1366]};
+let gridSizes = [`${screenFitW}x${screenFitH}`,
+                 `${screenFitWLarge}x${screenFitHLarge}`];
+for (let k of Object.keys(aspectRatiosWidths)) {
+    for (let length of aspectRatiosWidths[k]) {
+        let numDen = k.split(':');
+        let length2 = parseInt(length*numDen[1]/numDen[0]);
+        if (window.innerHeight < window.innerWidth) {
+            gridSizes.push(`${length}x${length2}`);
+        } else {
+            gridSizes.push(`${length2}x${length}`);
+        }
+    }
 }
 let gridSelect = changeDimensionsFolder.add(guiData, 'changeDimensions',
                                             gridSizes
@@ -407,6 +415,74 @@ function handleRecording(canvas) {
             guiData.mediaRecorder.start();
         }
     }
+}
+
+let mousePos = function(ev, mode) {
+    if (mode == 'move') {
+        guiData.mouseData.mouseCount++;
+        let prevBx = guiData.bx;
+        let prevBy = guiData.by;
+        guiData.bx = Math.floor((ev.clientX 
+                                  - canvas.offsetLeft))/scale.w;
+        guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+        guiData.px = parseInt(guiData.bx - prevBx);
+        if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
+            guiData.px = Math.sign(guiData.px)*
+                         50.0*(pixelWidth/512.0)/guiData.scaleP;
+        }
+        guiData.py = -parseInt(guiData.by - prevBy);
+        if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
+            guiData.py = Math.sign(guiData.py)*
+                         50.0*(pixelHeight/512.0)/guiData.scaleP;
+        }
+    }
+    if (guiData.mouseData.mouseUse) {
+        if (guiData.bx < canvas.width && guiData.by < canvas.height &&
+            guiData.bx >= 0 && 
+            guiData.by >= 0) guiData.mouseData.mouseAction = true;
+    }
+};
+
+function setMouseInput() {
+    canvas.addEventListener("touchstart", ev => {
+        guiData.mouseData.mouseUse = true;
+        let touches = ev.changedTouches;
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        guiData.drawRect.w = 0;
+        guiData.drawRect.h = 0;
+        guiData.drawRect.x = Math.floor((mouseEv.clientX
+                                          - canvas.offsetLeft))/scale.w;
+        guiData.drawRect.y = Math.floor((mouseEv.clientY
+                                          - canvas.offsetTop))/scale.h;
+        // mousePos(mouseEv, 'move');
+    });
+    canvas.addEventListener("touchmove", ev => {
+        let touches = ev.changedTouches;
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        mousePos(mouseEv, 'move');
+    });
+    canvas.addEventListener("touchend", ev => {
+        let touches = ev.changedTouches;
+        let mouseEv = {clientX: touches[0].pageX, clientY: touches[0].pageY};
+        mousePos(mouseEv, 'up');
+        guiData.mouseData.mouseCount = 0;
+        guiData.mouseData.mouseUse = false;
+    });
+    canvas.addEventListener("mouseup", ev => {
+        mousePos(ev, 'up');
+        guiData.mouseData.mouseCount = 0;
+        guiData.mouseData.mouseUse = false;
+    });
+    canvas.addEventListener("mousedown", ev => {
+        guiData.mouseData.mouseUse = true;
+        guiData.drawRect.w = 0;
+        guiData.drawRect.h = 0;
+        guiData.drawRect.x = Math.floor((ev.clientX
+                                           - canvas.offsetLeft))/scale.w;
+        guiData.drawRect.y = Math.floor((ev.clientY
+                                           - canvas.offsetTop))/scale.h;
+    });
+    canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 }
 
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
