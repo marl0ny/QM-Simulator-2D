@@ -67,7 +67,8 @@ let guiData = {
     screenshotDownloadCount: 0,
     screenshots: [],
     screenshotProgress: '',
-    streams: []
+    streams: [],
+    method: 'Leapfrog'
 };
 let measurePosition = () => guiData.measure = true;
 guiData.measurePosition = measurePosition;
@@ -234,6 +235,12 @@ probColourController.onChange(e => {
     guiData.probColour[1] = e[1]/255.0;
     guiData.probColour[2] = e[2]/255.0;
 });
+let intMethod = moreControlsFolder.addFolder('Integration Method');
+let methodControl = intMethod.add(guiData, 'method', 
+                                  ['Leapfrog', 'Crank-Nicolson', 
+                                   // 'Split-Step'
+                                  ]
+                                 ).name('Methods');
 let showFolder = moreControlsFolder.addFolder('Show Dimensions');
 let showValues = {w: width, h: height};
 let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');
@@ -243,7 +250,7 @@ let screenFitW = parseInt(3.0*window.innerWidth*windowScale/5.0);
 let screenFitH = parseInt(3.0*window.innerHeight*windowScale/5.0);
 let screenFitWLarge = parseInt(window.innerWidth*windowScale);
 let screenFitHLarge = parseInt(window.innerHeight*windowScale);
-let aspectRatiosWidths = {'1:1': [400, 512, 640, 800, 1024, 2048],
+let aspectRatiosWidths = {'1:1': [256, 400, 512, 640, 800, 1024, 2048],
                           '16:9': [683, 1024, 1280, 1366]};
 let gridSizes = [`${screenFitW}x${screenFitH}`,
                  `${screenFitWLarge}x${screenFitHLarge}`];
@@ -487,7 +494,7 @@ function setMouseInput() {
 
 let editUniformsFolder = moreControlsFolder.addFolder('Edit Other Values');
 editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
-editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
+let dtSlider = editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
 let laplaceSelect = editUniformsFolder.add(guiData, 'laplace',
                                            ['5 point', '9 point'],
                                            10).name('Laplacian');

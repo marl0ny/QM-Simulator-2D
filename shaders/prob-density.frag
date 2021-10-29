@@ -7,15 +7,11 @@ out vec4 fragColor;
 #define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
 #endif
-uniform sampler2D tex1;
-uniform sampler2D tex2;
-uniform sampler2D tex3;
+uniform sampler2D tex;
 
 
 void main() {
-    vec4 col1 = texture2D(tex1, fragTexCoord);
-    vec4 col2 = texture2D(tex2, fragTexCoord);
-    vec4 col3 = texture2D(tex3, fragTexCoord);
-    float probDensity = col2.r*col2.r + col1.g*col3.g;
+    vec4 col = texture2D(tex, fragTexCoord);
+    float probDensity = col.r*col.r + col.g*col.g;
     fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
 }

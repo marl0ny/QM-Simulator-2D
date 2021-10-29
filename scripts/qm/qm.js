@@ -4,10 +4,34 @@ main();
 
 function main() {
 
-    let view = new SimulationViewManager(pixelWidth, pixelHeight);
+    let framesManager = new FramesManager();
+    framesManager.addFrames(pixelWidth, pixelHeight, 7);
+    framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
+    let SimManager = SimulationViewManager;
+    let view = new SimManager(framesManager);
     let potChanged = false;
 
     initializePotential('SHO');
+
+    methodControl.onChange(e => {
+        if (e === 'Leapfrog') {
+            SimManager = SimulationViewManager;
+            dtSlider.max(0.013);
+            if (guiData.dt > 0.013) guiData.dt = 0.013;
+        } else if (e === 'Crank-Nicolson') {
+            SimManager = CrankNicolsonSimulationViewManager;
+            dtSlider.max(0.025);
+            if (guiData.dt > 0.025) guiData.dt = 0.025;
+        } else if (e === 'Split-Step') {
+            SimManager = SplitStepSimulationViewManager;
+        }
+        dtSlider.updateDisplay()
+        framesManager = new FramesManager();
+        framesManager.addFrames(pixelWidth, pixelHeight, 7);
+        framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
+        view = new SimManager(framesManager);
+        initializePotential(guiData.presetPotential);
+    });
 
     guiData.imageFunc = function () {
         let canvas = document.getElementById('image-canvas');
@@ -95,7 +119,10 @@ function main() {
             let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
             gl = initializeCanvasGL(canvas, context);
             initPrograms();
-            view = new SimulationViewManager(pixelWidth, pixelHeight);
+            framesManager = new FramesManager();
+            framesManager.addFrames(pixelWidth, pixelHeight, 7);
+            framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
+            view = new SimManager(framesManager);
             initializePotential('SHO');
             setMouseInput();
         }

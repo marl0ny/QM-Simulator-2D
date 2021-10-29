@@ -10,7 +10,13 @@ let displayProgram;
 let copyToProgram;
 let probDensityProgram;
 let probCurrentProgram;
+let staggeredProbDensityProgram;
+let staggeredProbCurrentProgram;
+let jacobiIterProgram;
+let cnExplicitPartProgram;
 let onesProgram;
+let complexMultiplyProgram;
+let expPotentialProgram;
 let imagePotentialProgram;
 
 
@@ -39,16 +45,37 @@ function initPrograms() {
                                   copyOverFragmentSource);
     copyToProgram = makeProgram(vShader, copyToShader);
     let probDensityShader = makeShader(gl.FRAGMENT_SHADER,
-                                        probDensityFragmentSource);
+                                       probDensityFragmentSource);
     probDensityProgram = makeProgram(vShader, probDensityShader);
     let probCurrentShader = makeShader(gl.FRAGMENT_SHADER,
-                                    probCurrentFragmentSource);
+                                       probCurrentFragmentSource);
     probCurrentProgram = makeProgram(vShader, probCurrentShader);
+    let staggeredProbDensityShader = makeShader(gl.FRAGMENT_SHADER,
+        staggeredProbDensityFragmentSource);
+    staggeredProbDensityProgram = makeProgram(vShader,
+        staggeredProbDensityShader);
+    let staggeredProbCurrentShader = makeShader(gl.FRAGMENT_SHADER,
+        staggeredProbCurrentFragmentSource);
+    staggeredProbCurrentProgram = makeProgram(vShader, 
+                                              staggeredProbCurrentShader);
     let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
     onesProgram = makeProgram(vShader, onesShader);
     let imagePotentialShader = makeShader(gl.FRAGMENT_SHADER, 
                                         imagePotentialFragmentSource);
     imagePotentialProgram = makeProgram(vShader, imagePotentialShader);
+    let cnShader = makeShader(gl.FRAGMENT_SHADER, 
+                              cnExplicitPartFragmentSource); 
+    cnExplicitPartProgram = makeProgram(vShader, cnShader);
+    let jacobiIterShader = makeShader(gl.FRAGMENT_SHADER, 
+                                      jacobiIterationFragmentSource);
+    jacobiIterProgram = makeProgram(vShader, jacobiIterShader);
+    let expPotentialShader = makeShader(gl.FRAGMENT_SHADER, 
+                                        expPotentialFragmentSource);
+    expPotentialProgram = makeProgram(vShader, expPotentialShader);
+    let complexMultiplyShader = makeShader(gl.FRAGMENT_SHADER,
+                                           complexMultiplyFragmentSource);
+    complexMultiplyProgram = makeProgram(vShader, 
+                                              complexMultiplyShader);
 
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
@@ -60,8 +87,14 @@ function initPrograms() {
     gl.deleteShader(copyToShader);
     gl.deleteShader(probDensityShader);
     gl.deleteShader(probCurrentShader);
+    gl.deleteShader(staggeredProbDensityShader);
+    gl.deleteShader(staggeredProbCurrentShader);
     gl.deleteShader(onesShader);
     gl.deleteShader(imagePotentialShader);
+    gl.deleteShader(jacobiIterShader);
+    gl.deleteShader(cnShader);
+    gl.deleteShader(expPotentialShader);
+    gl.deleteShader(complexMultiplyShader);
 
 }
 

@@ -261,6 +261,30 @@ class ImageFrame extends Frame {
     }
 }
 
+
+class FramesManager {
+    constructor() {
+        this.frames = [];
+        this.nullTexNumber = 0;
+    }
+    addFrame(width, height) {
+        let frame = new Frame(width, height, this.nullTexNumber);
+        this.frames.push(frame);
+        this.nullTexNumber++;
+    }
+    addFrames(width, height, n) {
+        for (let i = 0; i < n; i++) {
+            this.addFrame(width, height);
+        }
+    }
+    addVectorFieldFrame(width, height) {
+        let frame = new VectorFieldFrame(width, height, this.nullTexNumber);
+        this.frames.push(frame);
+        this.nullTexNumber++;
+    }
+}
+
+
 function getVariables(expr) {
     expr += ' ';
     let v = new RegExp(/[a-zA-Z_][a-zA-Z_0-9]*[^a-zA-Z_0-9]/g);

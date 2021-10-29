@@ -13,9 +13,7 @@ uniform float w;
 uniform float h;
 uniform float hbar;
 uniform float m;
-uniform sampler2D tex1;
-uniform sampler2D tex2;
-uniform sampler2D tex3;
+uniform sampler2D tex;
 
 
 float realValueAt(sampler2D texPsi, vec2 location) {
@@ -45,16 +43,10 @@ vec2 getDivImPsi(sampler2D texPsi) {
 }
 
 void main() {
-    float rePsi = texture2D(tex2, fragTexCoord).r;
-    float imPsi = 0.5*(texture2D(tex1, fragTexCoord).g
-                        + texture2D(tex3, fragTexCoord).g);
-    vec2 divRePsi = getDivRePsi(tex2);
-    vec2 divImPsi = (getDivImPsi(tex1) + getDivImPsi(tex3))/2.0;
-    // (*psi)*div psi = (rePsi - I*imPsi)*(divRePsi + I*divImPsi)
-    // = rePsi*divRePsi + imPsi*divImPsi
-    //     + I*(-imPsi*divRePsi + rePsi*divImPsi)
-    // I*(hbar/(2m))*(psi*div (*psi) - (*psi)*div psi)
-    // = I*(hbar/(2m))*2*Im(-(*psi)*div psi)
+    float rePsi = texture2D(tex, fragTexCoord).r;
+    float imPsi = texture2D(tex, fragTexCoord).g;
+    vec2 divRePsi = getDivRePsi(tex);
+    vec2 divImPsi = getDivImPsi(tex);
     vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);
     fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
 }

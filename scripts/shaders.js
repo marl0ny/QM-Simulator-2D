@@ -50,6 +50,90 @@ void main() {
 `;
 
 
+const cnExplicitPartFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;
+uniform float dy;
+uniform float dt;
+uniform float w;
+uniform float h;
+uniform float m;
+uniform float hbar;
+uniform float rScaleV;
+uniform sampler2D texPsi;
+uniform sampler2D texV;
+
+float realValueAt(vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.r*tmp.a;
+}
+
+float imagValueAt(vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.g*tmp.a;
+}
+
+float getDiv2RePsi(float rePsi) {
+    float u = realValueAt(fragTexCoord + vec2(0.0, dy/h));
+    float d = realValueAt(fragTexCoord + vec2(0.0, -dy/h));
+    float l = realValueAt(fragTexCoord + vec2(-dx/w, 0.0));
+    float r = realValueAt(fragTexCoord + vec2(dx/w, 0.0));
+    return (u + d + l + r - 4.0*rePsi)/(dx*dx);
+}
+
+float getDiv2ImPsi(float imPsi) {
+    float u = imagValueAt(fragTexCoord + vec2(0.0, dy/h));
+    float d = imagValueAt(fragTexCoord + vec2(0.0, -dy/h));
+    float l = imagValueAt(fragTexCoord + vec2(-dx/w, 0.0));
+    float r = imagValueAt(fragTexCoord + vec2(dx/w, 0.0));
+    return (u + d + l + r - 4.0*imPsi)/(dx*dx);
+}
+
+void main() {
+    float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
+               rScaleV*texture2D(texV, fragTexCoord).g;
+    vec4 psi = texture2D(texPsi, fragTexCoord);
+    float reKinetic = (-hbar*hbar/(2.0*m))*getDiv2RePsi(psi.r);
+    float imKinetic = (-hbar*hbar/(2.0*m))*getDiv2ImPsi(psi.g);
+    float hamiltonRePsi = reKinetic + V*psi.r;
+    float hamiltonImPsi = imKinetic + V*psi.g;
+    // 1 - i*dt*H/(2.0*hbar)
+    fragColor = vec4(psi.r + dt/(2.0*hbar)*hamiltonImPsi,
+                     psi.g - dt/(2.0*hbar)*hamiltonRePsi, 0.0, psi.a
+                     );
+}
+`;
+
+
+const complexMultiplyFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+
+
+void main() {
+    vec4 col1 = texture2D(tex1, fragTexCoord);
+    vec4 col2 = texture2D(tex2, fragTexCoord);
+    fragColor = vec4(col1.r*col2.r - col1.g*col2.g, 
+                     col1.r*col2.g + col1.g*col2.r, 0.0, 1.0);
+
+}`;
+
+
 const copyOverFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -276,6 +360,29 @@ void main () {
                     + vec4(10.0*potBrightness*pot/1000.0, 1.0);
     fragColor = vec4(pixColor.rgb, 1.0) + gui + vec;
 }`;
+
+
+const expPotentialFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform sampler2D texV;
+uniform float dt;
+uniform float hbar;
+
+void main() {
+    vec4 potential = texture2D(texV, fragTexCoord);
+    float reV = potential[0];
+    // TODO: do imaginary potentials as well.
+    // float imV = potential[2]; 
+    fragColor = vec4(cos(0.5*reV*dt/hbar), sin(0.5*reV*dt/hbar), 0.0, 1.0);
+}
+`;
 
 
 const guiRectangleFragmentSource = `precision highp float;
@@ -677,6 +784,70 @@ void main () {
 `;
 
 
+const jacobiIterationFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;
+uniform float dy;
+uniform float dt;
+uniform float w;
+uniform float h;
+uniform float m;
+uniform float hbar;
+uniform float rScaleV;
+uniform sampler2D texPsi;
+uniform sampler2D texPsiIter;
+uniform sampler2D texV;
+uniform int laplacePoints;
+
+float reValueAt(sampler2D texComplexFunc, vec2 location) {
+    vec4 tmp = texture2D(texComplexFunc, location);
+    return tmp.r*tmp.a;
+}
+
+float imagValueAt(sampler2D texComplexFunc, vec2 location) {
+    vec4 tmp = texture2D(texComplexFunc, location);
+    return tmp.g*tmp.a;
+}
+
+float getImagValuesAround(sampler2D texComplexFunc) {
+    return (imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h)) +
+            imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h)) +
+            imagValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0)) +
+            imagValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0)));
+}
+
+float getReValuesAround(sampler2D texComplexFunc) {
+    return (reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h)) +
+            reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h)) +
+            reValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0)) +
+            reValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0)));
+}
+
+void main() {
+    float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
+                rScaleV*texture2D(texV, fragTexCoord).g;
+    vec4 psiIter = texture2D(texPsiIter, fragTexCoord);
+    vec4 psi = texture2D(texPsi, fragTexCoord);
+    float imDiag = dt*V/(2.0*hbar) + hbar*dt/(m*dx*dx);
+    float reInvDiag = 1.0/(1.0 + imDiag*imDiag);
+    float imInvDiag = -imDiag/(1.0 + imDiag*imDiag);
+    float reTmp = psi.r;
+    reTmp -= hbar*dt/(4.0*m*dx*dx)*getImagValuesAround(texPsiIter);
+    float imTmp = psi.g;
+    imTmp += hbar*dt/(4.0*m*dx*dx)*getReValuesAround(texPsiIter);
+    fragColor = vec4(reInvDiag*reTmp - imInvDiag*imTmp,
+                     imInvDiag*reTmp + reInvDiag*imTmp, 0.0, psi.a);
+}
+`;
+
+
 const onesFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -709,9 +880,7 @@ uniform float w;
 uniform float h;
 uniform float hbar;
 uniform float m;
-uniform sampler2D tex1;
-uniform sampler2D tex2;
-uniform sampler2D tex3;
+uniform sampler2D tex;
 
 
 float realValueAt(sampler2D texPsi, vec2 location) {
@@ -741,16 +910,10 @@ vec2 getDivImPsi(sampler2D texPsi) {
 }
 
 void main() {
-    float rePsi = texture2D(tex2, fragTexCoord).r;
-    float imPsi = 0.5*(texture2D(tex1, fragTexCoord).g
-                        + texture2D(tex3, fragTexCoord).g);
-    vec2 divRePsi = getDivRePsi(tex2);
-    vec2 divImPsi = (getDivImPsi(tex1) + getDivImPsi(tex3))/2.0;
-    // (*psi)*div psi = (rePsi - I*imPsi)*(divRePsi + I*divImPsi)
-    // = rePsi*divRePsi + imPsi*divImPsi
-    //     + I*(-imPsi*divRePsi + rePsi*divImPsi)
-    // I*(hbar/(2m))*(psi*div (*psi) - (*psi)*div psi)
-    // = I*(hbar/(2m))*2*Im(-(*psi)*div psi)
+    float rePsi = texture2D(tex, fragTexCoord).r;
+    float imPsi = texture2D(tex, fragTexCoord).g;
+    vec2 divRePsi = getDivRePsi(tex);
+    vec2 divImPsi = getDivImPsi(tex);
     vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);
     fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
 }
@@ -766,18 +929,15 @@ out vec4 fragColor;
 #define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
 #endif
-uniform sampler2D tex1;
-uniform sampler2D tex2;
-uniform sampler2D tex3;
+uniform sampler2D tex;
 
 
 void main() {
-    vec4 col1 = texture2D(tex1, fragTexCoord);
-    vec4 col2 = texture2D(tex2, fragTexCoord);
-    vec4 col3 = texture2D(tex3, fragTexCoord);
-    float probDensity = col2.r*col2.r + col1.g*col3.g;
+    vec4 col = texture2D(tex, fragTexCoord);
+    float probDensity = col.r*col.r + col.g*col.g;
     fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
-}`;
+}
+`;
 
 
 const realTimestepFragmentSource = `precision highp float;
@@ -901,6 +1061,92 @@ void main() {
     } else {
         fragColor = vec4(initialV, initialV, imagV, 1.0);
     }
+}`;
+
+
+const staggeredProbCurrentFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;
+uniform float dy;
+uniform float w;
+uniform float h;
+uniform float hbar;
+uniform float m;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+
+
+float realValueAt(sampler2D texPsi, vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.r*tmp.a;
+}
+
+float imagValueAt(sampler2D texPsi, vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.g*tmp.a;
+}
+
+vec2 getDivRePsi(sampler2D texPsi) {
+    float u = realValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));
+    float d = realValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));
+    float l = realValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = realValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));
+    return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);
+}
+
+vec2 getDivImPsi(sampler2D texPsi) {
+    float u = imagValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));
+    float d = imagValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));
+    float l = imagValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = imagValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));
+    return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);
+}
+
+void main() {
+    float rePsi = texture2D(tex2, fragTexCoord).r;
+    float imPsi = 0.5*(texture2D(tex1, fragTexCoord).g
+                        + texture2D(tex3, fragTexCoord).g);
+    vec2 divRePsi = getDivRePsi(tex2);
+    vec2 divImPsi = (getDivImPsi(tex1) + getDivImPsi(tex3))/2.0;
+    // (*psi)*div psi = (rePsi - I*imPsi)*(divRePsi + I*divImPsi)
+    // = rePsi*divRePsi + imPsi*divImPsi
+    //     + I*(-imPsi*divRePsi + rePsi*divImPsi)
+    // I*(hbar/(2m))*(psi*div (*psi) - (*psi)*div psi)
+    // = I*(hbar/(2m))*2*Im(-(*psi)*div psi)
+    vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);
+    fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);
+}
+`;
+
+
+const staggeredProbDensityFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;
+out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+
+
+void main() {
+    vec4 col1 = texture2D(tex1, fragTexCoord);
+    vec4 col2 = texture2D(tex2, fragTexCoord);
+    vec4 col3 = texture2D(tex3, fragTexCoord);
+    float probDensity = col2.r*col2.r + col1.g*col3.g;
+    fragColor = vec4(probDensity, 0.0, 0.0, 1.0);
 }`;
 
 

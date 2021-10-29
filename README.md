@@ -1,7 +1,11 @@
 # Quantum Mechanics in 2D
 This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simulates the quantum mechanics of a single particle confined in a 2D box, where inside this box the user can create new potential barriers and scatter gaussian wavepackets off them. The full instructions are found [here](https://github.com/marl0ny/QM-Simulator-2D/blob/main/INSTRUCTIONS.md).
 
-The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step. 
+The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step.
+
+Instead of using the method mentioned above, the [Crank-Nicolson](https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method) method can be used instead, where [Jacobi iteration](https://en.wikipedia.org/wiki/Jacobi_method) is used to solve the implicit equations. This method is used in this [research article](https://arxiv.org/pdf/1409.8340), but for the Landau-Ginzburg instead of Schrödinger equation.
+
+Another method called [Split-Operator](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) or Split-Step is currently in the works. 
 
 Also provided is a (work in progress) [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method that involves updating the two two-component spinors at staggered time and spatial steps, which is found in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
@@ -14,6 +18,20 @@ chapter 16. Pearson Addison-Wesley.
  
  - Schroeder D. [Quantum Scattering in Two Dimensions](https://physics.weber.edu/schroeder/software/QuantumScattering2D.html).
 
+ Crank-Nicolson Method:
+
+- Wikipedia contributors. (2021, October 6). [Crank-Nicolson method](https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+- Wikipedia contributors. (2021, August 1). [Jacobi method](https://en.wikipedia.org/wiki/Jacobi_method). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+- Sadovskyy I., Koshelev A., Phillips C., Karpeyev D., Glatz A. (2015). Stable large-scale solver for Ginzburg-Landau equations for superconductors. <em>Journal of Computational Physics 294</em>, 639-654. [https://doi.org/10.1016/j.jcp.2015.04.002](https://doi.org/10.1016/j.jcp.2015.04.002)
+
+Split-Step:
+
+- James Schloss. [The Split-Operator Method](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html). In <em>The Arcane Algorithm Archive</em>.
+
+- Wikipedia contributors. (2021, May 6). [Split-step method](https://en.wikipedia.org/wiki/Split-step_method). In <em>Wikipedia, The Free Encyclopedia</em>.
+
  Dirac Equation:
 
  - Wikipedia contributors. (2021, June 16). [Dirac equation](https://en.wikipedia.org/wiki/Dirac_equation). In <em>Wikipedia, The Free Encyclopedia</em>.
@@ -22,8 +40,15 @@ chapter 16. Pearson Addison-Wesley.
 
  - Hammer, R., Pötz W. (2014). Staggered grid leap-frog scheme for the (2 + 1)D Dirac equation. <em>Computer Physics Communications, 185(1)</em>, 40-53. [https://doi.org/10.1016/j.cpc.2013.08.013](https://doi.org/10.1016/j.cpc.2013.08.013)
 
-
  ###
+
+Fast Fourier Transform:
+- Wikipedia contributors. (2021, October 8). [Cooley–Tukey FFT algorithm](https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+- Press W. et al. (1992). Fast Fourier Transform.
+In <em>[Numerical Recipes in Fortran 77](https://websites.pmc.ucsc.edu/~fnimmo/eart290c_17/NumericalRecipesinF77.pdf)</em>, chapter 12.
+
+- Weisstein, E. (2021). [Fast Fourier Transform](https://mathworld.wolfram.com/FastFourierTransform.html). In <em>Wolfram MathWorld</em>.
 
 Hartree Atomic Units:
  - Wikipedia contributors. (2021, May 14). [Hartree atomic units](https://en.wikipedia.org/wiki/Hartree_atomic_units). In <em>Wikipedia, The Free Encyclopedia</em>.
