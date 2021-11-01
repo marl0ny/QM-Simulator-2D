@@ -5,29 +5,45 @@ main();
 function main() {
 
     let framesManager = new FramesManager();
-    framesManager.addFrames(pixelWidth, pixelHeight, 7);
+    let numberOfFrames = 7;
+    framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
     framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
     let SimManager = SimulationViewManager;
     let view = new SimManager(framesManager);
     let potChanged = false;
+    let disableNonPowerTwo = false;
 
     initializePotential('SHO');
 
     methodControl.onChange(e => {
         if (e === 'Leapfrog') {
             SimManager = SimulationViewManager;
-            dtSlider.max(0.013);
-            if (guiData.dt > 0.013) guiData.dt = 0.013;
-        } else if (e === 'Crank-Nicolson') {
+            dtSlider.max(0.01);
+            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            numberOfFrames = 7;
+            disableNonPowerTwo = false;
+        } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
-        } else if (e === 'Split-Step') {
+            numberOfFrames = 7;
+            disableNonPowerTwo = false;
+        } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationViewManager;
+            dtSlider.max(0.1);
+            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            numberOfFrames = 7;
+            disableNonPowerTwo = true;
+        } else if (e === 'Split-Op. (GPU FFT)') {
+            SimManager = SplitStepGPUSimulationViewManager;
+            dtSlider.max(0.1);
+            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            numberOfFrames = 10;
+            disableNonPowerTwo = true;
         }
         dtSlider.updateDisplay()
         framesManager = new FramesManager();
-        framesManager.addFrames(pixelWidth, pixelHeight, 7);
+        framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
         view = new SimManager(framesManager);
         initializePotential(guiData.presetPotential);
@@ -120,7 +136,7 @@ function main() {
             gl = initializeCanvasGL(canvas, context);
             initPrograms();
             framesManager = new FramesManager();
-            framesManager.addFrames(pixelWidth, pixelHeight, 7);
+            framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
             framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
             view = new SimManager(framesManager);
             initializePotential('SHO');
@@ -158,6 +174,14 @@ function main() {
     }
     gridSelect.onChange(e => {
         xyDims = e.split('x');
+        if (disableNonPowerTwo) {
+            let pow2List = [1, 2, 4, 8, 16, 32, 64, 128, 
+                            256, 512, 1024, 2048, 4096];
+            if (!pow2List.some(e => e === parseInt(xyDims[0])) ||
+                !pow2List.some(e => e === parseInt(xyDims[1]))) {
+                return;
+            }
+        }
         setFrameDimensions(parseInt(xyDims[0]), parseInt(xyDims[1]));
 
     });

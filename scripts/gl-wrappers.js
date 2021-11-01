@@ -265,6 +265,7 @@ class ImageFrame extends Frame {
 class FramesManager {
     constructor() {
         this.frames = [];
+        this.vectorFieldFrames = [];
         this.nullTexNumber = 0;
     }
     addFrame(width, height) {
@@ -279,7 +280,7 @@ class FramesManager {
     }
     addVectorFieldFrame(width, height) {
         let frame = new VectorFieldFrame(width, height, this.nullTexNumber);
-        this.frames.push(frame);
+        this.vectorFieldFrames.push(frame);
         this.nullTexNumber++;
     }
 }

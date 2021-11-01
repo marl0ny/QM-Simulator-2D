@@ -48,6 +48,13 @@ void main() {
     float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
                rScaleV*texture2D(texV, fragTexCoord).g;
     vec4 psi = texture2D(texPsi, fragTexCoord);
+    // TODO: do an electromagnetic field where
+    // H = e**2*A**2/(2*m) - e*A*p/(2*m) - e*p*(A/(2*m)) + p**2/(2*m) + V
+    // H = p**2/(2*m) - e*A*p/(2*m) - e*p*(A/(2*m)) + (e**2*A**2/(2*m) + V)
+    // V_A = (e**2*A**2/(2*m) + V)
+    // H = (1/(2*m))*p**2 - (e/(2*m))*A*p - (e/(2*m))*p*A + V_A
+    // H psi = (1/(2*m))*p**2 psi - (e/(2*m))*A*p psi
+    //          - (e/(2*m))*p (A psi) + V_A psi
     float reKinetic = (-hbar*hbar/(2.0*m))*getDiv2RePsi(psi.r);
     float imKinetic = (-hbar*hbar/(2.0*m))*getDiv2ImPsi(psi.g);
     float hamiltonRePsi = reKinetic + V*psi.r;

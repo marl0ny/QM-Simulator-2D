@@ -18,6 +18,8 @@ let onesProgram;
 let complexMultiplyProgram;
 let expPotentialProgram;
 let imagePotentialProgram;
+let rearrangeProgram;
+let fftIterProgram;
 
 
 function initPrograms() {
@@ -76,6 +78,12 @@ function initPrograms() {
                                            complexMultiplyFragmentSource);
     complexMultiplyProgram = makeProgram(vShader, 
                                               complexMultiplyShader);
+    let fftIterShader = makeShader(gl.FRAGMENT_SHADER, 
+                                   fftIterFragmentSource);
+    fftIterProgram = makeProgram(vShader, fftIterShader);
+    let rearrangeShader = makeShader(gl.FRAGMENT_SHADER, 
+                                     rearrangeFragmentSource);
+    rearrangeProgram = makeProgram(vShader, rearrangeShader);
 
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
@@ -95,6 +103,8 @@ function initPrograms() {
     gl.deleteShader(cnShader);
     gl.deleteShader(expPotentialShader);
     gl.deleteShader(complexMultiplyShader);
+    gl.deleteShader(fftIterShader);
+    gl.deleteShader(rearrangeShader);
 
 }
 

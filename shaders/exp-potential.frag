@@ -14,7 +14,9 @@ uniform float hbar;
 void main() {
     vec4 potential = texture2D(texV, fragTexCoord);
     float reV = potential[0];
-    // TODO: do imaginary potentials as well.
-    // float imV = potential[2]; 
-    fragColor = vec4(cos(0.5*reV*dt/hbar), sin(0.5*reV*dt/hbar), 0.0, 1.0);
+    float imV = potential[2];
+    // Arg = -i*0.5*(reV + i*imV)*dt/hbar = 0.5*(-i*reV + imV)*dt/hbar
+    float imArg = -0.5*reV*dt/hbar;
+    float reArg = 0.5*imV*dt/hbar;
+    fragColor = vec4(exp(reArg)*cos(imArg), exp(reArg)*sin(imArg), 0.0, 1.0);
 }

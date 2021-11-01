@@ -6,9 +6,9 @@ class SimulationViewManager {
                                            framesManager.frames[i]);
         this.storeFrame = framesManager.frames[5];
         this.potentialFrame = framesManager.frames[6];
-        this.vectorFieldFrame = framesManager.frames[7];
+        this.vectorFieldFrame = framesManager.vectorFieldFrames[0];
         this.t = 3;
-        this.nullTexNumber = 8;
+        this.nullTexNumber = framesManager.nullTexNumber;
     }
     swap() {
         this.swapFrames = [this.swapFrames[2], this.swapFrames[3],
@@ -136,29 +136,6 @@ class SimulationViewManager {
         drawLines(count);
         unbind();
     }
-    reshapePotential(bx, by, v2, drawWidth, drawHeight, 
-                     stencilType, eraseMode) {
-        let storeFrame = this.storeFrame;
-        let potentialFrame = this.potentialFrame;
-        let nullTexNumber = this.nullTexNumber;
-        storeFrame.useProgram(shapePotentialProgram);
-        storeFrame.bind();
-        storeFrame.setFloatUniforms({bx: bx, by: by,
-                                     v2: v2,
-                                     drawWidth: drawWidth,
-                                     drawHeight: drawHeight});
-        storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber,
-                                   drawMode: stencilType,
-                                    eraseMode: eraseMode});
-        draw();
-        unbind();
-        potentialFrame.useProgram(copyToProgram);
-        potentialFrame.bind();
-        potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
-                                       tex2: nullTexNumber});
-        draw();
-        unbind();
-    }
     initWavefunc(params, wavefuncParams) {
         let t = this.t;
         let swapFrames = this.swapFrames;
@@ -226,6 +203,29 @@ class SimulationViewManager {
         swapFrames[t].setIntUniforms({texPsi: swapFrames[t-1].frameNumber,
                                       texV: potentialFrame.frameNumber,
                                       laplacePoints: laplaceVal});
+        draw();
+        unbind();
+    }
+    reshapePotential(bx, by, v2, drawWidth, drawHeight, 
+                     stencilType, eraseMode) {
+        let storeFrame = this.storeFrame;
+        let potentialFrame = this.potentialFrame;
+        let nullTexNumber = this.nullTexNumber;
+        storeFrame.useProgram(shapePotentialProgram);
+        storeFrame.bind();
+        storeFrame.setFloatUniforms({bx: bx, by: by,
+                                     v2: v2,
+                                     drawWidth: drawWidth,
+                                     drawHeight: drawHeight});
+        storeFrame.setIntUniforms({tex1: potentialFrame.frameNumber,
+                                   drawMode: stencilType,
+                                   eraseMode: eraseMode});
+        draw();
+        unbind();
+        potentialFrame.useProgram(copyToProgram);
+        potentialFrame.bind();
+        potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
+                                       tex2: nullTexNumber});
         draw();
         unbind();
     }
@@ -450,122 +450,18 @@ class CrankNicolsonSimulationViewManager extends SimulationViewManager {
     }
 }
 
-
-function bitReverse2(arr, start, end, size) {
-    let n = end - start;
-    let u, d, rev;
-    for(let i = 0; i < end - start; i++) {
-        u = 1;
-        d = n >> 1;
-        rev = 0;
-        while (u < n) {
-            rev += d*((i&u)/u);
-            u <<= 1;
-            d >>= 1;
-        }
-        if (rev >= 1) {
-            for (let k = 0; k < size; k++) {
-                let tmp = arr[size*(start + i) + k];
-                arr[size*(start + i) + k] = arr[size*(start + rev) + k];
-                arr[size*(start + rev) + k] = tmp;
-            }
-        }
-    }
-}
-
-function transpose(dest, src, w, h, size) {
-    for (let j = 0; j < h; j++) {
-        for (let i = 0; i < w; i++) {
-            for (let k = 0; k < size; k++) {
-                dest[size*(i*h + j) + k] = src[size*(j*w + i) + k];
-            }
-        }
-    }
-}
-
-function fftFreq(arr, start, end) {
-    let n = end - start;
-    if (n % 2 === 0) {
-        for (let i = 0; i <= n/2 - 1; i++) {
-            arr[start + i] = i;
-        }
-        for (let i = n - 1, j = -1; i >= n/2; i--, j--) {
-            arr[start + i] = j;
-        }
-    } else {
-        let k = 0;
-        for (let i = 0; i < (n-1)/2; i++) {
-            arr[start + i] = k;
-            k += 1;
-        }
-        k = -k;
-        for (let i = (n-1)/2 + 1; i < n; i++) {
-            arr[start + i] = k;
-            k -= 1;
-        }
-    }
-}
-/*
-A Cooley-Tukey Radix-2 FFT implementation.
-
-
-References:
-
-Wikipedia - Cooley–Tukey FFT algorithm:
-https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
-
-Press W. et al. (1992). Fast Fourier Transform.
-In Numerical Recipes in Fortran 77, chapter 12
-https://websites.pmc.ucsc.edu/~fnimmo/eart290c_17/NumericalRecipesinF77.pdf
-
-MathWorld Wolfram - Fast Fourier Transform:
-http://mathworld.wolfram.com/FastFourierTransform.html 
-*/
-function fft(arr, start, end, isInverse=false) {
-    bitReverse2(arr, start, end, 4);
-    let n = end - start;
-    // let blockTotal;
-    sign = (isInverse)? -1.0: 1.0;
-    for (let blockSize = 2; blockSize <= n; blockSize *= 2) {
-        for (let j = 0; j < n; j += blockSize) {
-            for (let i = 0; i < blockSize/2; i++) {
-                let cosVal = Math.cos(2.0*Math.PI*i/blockSize);
-                let sinVal = sign*Math.sin(2.0*Math.PI*i/blockSize);
-                let reEven = arr[(start + j + i)*4];
-                let imEven = arr[(start + j + i)*4 + 1];
-                let reOdd = arr[(start + j + i + blockSize/2)*4];
-                let imOdd = arr[(start + j + i + blockSize/2)*4 + 1];
-                let reExp = cosVal*reOdd - imOdd*sinVal;
-                let imExp = cosVal*imOdd + sinVal*reOdd;
-                let nVal = (isInverse && blockSize === n)? n: 1.0;
-                arr[(start + j + i)*4] = (reEven + reExp)/nVal;
-                arr[(start + j + i)*4 + 1] = (imEven + imExp)/nVal;
-                arr[(start + j + i + blockSize/2)*4] = (reEven - reExp)/nVal;
-                arr[(start + j + i + 
-                     blockSize/2)*4 + 1] = (imEven - imExp)/nVal;
-            }
-        }
-    }
-
-}
 class SplitStepSimulationViewManager 
     extends CrankNicolsonSimulationViewManager {
 
     constructor(framesManager) {
         super(framesManager);
-        this.expKineticInitialized = false;
         this.expKinetic = new Float32Array(4*pixelWidth*pixelHeight);
+        this._dt = 0.0;
+        this._hbar = 1.0;
     }
     swap() {
         this.swapFrames = [this.swapFrames[3], this.swapFrames[0],
                            this.swapFrames[1], this.swapFrames[2]];
-    }
-    initWavefunc(params, wavefuncParams) {
-        if (!this.expKineticInitialized) {
-            this.makeExpKinetic(this.expKinetic, params);
-            this.expKineticInitialized = true;
-        } 
-        super.initWavefunc(params, wavefuncParams);
     }
     fftFreq2(freqW, freqH) {
         for (let offset = 0; offset < pixelWidth*pixelHeight; 
@@ -601,6 +497,60 @@ class SplitStepSimulationViewManager
         }
 
     }
+    momentumStepCPU(arr) {
+        // Get the gpu data as an array
+        let arrTranspose = new Float32Array(4*pixelWidth*pixelHeight);
+        let transposeWidth = pixelHeight, transposeHeight = pixelWidth;
+        // fft to momentum space.
+        // let workers = [];
+        for (let offset = 0; offset < pixelWidth*pixelHeight; 
+            offset+=pixelWidth) {
+            /* let worker = new Worker('./scripts/qm/fft-worker.js');
+            worker.postMessage([arr.subarray(4*offset, 
+                                             4*(offset + pixelWidth)),
+                                offset, false]);
+            // workers.push(worker);
+            worker.onmessage = e => {
+                let subArr = e.data[0];
+                let offset = e.data[1];
+                for (let i = offset*4; i < 4*(offset + pixelWidth); i++) {
+                    arr[i] = subArr[i];
+                }
+                worker.terminate();
+            }*/
+            fft(arr, offset, offset+pixelWidth);
+        }
+        //  while (workers.length > 0) {}
+        transpose(arrTranspose, arr, pixelWidth, pixelHeight, 4);
+        for (let offset = 0; offset < transposeWidth*transposeHeight; 
+            offset+=transposeWidth) {
+            fft(arrTranspose, offset, offset+transposeWidth);
+        }
+        transpose(arr, arrTranspose, transposeWidth, transposeHeight, 4);
+        // multiply psi(p) with the exp kinetic factor.
+        for (let j = 0; j < pixelHeight; j++) {
+            for (let i = 0; i < pixelWidth; i++) {
+                let index = 4*(j*pixelWidth + i);
+                let rePsi = arr[index];
+                let imPsi = arr[index + 1];
+                let reExpKinetic = this.expKinetic[index];
+                let imExpKinetic = this.expKinetic[index + 1];
+                arr[index] = rePsi*reExpKinetic - imPsi*imExpKinetic;
+                arr[index + 1] =  rePsi*imExpKinetic + imPsi*reExpKinetic;
+            }
+        }
+        // Go back to position space.
+        for (let offset = 0; offset < pixelWidth*pixelHeight; 
+             offset+=pixelWidth) {
+            fft(arr, offset, offset+pixelWidth, true);
+        }
+        transpose(arrTranspose, arr, pixelWidth, pixelHeight, 4);
+        for (let offset = 0; offset < transposeWidth*transposeHeight; 
+             offset+=transposeWidth) {
+            fft(arrTranspose, offset, offset+transposeWidth, true);
+        } 
+        transpose(arr, arrTranspose, transposeWidth, transposeHeight, 4);
+    }
     step(params) {
         let t = this.t;
         let swapFrames = this.swapFrames;
@@ -611,6 +561,11 @@ class SplitStepSimulationViewManager
         let laplaceVal;
         let rScaleV;
         let width, height;
+        if (this._dt !== dt) {
+            this.makeExpKinetic(this.expKinetic, params);
+            this._hbar = hbar;
+            this._dt = dt;
+        }
         ({dx, dy, dt, m, hbar, laplaceVal, 
             width, height, rScaleV} = params);
         storeFrame.useProgram(expPotentialProgram);
@@ -624,57 +579,16 @@ class SplitStepSimulationViewManager
         swapFrames[t-2].useProgram(complexMultiplyProgram);
         swapFrames[t-2].bind();
         swapFrames[t-2].setIntUniforms({tex1: storeFrame.frameNumber, 
-                                       tex2: swapFrames[t-3].frameNumber});
+                                        tex2: swapFrames[t-3].frameNumber});
         draw();
-
-        // Get the gpu data as an array
         let arr = swapFrames[t-2].getTextureArray({x: 0, y: 0, 
                                                    w: pixelWidth, 
                                                    h: pixelHeight});
         unbind();
-        let arrTranspose = new Float32Array(4*pixelWidth*pixelHeight);
-        let transposeWidth = pixelHeight, transposeHeight = pixelWidth;
-
-        // fft to momentum space.
-        for (let offset = 0; offset < pixelWidth*pixelHeight; 
-             offset+=pixelWidth) {
-            fft(arr, offset, offset+pixelWidth);
-        }
-        transpose(arrTranspose, arr, pixelWidth, pixelHeight, 4);
-        for (let offset = 0; offset < transposeWidth*transposeHeight; 
-             offset+=transposeWidth) {
-            fft(arrTranspose, offset, offset+transposeWidth);
-        } 
-        transpose(arr, arrTranspose, transposeWidth, transposeHeight, 4);
-
-        // multiply psi(p) with the exp kinetic factor.
-        for (let j = 0; j < pixelHeight; j++) {
-            for (let i = 0; i < pixelWidth; i++) {
-                let index = 4*(j*pixelWidth + i);
-                let rePsi = arr[index], imPsi = arr[index + 1];
-                let reExpKinetic = this.expKinetic[index];
-                let imExpKinetic = this.expKinetic[index + 1];
-                arr[index] = rePsi*reExpKinetic - imPsi*imExpKinetic;
-                arr[index + 1] =  rePsi*imExpKinetic + imPsi*reExpKinetic;
-            }
-        }
-
-        // Go back to position space.
-        for (let offset = 0; offset < pixelWidth*pixelHeight; 
-             offset+=pixelWidth) {
-            fft(arr, offset, offset+pixelWidth, true);
-        }
-        transpose(arrTranspose, arr, pixelWidth, pixelHeight, 4);
-        for (let offset = 0; offset < transposeWidth*transposeHeight; 
-             offset+=transposeWidth) {
-            fft(arrTranspose, offset, offset+transposeWidth, true);
-        } 
-        transpose(arr, arrTranspose, transposeWidth, transposeHeight, 4);
-
+        this.momentumStepCPU(arr);
         // Put array data back into gpu buffer
         swapFrames[t-1].substituteTextureArray(pixelWidth, pixelHeight, 
                                                gl.FLOAT, arr);
-
         // Multiply wavefunction with exp potential part
         swapFrames[t].useProgram(complexMultiplyProgram);
         swapFrames[t].bind();
@@ -682,5 +596,160 @@ class SplitStepSimulationViewManager
                                       tex2: swapFrames[t-1].frameNumber});
         draw();
         unbind();
+    }
+}
+
+
+class SplitStepGPUSimulationViewManager 
+    extends SplitStepSimulationViewManager {
+    constructor(framesManager) {
+        super(framesManager);
+        this.expPotentialFrame = framesManager.frames[7];
+        this.expKineticFrame = framesManager.frames[8];
+        this.revBitSort2LookupFrame = framesManager.frames[9];
+        this.initRevBitSort2LookupFrame();
+    }
+    initRevBitSort2LookupFrame() {
+        let revBitSort2Table = new Float32Array(pixelWidth*pixelHeight*4);
+        for (let i = 0; i < pixelHeight; i++) {
+            for (let j = 0; j < pixelWidth; j++) {
+                revBitSort2Table[4*(i*pixelWidth + j) + 1] = i/pixelHeight;
+                revBitSort2Table[4*(i*pixelWidth + j)] = j/pixelWidth;
+            }
+        }
+        for (let offset = 0; offset < pixelWidth*pixelHeight; 
+             offset+=pixelWidth) {
+            bitReverse2(revBitSort2Table, offset, offset+pixelWidth, 4);
+        }
+        let arrTranspose = new Float32Array(pixelWidth*pixelHeight*4);
+        let transposeHeight = pixelWidth, transposeWidth = pixelHeight;
+        transpose(arrTranspose, revBitSort2Table, pixelWidth, pixelHeight, 4);
+        for (let offset = 0; offset < transposeWidth*transposeHeight; 
+             offset+=transposeWidth) {
+            bitReverse2(arrTranspose, offset, offset+transposeWidth, 4);
+        } 
+        transpose(revBitSort2Table, arrTranspose, 
+                  transposeWidth, transposeHeight, 4);
+        this.revBitSort2LookupFrame.substituteTextureArray(
+            pixelWidth, pixelHeight, gl.FLOAT, revBitSort2Table);
+    }
+    makeExpKinetic(expKinetic, params) {
+        super.makeExpKinetic(expKinetic, params);
+        let expKineticFrame = this.expKineticFrame;
+        expKineticFrame.substituteTextureArray(pixelWidth, pixelHeight,
+                                               gl.FLOAT, 
+                                               this.expKinetic);
+    }
+    revBitSort2(dest, src, revBitSortFrame) {
+        dest.useProgram(rearrangeProgram);
+        dest.bind();
+        dest.setFloatUniforms({width: pixelWidth, height: pixelHeight});
+        dest.setIntUniforms({tex: src.frameNumber, 
+                             lookupTex: revBitSortFrame.frameNumber});
+        draw();
+        unbind();
+    }
+    fftIters(frames, size, isVert, isInv) {
+        let prev = frames[0], next = frames[1];
+        for (let blockSize = 2; blockSize <= pixelWidth; blockSize *=2) {
+            let scale = (isInv && blockSize === size)? 1.0/size: 1.0;
+            next.useProgram(fftIterProgram);
+            next.bind();
+            next.setIntUniforms({tex: prev.frameNumber, isVertical: isVert});
+            next.setFloatUniforms({blockSize: blockSize/size,
+                                   angleSign: (isInv)? 1.0: -1.0, 
+                                   size: size, scale: scale});
+            draw();
+            unbind();
+            let tmp = prev;
+            prev = next;
+            next = tmp;
+        }
+        return [prev, next];
+    }
+    momentumStep() {
+        let t = this.t;
+        let swapFrames = this.swapFrames;
+        let expKineticFrame = this.expKineticFrame;
+        let revBitSort2LookupFrame = this.revBitSort2LookupFrame;
+        this.revBitSort2(swapFrames[t-1], swapFrames[t-2],
+                         revBitSort2LookupFrame);
+        let frames = [swapFrames[t-1], swapFrames[t-2]];
+        let isVert = true, isInv = true; 
+        frames = this.fftIters(frames, pixelWidth, !isVert, !isInv);
+        frames = this.fftIters(frames, pixelHeight, isVert, !isInv);
+        frames[1].useProgram(complexMultiplyProgram);
+        frames[1].bind();
+        frames[1].setIntUniforms({tex1: expKineticFrame.frameNumber,
+                                tex2: frames[0].frameNumber});
+        draw();
+        unbind();
+        this.revBitSort2(frames[0], frames[1], revBitSort2LookupFrame);
+        frames = this.fftIters(frames, pixelWidth, !isVert, isInv);
+        frames = this.fftIters(frames, pixelHeight, isVert, isInv);
+        return frames;
+    }
+    makeExpPotential(potentialFrame, expPotentialFrame, dt, hbar) {
+        expPotentialFrame.useProgram(expPotentialProgram);
+        expPotentialFrame.bind();
+        expPotentialFrame.setFloatUniforms({dt: dt, hbar: hbar});
+        expPotentialFrame.setIntUniforms({texV: potentialFrame.frameNumber});
+        draw();
+        unbind();
+    }
+    step(params) {
+        let t = this.t;
+        let swapFrames = this.swapFrames;
+        let potentialFrame = this.potentialFrame;
+        let expPotentialFrame = this.expPotentialFrame;
+        let dt, hbar;
+        ({dt, hbar} = params);
+        if (this._dt !== dt) {
+            this.makeExpKinetic(this.expKinetic, params);
+            this.makeExpPotential(potentialFrame, expPotentialFrame, 
+                                  dt, hbar);
+            this._dt = dt;
+            this._hbar = hbar;
+        }
+
+        // Multiply wavefunction with exp potential part
+        swapFrames[t-2].useProgram(complexMultiplyProgram);
+        swapFrames[t-2].bind();
+        swapFrames[t-2].setIntUniforms({tex1: expPotentialFrame.frameNumber, 
+                                        tex2: swapFrames[t-3].frameNumber});
+        draw();
+        unbind();
+
+        let frames = this.momentumStep();
+
+        // Multiply wavefunction with exp potential part
+        swapFrames[t].useProgram(complexMultiplyProgram);
+        swapFrames[t].bind();
+        swapFrames[t].setIntUniforms({tex1: expPotentialFrame.frameNumber, 
+                                      tex2: frames[0].frameNumber});
+        draw();
+        unbind();
+    }
+    reshapePotential(bx, by, v2, drawWidth, drawHeight, 
+                     stencilType, eraseMode) {
+        super.reshapePotential(bx, by, v2, drawWidth, drawHeight,
+                               stencilType, eraseMode);
+        this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
+                              this._dt, this._hbar);
+    }
+    imagePotential(imageData, invert=0) { 
+        super.imagePotential(imageData, invert);
+        this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
+                              this._dt, this._hbar);
+    }
+    presetPotential(potentialType, potentialUniforms) {
+        super.presetPotential(potentialType, potentialUniforms);
+        this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
+                              this._dt, this._hbar);
+    }
+    textPotential(program, uniforms) {
+        super.textPotential(program, uniforms);
+        this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
+                              this._dt, this._hbar);
     }
 }

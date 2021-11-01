@@ -237,8 +237,8 @@ probColourController.onChange(e => {
 });
 let intMethod = moreControlsFolder.addFolder('Integration Method');
 let methodControl = intMethod.add(guiData, 'method', 
-                                  ['Leapfrog', 'Crank-Nicolson', 
-                                   // 'Split-Step'
+                                  ['Leapfrog', 'CN w/ Jacobi', 
+                                   'Split-Op. (CPU FFT)', 'Split-Op. (GPU FFT)'
                                   ]
                                  ).name('Methods');
 let showFolder = moreControlsFolder.addFolder('Show Dimensions');
