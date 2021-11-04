@@ -2,7 +2,7 @@
 ## Possible New Features
 
 ### Schrodinger Simulation
- - [ ] Include other numerical schemes.
+ - [x] Include other numerical schemes.
  - [ ] Implement the 3-vector potential A.
  - [ ] Find a way to visually show expectation values such as \<x\> or \<v\>.
  - [ ] Add a text-based way to initialize the wavefunction.

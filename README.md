@@ -5,7 +5,7 @@ The simulation uses an integration method described in page 690 of <em>An Introd
 
 Instead of using the method mentioned above, the [Crank-Nicolson](https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method) method can be used instead, where [Jacobi iteration](https://en.wikipedia.org/wiki/Jacobi_method) is used to solve the implicit equations. This method is used in this [research article](https://arxiv.org/pdf/1409.8340), but for the Landau-Ginzburg instead of Schrödinger equation.
 
-Another method called [Split-Operator](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) or Split-Step is currently in the works. 
+Another method called [Split-Operator](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) or Split-Step is also available.
 
 Also provided is a (work in progress) [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method that involves updating the two two-component spinors at staggered time and spatial steps, which is found in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
@@ -41,6 +41,12 @@ Split-Step:
  - Hammer, R., Pötz W. (2014). Staggered grid leap-frog scheme for the (2 + 1)D Dirac equation. <em>Computer Physics Communications, 185(1)</em>, 40-53. [https://doi.org/10.1016/j.cpc.2013.08.013](https://doi.org/10.1016/j.cpc.2013.08.013)
 
  ###
+
+Approximating the vector potential:
+
+- Feynman R., Leighton R., Sands M. (2011). [The Schrödinger Equation in a Classical Context: A Seminar on Superconductivity](https://www.feynmanlectures.caltech.edu/III_21.html). In <em>In The Feynman Lectures on Physics: The New Millennium Edition, Volume 3</em>, chapter 21. Basic Books.
+
+- Wikipedia contributors. (2021, April 21). [Peierls substitution](https://en.wikipedia.org/wiki/Peierls_substitution). In <em>Wikipedia, The Free Encyclopedia</em>.
 
 Fast Fourier Transform:
 

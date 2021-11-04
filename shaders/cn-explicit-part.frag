@@ -17,6 +17,17 @@ uniform float hbar;
 uniform float rScaleV;
 uniform sampler2D texPsi;
 uniform sampler2D texV;
+uniform sampler2D texA;
+uniform int useAField;
+
+vec2 mult(vec2 z1, vec2 z2) {
+    return vec2(z1.x*z2.x - z1.y*z2.y, 
+                z1.x*z2.y + z1.y*z2.x);
+}
+
+vec2 conj(vec2 z) {
+    return vec2(z.r, -z.g);
+}
 
 float realValueAt(vec2 location) {
     vec4 tmp = texture2D(texPsi, location);
@@ -26,6 +37,63 @@ float realValueAt(vec2 location) {
 float imagValueAt(vec2 location) {
     vec4 tmp = texture2D(texPsi, location);
     return tmp.g*tmp.a;
+}
+
+vec2 valueAt(vec2 location) {
+    vec4 tmp = texture2D(texPsi, location);
+    return tmp.xy*tmp.a;
+}
+
+/* To approximage the vector potential, Peierls substitution is used where
+very basically the non-diagonal elements are multiplied by a phase that is 
+determined by a path from the diagonal to the non-diagonal element
+using the vector potential. 
+
+Feynman R., Leighton R., Sands M. (2011).
+The Schrödinger Equation in a Classical Context: 
+A Seminar on Superconductivity
+https://www.feynmanlectures.caltech.edu/III_21.html.
+In The Feynman Lectures on Physics: The New Millennium Edition, 
+Volume 3, chapter 21. Basic Books.
+
+Wikipedia contributors. (2021, April 21). Peierls substitution
+https://en.wikipedia.org/wiki/Peierls_substitution. 
+In Wikipedia, The Free Encyclopedia
+*/
+
+vec4 getAngles(vec2 location) {
+    float q = 1.0;
+    vec2 xy = location;
+    vec4 c = texture2D(texA, xy);
+    vec4 u = texture2D(texA, xy + vec2(0.0, dy/h));
+    vec4 d = texture2D(texA, xy + vec2(0.0, -dy/h));
+    vec4 l = texture2D(texA, xy + vec2(-dx/w, 0.0));
+    vec4 r = texture2D(texA, xy + vec2(dx/w, 0.0));
+    float thetaR = 0.5*q*(r + c).x*dx/hbar;
+    float thetaU = 0.5*q*(u + c).y*dy/hbar;
+    float thetaD = -0.5*q*(c + d).y*dy/hbar;
+    float thetaL = -0.5*q*(c + l).x*dx/hbar;
+    return vec4(thetaR, thetaU, thetaD, thetaL);
+}
+
+vec2 getPhase(float theta) {
+    return vec2(cos(theta), -sin(theta));
+}
+
+vec2 getDiv2Psi() {
+    vec2 xy = fragTexCoord;
+    vec4 theta = getAngles(xy);
+    vec2 phaseR = getPhase(theta[0]);
+    vec2 phaseU = getPhase(theta[1]);
+    vec2 phaseD = getPhase(theta[2]);
+    vec2 phaseL = getPhase(theta[3]);
+    vec2 u = mult(valueAt(xy + vec2(0.0, dy/h)), phaseU);
+    vec2 d = mult(valueAt(xy + vec2(0.0, -dy/h)), phaseD);
+    vec2 l = mult(valueAt(xy + vec2(-dx/w, 0.0)), phaseL);
+    vec2 r = mult(valueAt(xy + vec2(dx/w, 0.0)), phaseR);
+    vec2 c = valueAt(xy);
+    return (u + d + l + r - 4.0*c)/(dx*dx);
+
 }
 
 float getDiv2RePsi(float rePsi) {
@@ -55,12 +123,20 @@ void main() {
     // H = (1/(2*m))*p**2 - (e/(2*m))*A*p - (e/(2*m))*p*A + V_A
     // H psi = (1/(2*m))*p**2 psi - (e/(2*m))*A*p psi
     //          - (e/(2*m))*p (A psi) + V_A psi
-    float reKinetic = (-hbar*hbar/(2.0*m))*getDiv2RePsi(psi.r);
-    float imKinetic = (-hbar*hbar/(2.0*m))*getDiv2ImPsi(psi.g);
-    float hamiltonRePsi = reKinetic + V*psi.r;
-    float hamiltonImPsi = imKinetic + V*psi.g;
-    // 1 - i*dt*H/(2.0*hbar)
-    fragColor = vec4(psi.r + dt/(2.0*hbar)*hamiltonImPsi,
-                     psi.g - dt/(2.0*hbar)*hamiltonRePsi, 0.0, psi.a
-                     );
+    if (useAField == 0) {
+        float reKinetic = (-hbar*hbar/(2.0*m))*getDiv2RePsi(psi.r);
+        float imKinetic = (-hbar*hbar/(2.0*m))*getDiv2ImPsi(psi.g);
+        float hamiltonRePsi = reKinetic + V*psi.r;
+        float hamiltonImPsi = imKinetic + V*psi.g;
+        // 1 - i*dt*H/(2.0*hbar)
+        fragColor = vec4(psi.r + dt/(2.0*hbar)*hamiltonImPsi,
+                         psi.g - dt/(2.0*hbar)*hamiltonRePsi, 0.0, psi.a
+                         );
+    } else {
+        vec2 kinetic = (-hbar*hbar/(2.0*m))*getDiv2Psi();
+        vec2 hamiltonPsi = kinetic + V*psi.xy;
+        vec2 I = vec2(0.0, 1.0);
+        fragColor = vec4(psi.xy - (dt/(2.0*hbar))*mult(I, hamiltonPsi), 0.0,
+                         psi.a);
+    }
 }

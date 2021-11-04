@@ -13,6 +13,9 @@ uniform sampler2D tex;
 uniform sampler2D lookupTex;
 
 
+// The reverse bit sort table needs to be re-computed
+// each time the dimensions change.
+
 void main() {
     vec2 xy = fragTexCoord;
     vec4 col = vec4(0.0, 0.0, 0.0, 1.0);

@@ -20,6 +20,7 @@ let expPotentialProgram;
 let imagePotentialProgram;
 let rearrangeProgram;
 let fftIterProgram;
+let initVectorPotentialProgram;
 
 
 function initPrograms() {
@@ -84,6 +85,10 @@ function initPrograms() {
     let rearrangeShader = makeShader(gl.FRAGMENT_SHADER, 
                                      rearrangeFragmentSource);
     rearrangeProgram = makeProgram(vShader, rearrangeShader);
+    let initVectorPotentialShader = makeShader(gl.FRAGMENT_SHADER,
+        initialVectorPotentialFragmentSource);
+    initVectorPotentialProgram = makeProgram(vShader, 
+                                             initVectorPotentialShader);
 
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
@@ -105,6 +110,7 @@ function initPrograms() {
     gl.deleteShader(complexMultiplyShader);
     gl.deleteShader(fftIterShader);
     gl.deleteShader(rearrangeShader);
+    gl.deleteShader(initVectorPotentialShader);
 
 }
 

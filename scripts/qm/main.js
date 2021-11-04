@@ -27,6 +27,12 @@ function main() {
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
             numberOfFrames = 7;
+            disableNonPowerTwo = false; 
+       } else if (e === 'CNJ w/ B-Field') {
+            SimManager = CrankNicolsonWithAFieldSimulationViewManager;
+            dtSlider.max(0.025);
+            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            numberOfFrames = 8;
             disableNonPowerTwo = false;
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationViewManager;
