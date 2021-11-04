@@ -225,7 +225,8 @@ class SimulationViewManager {
         potentialFrame.useProgram(copyToProgram);
         potentialFrame.bind();
         potentialFrame.setIntUniforms({tex1: storeFrame.frameNumber,
-                                       tex2: nullTexNumber});
+                                       tex2: nullTexNumber
+                                    });
         draw();
         unbind();
     }

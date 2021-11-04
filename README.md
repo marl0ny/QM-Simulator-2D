@@ -3,9 +3,7 @@ This [WebGL program](https://marl0ny.github.io/QM-Simulator-2D/index.html) simul
 
 The simulation uses an integration method described in page 690 of <em>An Introduction to Computer Simulation Methods</em> by H. Gould et al (which references an [article](https://aip.scitation.org/doi/pdf/10.1063/1.168415) by P. Visscher). This method involves splitting the complex-valued wavefunction into its real and imaginary components, where each component is updated separately for each time step.
 
-Instead of using the method mentioned above, the [Crank-Nicolson](https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method) method can be used instead, where [Jacobi iteration](https://en.wikipedia.org/wiki/Jacobi_method) is used to solve the implicit equations. This method is used in this [research article](https://arxiv.org/pdf/1409.8340), but for the Landau-Ginzburg instead of Schrödinger equation.
-
-Another method called [Split-Operator](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) or Split-Step is also available.
+Two other integration methods are also currently under development: these are [Crank-Nicolson](https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method) and the [Split-Operator](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) method. They are found on a [separate branch](https://github.com/marl0ny/QM-Simulator-2D/tree/new-integration-methods). Note that this branch is not included in Github Pages, so you will need to download or pull from it separately. 
 
 Also provided is a (work in progress) [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. This uses a numerical method that involves updating the two two-component spinors at staggered time and spatial steps, which is found in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 

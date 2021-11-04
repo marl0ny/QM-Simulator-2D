@@ -235,14 +235,14 @@ probColourController.onChange(e => {
     guiData.probColour[1] = e[1]/255.0;
     guiData.probColour[2] = e[2]/255.0;
 });
-let intMethod = moreControlsFolder.addFolder('Integration Method');
+/* let intMethod = moreControlsFolder.addFolder('Integration Method');
 let methodControl = intMethod.add(guiData, 'method', 
                                   ['Leapfrog', 
                                    'CN w/ Jacobi', 'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)'
                                   ]
-                                 ).name('Methods');
+                                 ).name('Methods');*/
 let showFolder = moreControlsFolder.addFolder('Show Dimensions');
 let showValues = {w: width, h: height};
 let boxW = showFolder.add(showValues, 'w', `${width}`).name('Box Width');

@@ -15,7 +15,7 @@ function main() {
 
     initializePotential('SHO');
 
-    methodControl.onChange(e => {
+    /*methodControl.onChange(e => {
         if (e === 'Leapfrog') {
             SimManager = SimulationViewManager;
             dtSlider.max(0.01);
@@ -53,7 +53,7 @@ function main() {
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
         view = new SimManager(framesManager);
         initializePotential(guiData.presetPotential);
-    });
+    });*/
 
     guiData.imageFunc = function () {
         let canvas = document.getElementById('image-canvas');
@@ -379,6 +379,7 @@ function main() {
             (Math.abs(guiData.px) > drawWidth ||
              Math.abs(guiData.py) > drawWidth)) {
             reshapePotentialRecLevel += 1;
+            // console.log(reshapePotentialRecLevel);
             if (reshapePotentialRecLevel > 100) {
                 reshapePotentialRecLevel = 0;
             } else {
