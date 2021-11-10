@@ -8,7 +8,7 @@ function main() {
     let numberOfFrames = 7;
     framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
     framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
-    let SimManager = SimulationViewManager;
+    let SimManager = LeapfrogSimulationManager;
     let view = new SimManager(framesManager);
     let potChanged = false;
     let disableNonPowerTwo = false;
@@ -17,7 +17,7 @@ function main() {
 
     methodControl.onChange(e => {
         if (e === 'Leapfrog') {
-            SimManager = SimulationViewManager;
+            SimManager = LeapfrogSimulationManager;
             dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             numberOfFrames = 7;
@@ -43,11 +43,28 @@ function main() {
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationViewManager;
             dtSlider.max(0.1);
+            dtSlider.setValue(0.03);
+            dtSlider.updateDisplay();
+            iter.setValue(2);
+            iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
         }
-        dtSlider.updateDisplay()
+        dtSlider.updateDisplay();
+
+        if (disableNonPowerTwo) {
+            let evenPowers = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+            if (!(evenPowers.some(e => e === pixelWidth) && 
+                  evenPowers.some(e => e === pixelHeight)))
+                pixelWidth = 512, pixelHeight = 512;
+        }
+        resizeCanvas(pixelWidth, pixelHeight);
+        let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
+        gl = initializeCanvasGL(canvas, context);
+        initPrograms();
+        setMouseInput();
+
         framesManager = new FramesManager();
         framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
@@ -118,32 +135,16 @@ function main() {
 
 
     function setFrameDimensions(newWidth, newHeight) {
-        if (Math.abs(newWidth/newHeight - pixelWidth/pixelHeight) > 1e-10) {
-            let divCanvas = document.getElementById('div-canvas');
-            // divCanvas.innerHTML = ``;
-            document.getElementById('sketch-canvas').remove();
-            divCanvas.innerHTML = `<canvas id="sketch-canvas",
-                                    width="${newWidth}", height="${newHeight}",
-                                    text="WebGL not supported",
-                                    style = "touch-action: none; 
-                                    width: 700px; height: 512px; 
-                                    border: solid white 1px;
-                                    top: 0px; bottom: 0px;">`;
-            canvas = document.getElementById("sketch-canvas");
-            let divImageCanvas = document.getElementById("div-image-canvas");
-            divImageCanvas.innerHTML = `<canvas id="image-canvas" 
-                                        hidden="true"
-                                        width="${newWidth}" 
-                                        height="${newHeight}"></canvas>`;
-            width = (canvas.width/512)*64.0*Math.sqrt(2.0);
-            height = (canvas.height/512)*64.0*Math.sqrt(2.0);
-            setCanvasStyleWidthAndHeight(width, height);
+        pixelWidth = newWidth;
+        pixelHeight = newHeight;
+        if (Math.abs(newWidth/newHeight - pixelWidth/pixelHeight) > 1e-10 || disableNonPowerTwo) {
+            resizeCanvas(newWidth, newHeight);
             let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
             gl = initializeCanvasGL(canvas, context);
             initPrograms();
             framesManager = new FramesManager();
-            framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
-            framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
+            framesManager.addFrames(newWidth, newHeight, numberOfFrames);
+            framesManager.addVectorFieldFrame(newWidth, newHeight);
             view = new SimManager(framesManager);
             initializePotential('SHO');
             setMouseInput();
@@ -157,8 +158,6 @@ function main() {
         console.log(width, height);
         scale = {w: canvasStyleWidth/canvas.width,
             h: canvasStyleHeight/canvas.height};
-        pixelWidth = newWidth;
-        pixelHeight = newHeight;
         showValues.w = width;
         showValues.h = height;
         boxW.updateDisplay();

@@ -7,8 +7,9 @@ let vSwap = () => vFrames = [vFrames[1], vFrames[0]];
 let potFrame = new Frame(pixelWidth, pixelHeight, 5);
 let guiFrame = new Frame(pixelWidth, pixelHeight, 6);
 let vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
-let extraFrame = new Frame(pixelWidth, pixelHeight, 8);
-let nullTex = 9;
+let vectorPotentialFrame = new Frame(pixelWidth, pixelHeight, 8);
+let extraFrame = new Frame(pixelWidth, pixelHeight, 9);
+let nullTex = 10;
 var frames = [];
 frames.push(viewFrame);
 uFrames.forEach(e => frames.push(e));
@@ -37,6 +38,8 @@ let data = {
     drawValue: 10000/137.036,
     mouseSelect: 'New ψ(x, y)',
     presetPotentials: 'Free (Periodic)',
+    useVectorPotential: false,
+    presetVectorPotentials: 'None',
     potentialType: 7,
     stepsPerFrame: 6,
     brightness: 1.0,
@@ -162,6 +165,9 @@ gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
 // gui.add(data, 'measurePosition').name('Measure Position');
 let moreControls = gui.addFolder('More Controls');
+let vectorPotOptions = moreControls.add(data, 'presetVectorPotentials', 
+                                        ['None', 'ay, -bx, 0']
+                                       ).name('Vector Potential');
 let changeGrid = moreControls.add(data, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
                                 ).name('Grid Dimensions');
@@ -176,6 +182,21 @@ let uploadImageButton = imageOptions.add({'uploadImage': () => {}},
 uploadImageButton.domElement.hidden = true;
 let uploadImage = document.getElementById("uploadImage");
 let imageNameDisplay = imageOptions.add(data, 'imageName').name('File: ');
+
+
+vectorPotOptions.onChange(e => {
+    if (e === 'None') {
+        data.useVectorPotential = false;
+    } else {
+        data.useVectorPotential = true;
+        vectorPotentialFrame.useProgram(initVectorPotentialProgram);
+        vectorPotentialFrame.bind()
+        vectorPotentialFrame.setIntUniforms({potentialType: 1});
+        vectorPotentialFrame.setFloatUniforms({cx: 50.0, cy: 50.0});
+        draw();
+        unbind();
+    }
+});
 
 
 function onUploadImage() {
@@ -604,7 +625,9 @@ function step() {
     uFrames[1].setIntUniforms(
         {"vTex": vFrames[0].frameNumber,
          "uTex": uFrames[0].frameNumber,
-         "potTex": potFrame.frameNumber}
+         "potTex": potFrame.frameNumber,
+         "useVecPot": (data.useVectorPotential)? 1: 0,
+         "vecPotTex": vectorPotentialFrame.frameNumber}
     );
     draw();
     unbind();
@@ -619,7 +642,9 @@ function step() {
     vFrames[1].setIntUniforms(
         {"vTex": vFrames[0].frameNumber,
          "uTex": uFrames[0].frameNumber,
-         "potTex": potFrame.frameNumber}
+         "potTex": potFrame.frameNumber,
+         "useVecPot": (data.useVectorPotential)? 1: 0,
+         "vecPotTex": vectorPotentialFrame.frameNumber}
     );
     draw();
     unbind();

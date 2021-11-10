@@ -195,7 +195,7 @@ class Frame {
         }
         let shaderProgram = this.shaderProgram;
         let vertices = new Float32Array([1.0, 1.0, 0.0, 1.0, -1.0, 0.0,
-            -1.0, -1.0, 0.0, -1.0, 1.0, 0.0]);
+                                         -1.0, -1.0, 0.0, -1.0, 1.0, 0.0]);
         let elements = new Uint16Array([0, 2, 3, 0, 1, 2]);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
