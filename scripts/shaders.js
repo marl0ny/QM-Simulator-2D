@@ -808,8 +808,6 @@ void main() {
     vec4 leftU = texture2D(uTex, vec2(xy.x-dx/w, xy.y-0.5*dy/h));
     vec4 upU = texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y));
     vec4 downU = texture2D(uTex, vec2(xy.x-0.5*dx/w, xy.y-dy/h));
-    vec4 dUdx;
-    vec4 dUdy;
     if (useVecPot == 1) {
         vec2 loc = xy - 0.5*vec2(dx/w, dy/h);
         vec4 thetaRightUpDownLeft = getRightUpDownLeftAngles(loc);
@@ -825,11 +823,9 @@ void main() {
                    mult(upU.ba, upPhase));
         downU = vec4(mult(downU.rg, downPhase),
                      mult(downU.ba, downPhase));
-        dUdx = (rightU - leftU)/dx;
-        dUdy = (upU - downU)/dy;
     }
-    dUdx = (rightU - leftU)/dx;
-    dUdy = (upU - downU)/dy;
+    vec4 dUdx = (rightU - leftU)/dx;
+    vec4 dUdy = (upU - downU)/dy;
     vec4 uDerivatives = vec4(-dUdx[2] - dUdy[3], dUdy[2] - dUdx[3],
                              -dUdx[0] + dUdy[1], -dUdy[0] - dUdx[1]);
     float b = 0.5*(dt/hbar)*(-m*c*c
@@ -944,8 +940,6 @@ void main() {
     vec4 leftV = texture2D(vTex, vec2(xy.x, xy.y+0.5*dy/h));
     vec4 upV = texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y+dy/h));
     vec4 downV = texture2D(vTex, vec2(xy.x+0.5*dx/w, xy.y));
-    vec4 dVdx;
-    vec4 dVdy;
     if (useVecPot == 1) {
         vec2 loc = xy;
         vec4 thetaRightUpDownLeft = getRightUpDownLeftAngles(loc);
@@ -961,11 +955,9 @@ void main() {
                    mult(upV.ba, upPhase));
         downV = vec4(mult(downV.rg, downPhase),
                      mult(downV.ba, downPhase));
-        dVdx = (rightV - leftV)/dx;
-        dVdy = (upV - downV)/dy;
     }
-    dVdx = (rightV - leftV)/dx;
-    dVdy = (upV - downV)/dy;
+    vec4 dVdx = (rightV - leftV)/dx;
+    vec4 dVdy = (upV - downV)/dy;
     vec4 vDerivatives = vec4(-dVdx[2] - dVdy[3], dVdy[2] - dVdx[3],
                              -dVdx[0] + dVdy[1], -dVdy[0] - dVdx[1]);
     float a = 0.5*(dt/hbar)*(m*c*c + c*texture2D(potTex, xy)[0]);

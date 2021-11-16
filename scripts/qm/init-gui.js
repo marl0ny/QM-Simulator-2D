@@ -40,6 +40,8 @@ let guiData = {
     useTextureCoordinates: true,
     enterPotential: 'V(x, y)',
     enterPotentialExpr: '',
+    enterNonlinear: 'f(u)',
+    enterNonlinearExpr: '',
     measure: false,
     dt: 0.01,
     m: 1.0,
@@ -239,8 +241,9 @@ let intMethod = moreControlsFolder.addFolder('Integration Method');
 let methodControl = intMethod.add(guiData, 'method', 
                                   ['Leapfrog', 
                                    'CN w/ Jacobi', 'CNJ w/ B-Field',
-                                   // 'Split-Op. (CPU FFT)', 
-                                   'Split-Op. (GPU FFT)'
+                                   'Split-Op. (CPU FFT)', 
+                                   'Split-Op. (GPU FFT)',
+                                   'Split-Op. Nonlinear'
                                   ]
                                  ).name('Methods');
 let showFolder = moreControlsFolder.addFolder('Show Dimensions');
@@ -278,6 +281,11 @@ let textEditPotentialEntry = textEditPotential.add(guiData,
     'enterPotential').name('Enter Potential V(x, y)');
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
+let textEditNonlinear = moreControlsFolder.addFolder('Nonlinear Terms');
+let textEditNonlinearEntry = textEditNonlinear.add(guiData, 'enterNonlinear'
+                                                  ).name('Enter terms');
+let textEditNonlinearSubFolder = textEditNonlinear.addFolder('Edit Variables');
+textEditNonlinearSubFolder.controls = [];
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
 let boundariesSelect = boundariesFolder.add(guiData, 'boundaryType', 
                                             ['Dirichlet', 'Neumann', 
@@ -373,6 +381,55 @@ let finishRecordingVideo = () => {
     guiData.videoData = [];
 };
 recordVideoFolder.add({'func': finishRecordingVideo}, 'func').name('Finish');
+
+
+function textEditNonlinearFunc(view) {
+    let expr = guiData.enterNonlinear;
+    if (expr.includes('^') || expr.includes('**')) {
+        expr = powerOpsToCallables(expr, false);
+    }
+    expr = replaceIntsToFloats(expr);
+    if (expr === guiData.enterNonlinearExpr) return;
+    guiData.enterNonlinearExpr = expr;
+    for (let e of textEditSubFolder.controls) {
+        console.log(e);
+        e.remove();
+    }
+    textEditSubFolder.controls = [];
+    let uniforms = getVariables(expr);
+    uniforms.delete('u');
+    let shader = createNonlinearExpPotentialShader(expr, uniforms);
+    if (shader === null) {
+        console.log('Failed to create shader.');
+        return;
+    }
+    let program = makeProgram(vShader, shader);
+
+    let f = (uniforms) => {
+        try {
+            view.nonlinear(program, uniforms);
+        } catch (e) {
+            return;
+        }
+        potChanged = true;
+    };
+    let newUniformVals = {};
+    for (let u of uniforms) {
+        newUniformVals[u] = 1.0;
+    }
+    f(newUniformVals);
+    for (let e of uniforms) {
+        let slider = textEditNonlinearSubFolder.add(
+            newUniformVals, e,
+            0.0, 10.0
+        );
+        slider.onChange(val => {
+            newUniformVals[e] = val;
+            f(newUniformVals);
+        });
+        textEditSubFolder.controls.push(slider);
+    }
+}
 
 
 function downloadScreenshot() {

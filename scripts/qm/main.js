@@ -15,34 +15,40 @@ function main() {
 
     initializePotential('SHO');
 
+    let methodGridSizes;
     methodControl.onChange(e => {
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
             dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
+            methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false;
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
+            methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false; 
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
+            methodGridSizes = gridSizes;
             numberOfFrames = 8;
             disableNonPowerTwo = false;
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationViewManager;
             dtSlider.max(0.1);
             if (guiData.dt > 0.1) guiData.dt = 0.1;
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
             numberOfFrames = 7;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationViewManager;
             dtSlider.max(0.1);
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
             dtSlider.setValue(0.03);
             dtSlider.updateDisplay();
             iter.setValue(2);
@@ -50,15 +56,35 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
+        } else if (e === 'Split-Op. Nonlinear') {
+            SimManager = SplitStepNonlinearViewManager;
+            dtSlider.max(0.1);
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
+            dtSlider.setValue(0.03);
+            dtSlider.updateDisplay();
+            iter.setValue(2);
+            iter.updateDisplay();
+            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            numberOfFrames = 10;
+            disableNonPowerTwo = true;
+            textEditNonlinearEntry.onChange(() => {
+                textEditNonlinearFunc(view);
+            });
         }
         dtSlider.updateDisplay();
 
+        let innerHTML = ``;
+        methodGridSizes.map(
+            e => innerHTML += `<option value="${e}">${e}</option>`);
+        gridSelect.__select.innerHTML = innerHTML;
         if (disableNonPowerTwo) {
             let evenPowers = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
             if (!(evenPowers.some(e => e === pixelWidth) && 
                   evenPowers.some(e => e === pixelHeight)))
                 pixelWidth = 512, pixelHeight = 512;
+                gridSelect.setValue(`512x512`);
         }
+        gridSelect.updateDisplay();
         resizeCanvas(pixelWidth, pixelHeight);
         let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
         gl = initializeCanvasGL(canvas, context);
