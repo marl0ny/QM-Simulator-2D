@@ -1,5 +1,5 @@
 # Instructions
-On start up, the application displays the wavefunction in an embedded Harmonic Oscillator potential, where the brightness and colour of the wavefunction corresponds to its probability density and complex phase. Click anywhere to initialize a new wavefunction, where the movement of the mouse when pressed is used to determine the initial momentum of the wavefunction.
+On start up, the application displays the wavefunction in an embedded Harmonic Oscillator potential, where the brightness and colour of the wavefunction corresponds to its probability density and complex phase. Click anywhere to initialize a new wavefunction, where the movement of the mouse when pressed determines the initial momentum of the wavefunction.
 
 On the upper right are the user interface controls. These are:
 - **Instructions**. Link to this document.
@@ -8,7 +8,7 @@ On the upper right are the user interface controls. These are:
 - **Speed** slider. Change the number of time steps per frame.
 - **Colour Phase** checkbox. Check this to show the phase of the complex wavefunction using colours.
 - **Mouse Usage** dropdown. Use the mouse to either place a new wavefunction **new Ψ(x, y)**, sketch a potential barrier **sketch barrier**, set the potential value to zero at the mouse location **erase barrier**, or determine the probability of finding the particle inside a user-drawn rectangular region **prob. in box**.
-- **Preset Potential** dropdown. Modify the potential within the box using the preset options found here. The options are SHO (Simple Harmonic Oscillator, up to the box boundaries), ISW (Infinite Square Well), Double Slit, Single Slit, Step, Spike, and Triple Slit. The default potential at the start is SHO.
+- **Preset Potential** dropdown. Change the potential to one of the preset options found here. The options are SHO (Simple Harmonic Oscillator, up to the box boundaries), ISW (Infinite Square Well), Double Slit, Single Slit, Step, Spike, and Triple Slit. The default potential at the start is SHO.
 - **Mouse Usage Controls** folder. Contains widgets that pertain to the selection in the Mouse dropdown. These are:
     - **new Ψ(x, y)**
         - **Fix Init. Mom.** checkbox. Fix Initial Momentum. Instead of using the mouse to specify the initial momentum of the wavefunction, use the kx and ky sliders instead.

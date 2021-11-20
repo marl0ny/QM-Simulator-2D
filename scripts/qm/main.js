@@ -55,6 +55,13 @@ function main() {
         initializePotential(guiData.presetPotential);
     });*/
 
+    guiData.setToImageDimensions = function () {
+        let canvas = document.getElementById('image-canvas');
+        let im = document.getElementById('image');
+        setFrameDimensions(parseInt(im.width/2.0), 
+                           parseInt(im.height/2.0));
+    }
+
     guiData.imageFunc = function () {
         let canvas = document.getElementById('image-canvas');
         console.log(canvas.width, canvas.height);

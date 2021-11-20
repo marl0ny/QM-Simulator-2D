@@ -56,6 +56,7 @@ let guiData = {
     potColour: [1.0, 1.0, 1.0],
     imageName: '',
     imageFunc: () => {},
+    setToImageDimensions: () => {},
     invertImage: false,
     takeScreenshot: false,
     recordVideo: false,
@@ -309,6 +310,9 @@ function onUploadImage() {
 uploadImage.addEventListener("change", onUploadImage, false);
 let invertImageControl = imagePotentialFolder.add(guiData, 
     'invertImage', false).name('invert');
+imagePotentialFolder.add({'useImageDimensions': 
+                          () => guiData.setToImageDimensions()}, 
+                          'useImageDimensions').name('Use Dim.');
 imagePotentialFolder.add({'submit': () => guiData.imageFunc()}, 
                          'submit').name('Use for Pot.');
 let recordVideoFolder = moreControlsFolder.addFolder('Record Video');

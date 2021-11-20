@@ -21,7 +21,11 @@ uniform sampler2D tex3;
 uniform sampler2D texV;
 uniform sampler2D vecTex;
 uniform sampler2D textTex;
+uniform sampler2D backgroundTex;
+// TODO: Split this up into separate modes that deal with the 
+// potential, wavefunction, and probability current individually.
 uniform int displayMode;
+uniform int backgroundDisplayMode;
 uniform vec3 probColour;
 uniform vec3 potColour;
 
@@ -29,6 +33,8 @@ uniform vec3 potColour;
 #define DISPLAY_PHASE 1
 #define DISPLAY_CURRENT_WITH_PROB 2
 #define DISPLAY_CURRENT_WITH_PHASE 3
+
+#define DISPLAY_BACKGROUND 1
 
 
 vec4 drawWindow(vec4 pix, float x, float y,
@@ -58,9 +64,8 @@ vec4 drawWindow(vec4 pix, float x, float y,
 }
 
 
-vec3 complexToColour(float re, float im) {
+vec3 argumentToColour(float argVal) {
     float pi = 3.141592653589793;
-    float argVal = atan(im, re);
     float maxCol = 1.0;
     float minCol = 50.0/255.0;
     float colRange = maxCol - minCol;
@@ -88,6 +93,12 @@ vec3 complexToColour(float re, float im) {
     }
 }
 
+
+vec3 complexToColour(float re, float im) {
+    return argumentToColour(atan(im, re));
+}
+
+
 void main () {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
@@ -101,8 +112,15 @@ void main () {
     if (displayMode == DISPLAY_PHASE) {
         pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
                    potential,
+                   // argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)
+                   // *exp(-brightness*probDensity/16.0),
                    1.0);
     } else if (displayMode == DISPLAY_ONLY_PROB_DENSITY) {
+        /* vec3 colPotential = argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)*exp(-brightness*probDensity/16.0);
+        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + colPotential.r,
+                   probDensity*probColour[1]*(brightness/16.0) + colPotential.g,
+                   probDensity*probColour[2]*(brightness/16.0) + colPotential.b, 
+                   1.0);*/
         pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
                    probDensity*probColour[1]*(brightness/16.0) + potential.g,
                    probDensity*probColour[2]*(brightness/16.0) + potential.b, 
