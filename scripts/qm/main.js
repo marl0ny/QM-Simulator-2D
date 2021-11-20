@@ -8,46 +8,109 @@ function main() {
     let numberOfFrames = 7;
     framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
     framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
-    let SimManager = SimulationViewManager;
+    let SimManager = LeapfrogSimulationManager;
     let view = new SimManager(framesManager);
     let potChanged = false;
     let disableNonPowerTwo = false;
 
     initializePotential('SHO');
 
-    /*methodControl.onChange(e => {
+    /*let methodGridSizes;
+    methodControl.onChange(e => {
         if (e === 'Leapfrog') {
-            SimManager = SimulationViewManager;
+            SimManager = LeapfrogSimulationManager;
             dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false;
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false; 
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
+            methodGridSizes = gridSizes;
             numberOfFrames = 8;
             disableNonPowerTwo = false;
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationViewManager;
             dtSlider.max(0.1);
             if (guiData.dt > 0.1) guiData.dt = 0.1;
+            boundaryTypes = ['Periodic'];
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
             numberOfFrames = 7;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationViewManager;
             dtSlider.max(0.1);
+            boundaryTypes = ['Periodic'];
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
+            dtSlider.setValue(0.03);
+            dtSlider.updateDisplay();
+            iter.setValue(2);
+            iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
+        } else if (e === 'Split-Op. Nonlinear') {
+            SimManager = SplitStepNonlinearViewManager;
+            dtSlider.max(0.1);
+            boundaryTypes = ['Periodic'];
+            methodGridSizes = ['256x256', '512x512', '1024x1024'];
+            dtSlider.setValue(0.03);
+            dtSlider.updateDisplay();
+            iter.setValue(2);
+            iter.updateDisplay();
+            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            numberOfFrames = 10;
+            disableNonPowerTwo = true;
+            textEditNonlinearEntry.onChange(() => {
+                textEditNonlinearFunc(view);
+            });
         }
-        dtSlider.updateDisplay()
+        dtSlider.updateDisplay();
+
+        let innerHTML = ``;
+        methodGridSizes.map(
+            e => innerHTML += `<option value="${e}">${e}</option>`);
+        gridSelect.__select.innerHTML = innerHTML;
+        innerHTML = ``;
+        boundaryTypes.map(
+            e => innerHTML += `<option value="${e}">${e}</option>`);
+        boundariesSelect.__select.innerHTML = innerHTML;
+        if (disableNonPowerTwo) {
+            let evenPowers = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+            if (!(evenPowers.some(e => e === pixelWidth) && 
+                  evenPowers.some(e => e === pixelHeight)))
+                pixelWidth = 512, pixelHeight = 512;
+                gridSelect.setValue(`512x512`);
+                boundariesSelect.setValue(`Periodic`);
+        } else {
+            if (guiData.borderAlpha === 0.0) {
+                guiData.boundaryType = 'Dirichlet';
+                boundariesSelect.updateDisplay();
+            }
+            else if (guiData.borderAlpha === 1.0) {
+                guiData.boundaryType = 'Neumann';
+                boundariesSelect.updateDisplay();
+            }
+        }
+        boundariesSelect.updateDisplay();
+        gridSelect.updateDisplay();
+        resizeCanvas(pixelWidth, pixelHeight);
+        let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
+        gl = initializeCanvasGL(canvas, context);
+        initPrograms();
+        setMouseInput();
+
         framesManager = new FramesManager();
         framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
@@ -125,32 +188,17 @@ function main() {
 
 
     function setFrameDimensions(newWidth, newHeight) {
-        if (Math.abs(newWidth/newHeight - pixelWidth/pixelHeight) > 1e-10) {
-            let divCanvas = document.getElementById('div-canvas');
-            // divCanvas.innerHTML = ``;
-            document.getElementById('sketch-canvas').remove();
-            divCanvas.innerHTML = `<canvas id="sketch-canvas",
-                                    width="${newWidth}", height="${newHeight}",
-                                    text="WebGL not supported",
-                                    style = "touch-action: none; 
-                                    width: 700px; height: 512px; 
-                                    border: solid white 1px;
-                                    top: 0px; bottom: 0px;">`;
-            canvas = document.getElementById("sketch-canvas");
-            let divImageCanvas = document.getElementById("div-image-canvas");
-            divImageCanvas.innerHTML = `<canvas id="image-canvas" 
-                                        hidden="true"
-                                        width="${newWidth}" 
-                                        height="${newHeight}"></canvas>`;
-            width = (canvas.width/512)*64.0*Math.sqrt(2.0);
-            height = (canvas.height/512)*64.0*Math.sqrt(2.0);
-            setCanvasStyleWidthAndHeight(width, height);
+        let ratioDiff = Math.abs(newWidth/newHeight - pixelWidth/pixelHeight);
+        pixelWidth = newWidth;
+        pixelHeight = newHeight;
+        if (ratioDiff > 1e-10 || disableNonPowerTwo) {
+            resizeCanvas(newWidth, newHeight);
             let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
             gl = initializeCanvasGL(canvas, context);
             initPrograms();
             framesManager = new FramesManager();
-            framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
-            framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
+            framesManager.addFrames(newWidth, newHeight, numberOfFrames);
+            framesManager.addVectorFieldFrame(newWidth, newHeight);
             view = new SimManager(framesManager);
             initializePotential('SHO');
             setMouseInput();
@@ -164,8 +212,6 @@ function main() {
         console.log(width, height);
         scale = {w: canvasStyleWidth/canvas.width,
             h: canvasStyleHeight/canvas.height};
-        pixelWidth = newWidth;
-        pixelHeight = newHeight;
         showValues.w = width;
         showValues.h = height;
         boxW.updateDisplay();

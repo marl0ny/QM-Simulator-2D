@@ -195,7 +195,7 @@ class Frame {
         }
         let shaderProgram = this.shaderProgram;
         let vertices = new Float32Array([1.0, 1.0, 0.0, 1.0, -1.0, 0.0,
-            -1.0, -1.0, 0.0, -1.0, 1.0, 0.0]);
+                                         -1.0, -1.0, 0.0, -1.0, 1.0, 0.0]);
         let elements = new Uint16Array([0, 2, 3, 0, 1, 2]);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
@@ -497,6 +497,61 @@ function createFunctionShader(expr, uniforms) {
     `, // 8
     '}'];
     splitTemplateShader[7] = splitTemplateShader[7] + expr + ';';
+    for (let uniform of uniforms) {
+        splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
+    }
+    splitTemplateShader[1] += '\n';
+    let templateShaderText = '';
+    for (let s of splitTemplateShader) {
+        templateShaderText += s + '\n';
+    }
+    if (context === "webgl2")
+        templateShaderText = "#version 300 es\n" + templateShaderText;
+    let shaderID = gl.createShader(gl.FRAGMENT_SHADER);
+    if (shaderID === 0) {
+        return null;
+    }
+    gl.shaderSource(shaderID, templateShaderText);
+    gl.compileShader(shaderID);
+    if (!gl.getShaderParameter(shaderID, gl.COMPILE_STATUS)) {
+        gl.deleteShader(shaderID);
+        return null;
+    }
+    return shaderID;
+}
+
+function createNonlinearExpPotentialShader(expr, uniforms) {
+    let splitTemplateShader = [`
+    precision highp float;
+    #if __VERSION__ == 300
+    #define texture2D texture
+    in vec2 fragTexCoord;
+    out vec4 fragColor;
+    #else
+    #define fragColor gl_FragColor
+    varying highp vec2 fragTexCoord;
+    #endif
+    const float pi = 3.141592653589793;
+    uniform sampler2D texV;
+    uniform sampler2D texPsi;
+    uniform float dt;
+    uniform float hbar;`, // 0
+    '// UNIFORMS HERE', // 1
+    'void main() {',  // 2
+    '    vec4 psi = texture2D(texPsi, fragTexCoord);', // 3
+    '    float u = psi.x*psi.x + psi.y*psi.y;', // 4
+    '    float value = ', // 5
+    `    vec4 potential = texture2D(texV, fragTexCoord);
+    float reV = potential[0] + value;
+    float imV = potential[2];
+    // Arg = -i*0.5*(reV + i*imV)*dt/hbar = 0.5*(-i*reV + imV)*dt/hbar
+    float imArg = -0.5*reV*dt/hbar;
+    float reArg = 0.5*imV*dt/hbar;
+    fragColor = vec4(exp(reArg)*cos(imArg), exp(reArg)*sin(imArg), 0.0, 1.0);
+    `, // 6
+    '}'];
+    console.log(expr);
+    splitTemplateShader[5] = splitTemplateShader[5] + expr + ';';
     for (let uniform of uniforms) {
         splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
     }

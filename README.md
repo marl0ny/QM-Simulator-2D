@@ -38,6 +38,10 @@ Split-Step:
 
  - Hammer, R., Pötz W. (2014). Staggered grid leap-frog scheme for the (2 + 1)D Dirac equation. <em>Computer Physics Communications, 185(1)</em>, 40-53. [https://doi.org/10.1016/j.cpc.2013.08.013](https://doi.org/10.1016/j.cpc.2013.08.013)
 
+ Nonlinear Schrödinger Equation:
+
+ - Antoine, X., Bao, W., Besse C. (2013). Computational methods for the dynamics of the nonlinear Schrödinger/Gross–Pitaevskii equations. <em>Computer Physics Communications, 184(12)</em>, 2621-2633. [https://doi.org/10.1016/j.cpc.2013.07.012](https://doi.org/10.1016/j.cpc.2013.07.012)
+
  ###
 
 Approximating the vector potential:

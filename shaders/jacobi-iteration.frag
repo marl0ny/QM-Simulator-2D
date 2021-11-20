@@ -43,17 +43,46 @@ float imagValueAt(sampler2D texComplexFunc, vec2 location) {
 }
 
 float getImagValuesAround(sampler2D texComplexFunc) {
-    return (imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h)) +
-            imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h)) +
-            imagValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0)) +
-            imagValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0)));
+    float u = imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h));
+    float d = imagValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h));
+    float l = imagValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = imagValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0));
+    if (laplacePoints <= 5) {
+        return u + d + l + r;
+    } else {
+        float ul = imagValueAt(texComplexFunc, 
+                               fragTexCoord + vec2(-dx/w, dy/h));
+        float ur = imagValueAt(texComplexFunc, 
+                               fragTexCoord + vec2(dx/w, dy/h));
+        float dl = imagValueAt(texComplexFunc, 
+                               fragTexCoord + vec2(-dx/w, -dy/h));
+        float dr = imagValueAt(texComplexFunc, 
+                               fragTexCoord + vec2(dx/w, -dy/h));
+        return 0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r;
+
+    }
 }
 
 float getReValuesAround(sampler2D texComplexFunc) {
-    return (reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h)) +
-            reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h)) +
-            reValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0)) +
-            reValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0)));
+    float u = reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, dy/h));
+    float d = reValueAt(texComplexFunc, fragTexCoord + vec2(0.0, -dy/h));
+    float l = reValueAt(texComplexFunc, fragTexCoord + vec2(-dx/w, 0.0));
+    float r = reValueAt(texComplexFunc, fragTexCoord + vec2(dx/w, 0.0));
+    if (laplacePoints <= 5) {
+        return u + d + l + r;
+    } else {
+        float ul = reValueAt(texComplexFunc, 
+                             fragTexCoord + vec2(-dx/w, dy/h));
+        float ur = reValueAt(texComplexFunc, 
+                             fragTexCoord + vec2(dx/w, dy/h));
+        float dl = reValueAt(texComplexFunc, 
+                             fragTexCoord + vec2(-dx/w, -dy/h));
+        float dr = reValueAt(texComplexFunc, 
+                             fragTexCoord + vec2(dx/w, -dy/h));
+        return 0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r;
+    }
 }
 
 
@@ -109,7 +138,16 @@ vec2 getValuesAround(sampler2D texComplexFunc) {
     vec2 d = mult(valueAt(texComplexFunc, xy + vec2(0.0, -dy/h)), phaseD);
     vec2 l = mult(valueAt(texComplexFunc, xy + vec2(-dx/w, 0.0)), phaseL);
     vec2 r = mult(valueAt(texComplexFunc, xy + vec2(dx/w, 0.0)), phaseR);
-    return u + d + l + r;
+    if (laplacePoints <= 5) {
+        return u + d + l + r;
+    } else {
+        vec2 ul = valueAt(texComplexFunc, xy + vec2(-dx/w, dy/h));
+        vec2 ur = valueAt(texComplexFunc, xy + vec2(dx/w, dy/h));
+        vec2 dl = valueAt(texComplexFunc, xy + vec2(-dx/w, -dy/h));
+        vec2 dr = valueAt(texComplexFunc, xy + vec2(dx/w, -dy/h));
+        return 0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r;
+    }
 }
 
 void main() {
@@ -117,7 +155,8 @@ void main() {
                 rScaleV*texture2D(texV, fragTexCoord).g;
     vec4 psiIter = texture2D(texPsiIter, fragTexCoord);
     vec4 psi = texture2D(texPsi, fragTexCoord);
-    float imDiag = dt*V/(2.0*hbar) + hbar*dt/(m*dx*dx);
+    float c1 = (laplacePoints <= 5)? 1.0: 0.75;
+    float imDiag = dt*V/(2.0*hbar) + c1*hbar*dt/(m*dx*dx);
     if (useAField == 0) {
         float reInvDiag = 1.0/(1.0 + imDiag*imDiag);
         float imInvDiag = -imDiag/(1.0 + imDiag*imDiag);

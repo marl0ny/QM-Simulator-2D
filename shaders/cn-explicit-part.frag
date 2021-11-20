@@ -19,6 +19,8 @@ uniform sampler2D texPsi;
 uniform sampler2D texV;
 uniform sampler2D texA;
 uniform int useAField;
+uniform int laplacePoints;
+
 
 vec2 mult(vec2 z1, vec2 z2) {
     return vec2(z1.x*z2.x - z1.y*z2.y, 
@@ -92,7 +94,16 @@ vec2 getDiv2Psi() {
     vec2 l = mult(valueAt(xy + vec2(-dx/w, 0.0)), phaseL);
     vec2 r = mult(valueAt(xy + vec2(dx/w, 0.0)), phaseR);
     vec2 c = valueAt(xy);
-    return (u + d + l + r - 4.0*c)/(dx*dx);
+    if (laplacePoints <= 5) {
+        return (u + d + l + r - 4.0*c)/(dx*dx);
+    } else {
+        vec2 ul = valueAt(xy + vec2(-dx/w, dy/h));
+        vec2 ur = valueAt(xy + vec2(dx/w, dy/h));
+        vec2 dl = valueAt(xy + vec2(-dx/w, -dy/h));
+        vec2 dr = valueAt(xy + vec2(dx/w, -dy/h));
+        return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*c)/(dx*dx);
+    }
 
 }
 
@@ -101,7 +112,16 @@ float getDiv2RePsi(float rePsi) {
     float d = realValueAt(fragTexCoord + vec2(0.0, -dy/h));
     float l = realValueAt(fragTexCoord + vec2(-dx/w, 0.0));
     float r = realValueAt(fragTexCoord + vec2(dx/w, 0.0));
-    return (u + d + l + r - 4.0*rePsi)/(dx*dx);
+    if (laplacePoints <= 5) {
+        return (u + d + l + r - 4.0*rePsi)/(dx*dx);
+    } else {
+        float ul = realValueAt(fragTexCoord + vec2(-dx/w, dy/h));
+        float ur = realValueAt(fragTexCoord + vec2(dx/w, dy/h));
+        float dl = realValueAt(fragTexCoord + vec2(-dx/w, -dy/h));
+        float dr = realValueAt(fragTexCoord + vec2(dx/w, -dy/h));
+        return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*rePsi)/(dx*dx);
+    }
 }
 
 float getDiv2ImPsi(float imPsi) {
@@ -109,7 +129,16 @@ float getDiv2ImPsi(float imPsi) {
     float d = imagValueAt(fragTexCoord + vec2(0.0, -dy/h));
     float l = imagValueAt(fragTexCoord + vec2(-dx/w, 0.0));
     float r = imagValueAt(fragTexCoord + vec2(dx/w, 0.0));
-    return (u + d + l + r - 4.0*imPsi)/(dx*dx);
+    if (laplacePoints <= 5) {
+        return (u + d + l + r - 4.0*imPsi)/(dx*dx);
+    } else {
+        float ul = imagValueAt(fragTexCoord + vec2(-dx/w, dy/h));
+        float ur = imagValueAt(fragTexCoord + vec2(dx/w, dy/h));
+        float dl = imagValueAt(fragTexCoord + vec2(-dx/w, -dy/h));
+        float dr = imagValueAt(fragTexCoord + vec2(dx/w, -dy/h));
+        return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*imPsi)/(dx*dx);
+    }
 }
 
 void main() {

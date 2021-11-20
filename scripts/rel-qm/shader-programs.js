@@ -23,6 +23,9 @@ let currentShader = makeShader(gl.FRAGMENT_SHADER,
 let onesShader = makeShader(gl.FRAGMENT_SHADER, onesFragmentSource);
 let imagePotentialShader = makeShader(gl.FRAGMENT_SHADER, 
                                       imagePotentialFragmentSource);
+let initVectorPotentialShader = makeShader(gl.FRAGMENT_SHADER,
+                                    initialVectorPotentialFragmentSource);
+
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
 let initWave2Program = makeProgram(vShader, initWave2Shader);
@@ -37,6 +40,8 @@ let guiRectProgram = makeProgram(vShader, guiRectShader);
 let currentProgram = makeProgram(vShader, currentShader);
 let onesProgram = makeProgram(vShader, onesShader);
 let imagePotentialProgram = makeProgram(vShader, imagePotentialShader);
+let initVectorPotentialProgram = makeProgram(vShader, 
+                                             initVectorPotentialShader);
 
 gl.deleteShader(vShader);
 gl.deleteShader(initWaveShader);
@@ -52,4 +57,5 @@ gl.deleteShader(guiRectShader);
 gl.deleteShader(currentShader);
 gl.deleteShader(onesShader);
 gl.deleteShader(imagePotentialShader);
+gl.deleteShader(initVectorPotentialShader);
 
