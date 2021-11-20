@@ -12,7 +12,7 @@
  - [ ] For the different methods need to change the default time step and grid sizes. For the Split-Op method need to make periodic the only possible boundary condition.
  - [ ] Add new potentials (like Coulomb) for the Split-Step and CN Jacobi methods which Leapfrog was not able to handle. When using Leapfrog these potentials should not be available.
  - [ ] Add a method option which uses the exact analytical formulas (only analytical potentials would be available).
- - [ ] Asynchronous programming for the Split-Step GPU implementation.
+ - [ ] Asynchronous programming to properly handle web workers for the Split-Step CPU implementation.
 
 
 #### Refactoring
@@ -21,13 +21,17 @@
 - Put the SimulationViewManager and its derivatives in a separate folder.
 - Instead of having many of the gui functions within the main function, perhaps put these outside instead in init-gui.
 - Add comments and descriptions for the shaders.
+- Add tests
 
 ### Dirac Simulation
  - [x] Include the 3-vector potential as well.
  - [ ] Add the ability to initialize the wavefunction in terms of a linear combination of the different spinor components. 
 
- ## Bugs
-  - In the Split-Op. simulation, when switching to a different power of two grid size, the simulation does not work properly.
-  This is not an issue when first using the other methods with the new power of two texture and switching to the Split-Op. method.
-  - Need to now fix that when changing to a non-square dimension the actual dimensions remain a square.
+ ### Bugs
+  - <s>In the Split-Op. simulation, when switching to a different power of two grid size, the simulation does not work properly.
+  This is not an issue when first using the other methods with the new power of two texture and switching to the Split-Op. method. This seems to now be mostly resolved.</s>
+  - <s>Need to now fix that when changing to a non-square dimension the actual dimensions remain a square.</s>
+  - <s>For Split-Op. Nonlinear, the potential changes when dt changes.</s>
   - The transmission and reflection for Split-Operator and the other methods are different, with Split-Operator admitting more transmittance. This is evident with the default step potential example.
+ - The Split-Op. method does not work with WebGL 1. This is because when using WebGL 1 the interpolation is set to only LINEAR, which causes the rearrange shader program that handles reverse bit sorting to fail.
+  - For the Dirac simulation, setting the interpolation to NEAREST causes the simulation to be instable, since with this setting the spinors are no longer accessed in a staggered fashion. Add parameters to the gl creation functions that set the interpolation instead of controlling it in the functions themselves.

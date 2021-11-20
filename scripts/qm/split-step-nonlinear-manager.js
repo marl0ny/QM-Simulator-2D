@@ -22,6 +22,10 @@ extends SplitStepGPUSimulationViewManager {
         this.nonlinearParams = uniforms;
 
     }
+    _resetNonlinearParams() {
+        this.nonlinearParams['dt'] = this._dt;
+        this.nonlinearParams['hbar'] = this._hbar;
+    }
     step(params) {
         let t = this.t;
         let swapFrames = this.swapFrames;
@@ -31,12 +35,15 @@ extends SplitStepGPUSimulationViewManager {
         if (this._dt !== dt) {
             let m, hbar, width, height;
             ({m, hbar, width, height} = params);
-            this.makeExpKinetic(this.expKinetic, params);
             this._dt = dt;
             this._hbar = hbar;
             this._m = m;
             this._w = width;
             this._h = height;
+            this._resetNonlinearParams();
+            this.makeExpPotential(potentialFrame, expPotentialFrame, 
+                                  dt, hbar);
+            this.makeExpKinetic(this.expKinetic, params);
         }
         /*
         Applying nonlinear terms for the split-operator method can be found here

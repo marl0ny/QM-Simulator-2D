@@ -21,6 +21,7 @@ function main() {
             SimManager = LeapfrogSimulationManager;
             dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false;
@@ -28,6 +29,7 @@ function main() {
             SimManager = CrankNicolsonSimulationViewManager;
             dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false; 
@@ -42,12 +44,14 @@ function main() {
             SimManager = SplitStepSimulationViewManager;
             dtSlider.max(0.1);
             if (guiData.dt > 0.1) guiData.dt = 0.1;
+            boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             numberOfFrames = 7;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationViewManager;
             dtSlider.max(0.1);
+            boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             dtSlider.setValue(0.03);
             dtSlider.updateDisplay();
@@ -59,6 +63,7 @@ function main() {
         } else if (e === 'Split-Op. Nonlinear') {
             SimManager = SplitStepNonlinearViewManager;
             dtSlider.max(0.1);
+            boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             dtSlider.setValue(0.03);
             dtSlider.updateDisplay();
@@ -77,13 +82,28 @@ function main() {
         methodGridSizes.map(
             e => innerHTML += `<option value="${e}">${e}</option>`);
         gridSelect.__select.innerHTML = innerHTML;
+        innerHTML = ``;
+        boundaryTypes.map(
+            e => innerHTML += `<option value="${e}">${e}</option>`);
+        boundariesSelect.__select.innerHTML = innerHTML;
         if (disableNonPowerTwo) {
             let evenPowers = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
             if (!(evenPowers.some(e => e === pixelWidth) && 
                   evenPowers.some(e => e === pixelHeight)))
                 pixelWidth = 512, pixelHeight = 512;
                 gridSelect.setValue(`512x512`);
+                boundariesSelect.setValue(`Periodic`);
+        } else {
+            if (guiData.borderAlpha === 0.0) {
+                guiData.boundaryType = 'Dirichlet';
+                boundariesSelect.updateDisplay();
+            }
+            else if (guiData.borderAlpha === 1.0) {
+                guiData.boundaryType = 'Neumann';
+                boundariesSelect.updateDisplay();
+            }
         }
+        boundariesSelect.updateDisplay();
         gridSelect.updateDisplay();
         resizeCanvas(pixelWidth, pixelHeight);
         let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
@@ -161,9 +181,10 @@ function main() {
 
 
     function setFrameDimensions(newWidth, newHeight) {
+        let ratioDiff = Math.abs(newWidth/newHeight - pixelWidth/pixelHeight);
         pixelWidth = newWidth;
         pixelHeight = newHeight;
-        if (Math.abs(newWidth/newHeight - pixelWidth/pixelHeight) > 1e-10 || disableNonPowerTwo) {
+        if (ratioDiff > 1e-10 || disableNonPowerTwo) {
             resizeCanvas(newWidth, newHeight);
             let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
             gl = initializeCanvasGL(canvas, context);
