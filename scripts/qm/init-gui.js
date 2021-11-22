@@ -40,6 +40,8 @@ let guiData = {
     useTextureCoordinates: true,
     enterPotential: 'V(x, y)',
     enterPotentialExpr: '',
+    enterWavefunc: 'ψ(x, y)',
+    enterWavefuncExpr: '',
     enterNonlinear: 'f(u)',
     enterNonlinearExpr: '',
     measure: false,
@@ -282,11 +284,21 @@ let textEditPotentialEntry = textEditPotential.add(guiData,
     'enterPotential').name('Enter Potential V(x, y)');
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
-let textEditNonlinear = moreControlsFolder.addFolder('Nonlinear Terms');
+
+let textEditWavefunc = moreControlsFolder.addFolder('Text Edit Wavefunction');
+let wavefuncUseTex = textEditWavefunc.add(guiData,
+                                          'useTextureCoordinates'
+                                         ).name('Use Tex Coordinates');
+let textEditWavefuncEntry = textEditWavefunc.add(guiData,
+    'enterWavefunc').name('Enter ψ(x, y)');
+let textEditWavefuncSubFolder = textEditWavefunc.addFolder('Edit variables');
+textEditWavefuncSubFolder.controls = [];
+
+/*let textEditNonlinear = moreControlsFolder.addFolder('Nonlinear Terms');
 let textEditNonlinearEntry = textEditNonlinear.add(guiData, 'enterNonlinear'
                                                   ).name('Enter terms');
 let textEditNonlinearSubFolder = textEditNonlinear.addFolder('Edit Variables');
-textEditNonlinearSubFolder.controls = [];
+textEditNonlinearSubFolder.controls = [];*/
 let boundariesFolder = moreControlsFolder.addFolder('Edit Boundary Type');
 let boundariesSelect = boundariesFolder.add(guiData, 'boundaryType', 
                                             ['Dirichlet', 'Neumann', 

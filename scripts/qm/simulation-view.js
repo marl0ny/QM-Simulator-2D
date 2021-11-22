@@ -233,6 +233,37 @@ class SimulationViewManager {
         draw();
         unbind();
     }
+    textWavefunction(program, params, wavefuncParams) {
+        let dx, dy, dt;
+        let m, hbar;
+        let borderAlpha, laplaceVal;
+        let width, height;
+        ({dx, dy, dt, m, hbar, borderAlpha, 
+          laplaceVal, width, height} = params);
+        for (let elem of Object.entries(params)) {
+            wavefuncParams[elem[0]] = elem[1];
+        }
+        let t = this.t;
+        let swapFrames = this.swapFrames;
+        let potentialFrame = this.potentialFrame;
+        swapFrames[t-3].useProgram(program);
+        swapFrames[t-3].bind();
+        swapFrames[t-3].setFloatUniforms(wavefuncParams);
+        draw();
+        unbind();
+        swapFrames[t-2].useProgram(imagTimeStepProgram);
+        swapFrames[t-2].bind();
+        swapFrames[t-2].setFloatUniforms({dx: dx,
+                                          dy: dy,
+                                          dt: dt/2.0,
+                                          w: width, h: height, m: m,
+                                          hbar: hbar});
+        swapFrames[t-2].setIntUniforms({texPsi: swapFrames[t-3].frameNumber,
+                                        texV: potentialFrame.frameNumber, 
+                                        laplacePoints: laplaceVal});
+        draw();
+        unbind();
+    }
     display(floatUniforms, intUniforms, vec3Uniforms) {
         let tex = this.vectorFieldFrame.frameNumber;
         let potentialFrame = this.potentialFrame;

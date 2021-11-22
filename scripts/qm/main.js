@@ -464,15 +464,20 @@ function main() {
         let py = (!guiData.mouseData.fixInitialP)?
                   guiData.scaleP*guiData.py: guiData.mouseData.py0;
         let sigma = guiData.mouseData.sigma;
+        let dx = width/pixelWidth;
+        let dy = height/pixelHeight;
         let params = {dx: width/pixelWidth, dy: height/pixelHeight, 
                       dt: guiData.dt,
                       m: guiData.m, hbar: 1.0,
                       borderAlpha: guiData.borderAlpha,
                       laplaceVal: guiData.laplaceVal,
                       width: width, height: height};
+        // let tmp = (pixelWidth > pixelHeight)? pixelHeight: pixelWidth;
         let wavefuncParams = {amp: 5.0*30.0/(sigma*512.0),
-                              sx: (sigma*512.0)/pixelWidth,
-                              sy: (sigma*512.0)/pixelHeight,
+                              sx: (pixelWidth > pixelHeight)? 
+                                   sigma*pixelHeight/pixelWidth: sigma,
+                              sy: (pixelWidth > pixelHeight)?
+                                   sigma: sigma*pixelWidth/pixelHeight,
                               bx: guiData.bx/canvas.width,
                               by: 1.0 - guiData.by/canvas.height,
                               px: px, py: py};
@@ -591,7 +596,7 @@ function main() {
         let uniforms = getVariables(expr);
         uniforms.delete('x');
         uniforms.delete('y');
-        let shader = createFunctionShader(expr, uniforms);
+        let shader = createPotentialShader(expr, uniforms);
         if (shader === null) {
             return;
         }
@@ -628,6 +633,63 @@ function main() {
             textEditSubFolder.controls.push(slider);
         }
     }
+    function textEditWavefuncFunction() {
+        params = {px: guiData.px, py: guiData.py, 
+                  dx: 1.0/pixelWidth, dy: 1.0/pixelHeight,
+                  borderAlpha: guiData.borderAlpha,
+                  };
+        let expr = guiData.enterWavefunc;
+        if (expr.includes('^') || expr.includes('**')) {
+            expr = powerOpsToCallables(expr, false);
+        }
+        expr = replaceIntsToFloats(expr);
+        if (expr === guiData.enterWavefuncExpr) return;
+        guiData.enterWavefuncExpr = expr;
+        for (let e of textEditWavefuncSubFolder.controls) {
+            console.log(e);
+            e.remove();
+        }
+        textEditWavefuncSubFolder.controls = [];
+        guiData.enterWavefuncExpr = expr;
+        let uniforms = getVariables(expr);
+        uniforms.delete('x');
+        uniforms.delete('y');
+        let shader = createWavefunctionShader(expr, uniforms);
+        if (shader === null) {
+            return;
+        }
+        let program = makeProgram(vShader, shader);
+
+        let f = (uniforms) => {
+            xyScales = {};
+            if (guiData.useTextureCoordinates) {
+                xyScales = {xScale: 1.0, yScale: 1.0};
+            } else {
+                xyScales = {xScale: width, yScale: height};
+            }
+            for (let e of Object.keys(xyScales)) {
+                uniforms[e] = xyScales[e];
+            }
+            view.textWavefunction(program, params, uniforms);
+        };
+        let newUniformVals = {};
+        for (let u of uniforms) {
+            newUniformVals[u] = 1.0;
+        }
+        f(newUniformVals);
+        for (let e of uniforms) {
+            let slider = textEditWavefuncSubFolder.add(
+                newUniformVals, e,
+                0.0, 10.0
+            );
+            slider.onChange(val => {
+                newUniformVals[e] = val;
+                f(newUniformVals);
+            });
+            textEditWavefuncSubFolder.controls.push(slider);
+        }
+    }
+    textEditWavefuncEntry.onChange(() => textEditWavefuncFunction());
 
     function animate() {
         if (stats) stats.begin();
