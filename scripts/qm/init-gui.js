@@ -285,14 +285,15 @@ let textEditPotentialEntry = textEditPotential.add(guiData,
 let textEditSubFolder = textEditPotential.addFolder('Edit variables');
 textEditSubFolder.controls = [];
 
-let textEditWavefunc = moreControlsFolder.addFolder('Text Edit Wavefunction');
+/*let textEditWavefunc = moreControlsFolder.addFolder('Text Edit Wavefunction');
+textEditWavefunc.hide();
 let wavefuncUseTex = textEditWavefunc.add(guiData,
                                           'useTextureCoordinates'
                                          ).name('Use Tex Coordinates');
 let textEditWavefuncEntry = textEditWavefunc.add(guiData,
     'enterWavefunc').name('Enter ψ(x, y)');
 let textEditWavefuncSubFolder = textEditWavefunc.addFolder('Edit variables');
-textEditWavefuncSubFolder.controls = [];
+textEditWavefuncSubFolder.controls = [];*/
 
 /*let textEditNonlinear = moreControlsFolder.addFolder('Nonlinear Terms');
 let textEditNonlinearEntry = textEditNonlinear.add(guiData, 'enterNonlinear'

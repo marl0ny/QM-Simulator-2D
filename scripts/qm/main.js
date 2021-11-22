@@ -689,7 +689,7 @@ function main() {
             textEditWavefuncSubFolder.controls.push(slider);
         }
     }
-    textEditWavefuncEntry.onChange(() => textEditWavefuncFunction());
+    // textEditWavefuncEntry.onChange(() => textEditWavefuncFunction());
 
     function animate() {
         if (stats) stats.begin();
