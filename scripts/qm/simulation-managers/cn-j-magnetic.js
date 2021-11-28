@@ -1,6 +1,6 @@
 
-class CrankNicolsonWithAFieldSimulationViewManager
-extends CrankNicolsonSimulationViewManager {
+class CrankNicolsonWithAFieldSimulationManager
+extends CrankNicolsonSimulationManager {
 constructor(framesManager) {
     super(framesManager);
     this.vectorPotentialFrame = framesManager.frames[7];

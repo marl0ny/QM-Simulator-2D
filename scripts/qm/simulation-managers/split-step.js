@@ -1,6 +1,6 @@
 
-class SplitStepSimulationViewManager 
-extends CrankNicolsonSimulationViewManager {
+class SplitStepSimulationManager 
+extends CrankNicolsonSimulationManager {
 
 constructor(framesManager) {
     super(framesManager);

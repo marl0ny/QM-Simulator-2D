@@ -1,5 +1,5 @@
 
-class CrankNicolsonSimulationViewManager extends SimulationViewManager {
+class CrankNicolsonSimulationManager extends SimulationManager {
 
     getUnnormalizedProbDist() {
         this.storeFrame.useProgram(probDensityProgram);

@@ -19,16 +19,20 @@
     <script>
     const useWebGL2IfAvailable = true; 
     </script>
-    <script src="./scripts/qm/init-canvas.js"> </script>
+    <script src="./scripts/qm/canvas.js"> </script>
     <script src="./scripts/gl-wrappers.js"> </script>
+    <script src="./scripts/parse.js"> </script>
+    <script src="./scripts/shader-creators.js"> </script>
     <script src="./scripts/qm/shader-programs.js"> </script>
-    <script src="./scripts/qm/init-gui.js"> </script>
-    <script src="./scripts/qm/simulation-view.js"> </script>
-    <script src="./scripts/qm/leapfrog-manager.js"></script>
-    <script src="./scripts/qm/cn-manager.js"> </script>
-    <script src="./scripts/qm/cn-magnetic-manager.js"> </script>
-    <script src="./scripts/qm/split-step-cpu-manager.js"> </script>
-    <script src="./scripts/qm/split-step-gpu-manager.js"> </script>
-    <script src="./scripts/qm/split-step-nonlinear-manager.js"> </script>
+    <script src="./scripts/qm/gui/data.js"> </script>
+    <script src="./scripts/qm/gui/controls.js"> </script>
+    <script src="./scripts/qm/gui/functions.js"> </script>
+    <script src="./scripts/qm/simulation-managers/simulation-manager.js"> </script>
+    <script src="./scripts/qm/simulation-managers/real-imag-leapfrog.js"></script>
+    <script src="./scripts/qm/simulation-managers/cn-j.js"> </script>
+    <script src="./scripts/qm/simulation-managers/cn-j-magnetic.js"> </script>
+    <script src="./scripts/qm/simulation-managers/split-step.js"> </script>
+    <script src="./scripts/qm/simulation-managers/split-step-gpu.js"> </script>
+    <script src="./scripts/qm/simulation-managers/split-step-nonlinear.js"> </script>
     <script src="./scripts/qm/main.js"> </script>
 </html>

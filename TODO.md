@@ -26,16 +26,16 @@ These proposed changes are only for visual effects and do not correspond to anyt
 - [ ] Add an undo/redo button for potential barrier sketching.
 
 #### Refactoring
-- Add helper methods for the base methods in SimulationViewManager base class.
-- Use the non-staggered implementations as the base method for SimulationViewManager. The Leapfrog class will overwrite these with its staggered implementations.
-- Put the SimulationViewManager and its derivatives in a separate folder.
-- Instead of having many of the gui functions within the main function, perhaps put these outside instead in init-gui.
+- Add helper methods for the base methods in SimulationManager base class.
+- Use the non-staggered implementations as the base method for SimulationManager. The Leapfrog class will overwrite these with its staggered implementations.
+- Instead of having many of the gui functions within the main function, perhaps put these outside instead in a better file.
 - Add comments and descriptions for the shaders.
 - Add tests
 
 ### Dirac Simulation
  - [x] Include the 3-vector potential as well.
- - [ ] Add the ability to initialize the wavefunction in terms of a linear combination of the different spinor components. 
+ - [ ] Add the ability to initialize the wavefunction in terms of a linear combination of the different spinor components.
+ - [ ] Add other methods like Split-Operator
 
 
  ## Bugs
@@ -46,3 +46,6 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - The transmission and reflection for Split-Operator and the other methods are different, with Split-Operator admitting more transmittance. This is evident with the default step potential example.
  - The Split-Op. method does not work with WebGL 1. This is because when using WebGL 1 the interpolation is set to only LINEAR, which causes the rearrange shader program that handles reverse bit sorting to fail.
   - For the Dirac simulation, setting the interpolation to NEAREST causes the simulation to be instable, since with this setting the spinors are no longer accessed in a staggered fashion. Add parameters to the gl creation functions that set the interpolation instead of controlling it in the functions themselves.
+  - Also for the Dirac simulation, the conserved probability density and current may not be calculated properly given the staggered grid. This may be the reason for the 'checkerboard' numerical artifacts that sometimes appear.
+  - The Dirac simulation doesn't seem to be symmetric under time reversal, as can be seen when switching from a positive to a negative time step.
+  - When using the dimensions of an image for the simulation need to update the grid size controls as well.

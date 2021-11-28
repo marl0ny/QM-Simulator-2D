@@ -1,6 +1,6 @@
 
-class SplitStepGPUSimulationViewManager 
-extends SplitStepSimulationViewManager {
+class SplitStepGPUSimulationManager 
+extends SplitStepSimulationManager {
     constructor(framesManager) {
         super(framesManager);
         this.expPotentialFrame = framesManager.frames[7];

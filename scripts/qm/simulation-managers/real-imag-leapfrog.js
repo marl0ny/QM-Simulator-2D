@@ -1,4 +1,4 @@
-class LeapfrogSimulationManager extends SimulationViewManager {
+class LeapfrogSimulationManager extends SimulationManager {
 
     step(params) {
         let t = this.t;

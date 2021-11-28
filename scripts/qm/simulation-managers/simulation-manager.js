@@ -1,4 +1,4 @@
-class SimulationViewManager {
+class SimulationManager {
 
     constructor(framesManager) {
         this.viewFrame = framesManager.frames[0];

@@ -1,5 +1,5 @@
-class SplitStepNonlinearViewManager 
-extends SplitStepGPUSimulationViewManager {
+class SplitStepNonlinearManager 
+extends SplitStepGPUSimulationManager {
     // TODO
     constructor(framesManager) {
         super(framesManager);
