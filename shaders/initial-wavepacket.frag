@@ -28,10 +28,10 @@ void main () {
         float y = fragTexCoord.y;
         float u = ((x - bx)/(sx*sqrt2));
         float v = ((y - by)/(sy*sqrt2));
-        // float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
-        // float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
-        float re = amp/cosh(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
-        float im = amp/cosh(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
+        float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
+        float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
+        // float re = amp/cosh(- u*u - v*v)*cos(2.0*pi*(px*x + py*y));
+        // float im = amp/cosh(- u*u - v*v)*sin(2.0*pi*(px*x + py*y));
         fragColor = vec4(re, im, 0.0, 1.0); 
     } else {
         fragColor = vec4(0.0, 0.0, 0.0, borderAlpha); 
