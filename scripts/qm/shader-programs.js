@@ -124,6 +124,7 @@ class ShaderPrograms {
 
 let realTimeStepProgram;
 let imagTimeStepProgram;
+let realImagTimeStepProgram;
 let initialWaveProgram;
 let initPotentialProgram;
 let shapePotentialProgram;
@@ -153,8 +154,13 @@ function initPrograms() {
     let imagTimeStepShader = makeShader(gl.FRAGMENT_SHADER,
                                         imagTimestepFragmentSource);
     imagTimeStepProgram = makeProgram(vShader, imagTimeStepShader);
+    let realImagTimeStepShader = makeShader(gl.FRAGMENT_SHADER, 
+                                            realImagTimestepFragmentSource);
+    realImagTimeStepProgram = makeProgram(vShader,
+                                          realImagTimeStepShader);
     let initialWaveShader = makeShader(gl.FRAGMENT_SHADER,
                                         initialWavepacketFragmentSource);
+    
     initialWaveProgram = makeProgram(vShader, initialWaveShader);
     let initPotentialShader = makeShader(gl.FRAGMENT_SHADER,
                                             initialPotentialFragmentSource);
@@ -214,6 +220,7 @@ function initPrograms() {
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
     gl.deleteShader(imagTimeStepShader);
+    gl.deleteShader(realImagTimeStepShader);
     gl.deleteShader(initialWaveShader);
     gl.deleteShader(initPotentialShader);
     gl.deleteShader(reshapePotentialShader);

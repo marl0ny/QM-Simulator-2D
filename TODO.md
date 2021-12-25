@@ -24,6 +24,7 @@ These proposed changes are only for visual effects and do not correspond to anyt
 
  #### Other Options
 - [ ] Add an undo/redo button for potential barrier sketching.
+- [ ] Implement a way to serialize the potential in a lossless format.
 
 #### Refactoring
 - Add helper methods for the base methods in SimulationManager base class.

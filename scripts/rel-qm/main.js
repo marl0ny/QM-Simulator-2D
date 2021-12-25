@@ -160,7 +160,7 @@ let potViewOptions =
     viewOptionsFolder.addFolder('Potential');
 potViewOptions.add(data, 'potBrightness', 0.0, 8.0).name('brightness');
 let dx = data.w/pixelWidth;
-dtControl = gui.add(data, 'dt', -0.5*dx/data.c, 0.9*dx/data.c).name('dt');
+dtControl = gui.add(data, 'dt', -0.5*dx/data.c, 0.999*dx/data.c).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
 // gui.add(data, 'measurePosition').name('Measure Position');

@@ -131,15 +131,17 @@ guiControls.probColourController.onChange(e => {
     guiData.probColour[1] = e[1]/255.0;
     guiData.probColour[2] = e[2]/255.0;
 });
-/* guiControls.intMethod = moreControlsFolder.addFolder('Integration Method');
-guiControls.methodControl = intMethod.add(guiData, 'method', 
-                                  ['Leapfrog', 
+guiControls.intMethod
+     = guiControls.moreControlsFolder.addFolder('Integration Method');
+guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
+                                  ['Leapfrog', 'Leapfrog 2',
                                    'CN w/ Jacobi', 'CNJ w/ B-Field',
                                    'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
-                                   'Split-Op. Nonlinear'
+                                   'Split-Op. Nonlinear',
+                                   'Leapfrog Nonlinear'
                                   ]
-                                 ).name('Methods');*/
+                                 ).name('Methods');
 guiControls.showFolder
     = guiControls.moreControlsFolder.addFolder('Show Dimensions');
 guiControls.boxW = guiControls.showFolder.add(guiData.showValues, 
@@ -155,7 +157,7 @@ let screenFitH = parseInt(3.0*window.innerHeight*windowScale/5.0);
 let screenFitWLarge = parseInt(window.innerWidth*windowScale);
 let screenFitHLarge = parseInt(window.innerHeight*windowScale);
 let aspectRatiosWidths = {'1:1': [256, 400, 512, 640, 800, 1024, 2048],
-                          '16:9': [683, 1024, 1280, 1366]};
+                          '16:9': [683, 1024, 1280, 1366, 1920]};
 let gridSizes = [`${screenFitW}x${screenFitH}`,
                  `${screenFitWLarge}x${screenFitHLarge}`];
 for (let k of Object.keys(aspectRatiosWidths)) {
@@ -184,7 +186,7 @@ guiControls.textEditSubFolder
     = guiControls.textEditPotential.addFolder('Edit variables');
 guiControls.textEditSubFolder.controls = [];
 
-/* guiControls.textEditWavefunc
+guiControls.textEditWavefunc
     = guiControls.moreControlsFolder.addFolder('Text Edit Wavefunction');
 // textEditWavefunc.hide();
 guiControls.wavefuncUseTex = guiControls.textEditWavefunc.add(guiData,
@@ -194,16 +196,16 @@ guiControls.textEditWavefuncEntry = guiControls.textEditWavefunc.add(guiData,
     'enterWavefunc').name('Enter ψ(x, y)');
 guiControls.textEditWavefuncSubFolder
     = guiControls.textEditWavefunc.addFolder('Edit variables');
-guiControls.textEditWavefuncSubFolder.controls = [];*/
+guiControls.textEditWavefuncSubFolder.controls = [];
 
-/*guiControls.textEditNonlinear
+guiControls.textEditNonlinear
     = guiControls.moreControlsFolder.addFolder('Nonlinear Terms');
 guiControls.textEditNonlinearEntry
     = guiControls.textEditNonlinear.add(guiData, 'enterNonlinear'
                                         ).name('Enter terms');
 guiControls.textEditNonlinearSubFolder
     = guiControls.textEditNonlinear.addFolder('Edit Variables');
-guiControls.textEditNonlinearSubFolder.controls = [];*/
+guiControls.textEditNonlinearSubFolder.controls = [];
 guiControls.boundariesFolder
     = guiControls.moreControlsFolder.addFolder('Edit Boundary Type');
 guiControls.boundariesSelect 

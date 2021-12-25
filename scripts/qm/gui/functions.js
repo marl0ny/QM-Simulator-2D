@@ -113,8 +113,15 @@ let finishRecordingVideo = () => {
 guiControls.recordVideoFolder.add(
     {'func': finishRecordingVideo}, 'func').name('Finish');
 
+function textEditNonlinearFuncSplitOperator(view) {
+    textEditNonlinearFunc(view, 0);    
+}
 
-function textEditNonlinearFunc(view) {
+function textEditNonlinearFuncLeapfrog(view) {
+    textEditNonlinearFunc(view, 1);    
+}
+
+function textEditNonlinearFunc(view, simType) {
     let expr = guiData.enterNonlinear;
     if (expr.includes('^') || expr.includes('**')) {
         expr = powerOpsToCallables(expr, false);
@@ -122,14 +129,19 @@ function textEditNonlinearFunc(view) {
     expr = replaceIntsToFloats(expr);
     if (expr === guiData.enterNonlinearExpr) return;
     guiData.enterNonlinearExpr = expr;
-    for (let e of textEditSubFolder.controls) {
+    for (let e of guiControls.textEditSubFolder.controls) {
         console.log(e);
         e.remove();
     }
-    textEditSubFolder.controls = [];
+    guiControls.textEditSubFolder.controls = [];
     let uniforms = getVariables(expr);
     uniforms.delete('u');
-    let shader = createNonlinearExpPotentialShader(expr, uniforms);
+    let shader;
+    if (simType === 0) {
+        shader = createNonlinearExpPotentialShader(expr, uniforms);
+    } else {
+        shader = createNonlinearLeapfrogShader(expr, uniforms); 
+    }
     if (shader === null) {
         console.log('Failed to create shader.');
         return;
@@ -150,7 +162,7 @@ function textEditNonlinearFunc(view) {
     }
     f(newUniformVals);
     for (let e of uniforms) {
-        let slider = textEditNonlinearSubFolder.add(
+        let slider = guiControls.textEditNonlinearSubFolder.add(
             newUniformVals, e,
             0.0, 10.0
         );
@@ -158,7 +170,7 @@ function textEditNonlinearFunc(view) {
             newUniformVals[e] = val;
             f(newUniformVals);
         });
-        textEditSubFolder.controls.push(slider);
+        guiControls.textEditSubFolder.controls.push(slider);
     }
 }
 
