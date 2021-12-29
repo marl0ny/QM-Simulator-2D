@@ -715,8 +715,9 @@ function main() {
         display();
         measurePosition();
         if (stats) stats.end();
-        handleRecording(canvas);
-        requestAnimationFrame(animate);
+        handleRecording(canvas).then(() => {
+            requestAnimationFrame(animate);
+        })
     }
     setMouseInput();
     window.addEventListener("orientationchange", () => {

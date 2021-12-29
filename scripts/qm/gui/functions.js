@@ -162,24 +162,61 @@ function textEditNonlinearFunc(view) {
     }
 }
 
-
-function downloadScreenshot() {
-    if (guiData.screenshots.length === 30 || 
-        guiData.screenshotCount === guiData.nScreenshots) {
-        guiData.screenshots.reverse();
-        while (guiData.screenshots.length > 0) {
-            let dataURL = guiData.screenshots.pop();
-            let downloadCount = guiData.screenshotDownloadCount;
-            createDownloadTag(dataURL, downloadCount,
-                               guiData.nScreenshots);
-            document.getElementById(`a-download-${downloadCount}`).click();
-            let div = document.getElementById('image-download');
-            div.innerHTML = '';
-            guiData.screenshotDownloadCount++;
+function downloadScreenshotsZip(screenshots, screenshotNames) {
+    if (screenshots.length > 100) {
+        newScreenshots = [];
+        newScreenshotNames = [];
+        for (let i = 0; i < 100; i++) {
+            newScreenshots.push(screenshots.pop());
+            newScreenshotNames.push(screenshotNames.pop());
         }
+        return downloadScreenshotsZip(newScreenshots, 
+            newScreenshotNames).then(() =>
+                downloadScreenshotsZip(screenshots, screenshotNames)
+            );
     }
-    guiControls.screenshotProgress.setValue(
-        `${guiData.screenshotDownloadCount}/${guiData.nScreenshots}`);
+    let zip = new JSZip();
+    while (screenshots.length > 0) {
+        let dataURL = screenshots.pop();
+        let imageName = screenshotNames.pop();
+        zip.file(imageName, dataURL.slice(22), {base64: true});
+    }
+    let time = Date.now();
+
+    // let options = {type: "blob",
+    //                compression: "DEFLATE",
+    //                compressionOptions: {level: 2}
+    //             };
+    // return zip.generateAsync(options).then( data => {
+    //     let zipFile = new File([data], `images-${time}.zip`, 
+    //                             {type: "application/zip"});
+    // });
+
+    let options = {type: "base64",
+                   compression: "STORE",
+                   // compression: "DEFLATE",
+                   compressionOptions: {level: 2}
+                };
+    return zip.generateAsync(options).then( data => {
+        // let div = document.getElementById('image-download');
+        let aTag = document.createElement('a');
+        aTag.hidden = true;
+        aTag.id = `a-download-${time}-zip`;
+        aTag.download = `"images-${time}.zip`;
+        aTag.href = `data:application/zip;base64,${data}`;
+        /*div.innerHTML += `<a href="data:application/zip;base64,${data}"
+                            hidden="true" 
+                            id="a-download-${time}-zip" 
+                            download="images-${time}.zip"></a>`;*/
+        return aTag;
+    }).then(aTag => {
+        // let aTag = document.getElementById(`a-download-${time}-zip`);
+        // console.log(aTag);
+        aTag.click();
+        return aTag;
+    }).then(aTag => {
+        aTag.remove();
+    });
 }
 
 function onUploadImage() {
@@ -193,35 +230,48 @@ function onUploadImage() {
 }
 guiControls.uploadImage.addEventListener("change", onUploadImage, false);
 
-function createDownloadTag(dataURL, num, total) {
+function makeImageFilename(num, total) {
     let time = Date.now();
     let numStr = `${num + 1}`, totalStr = `${total}`;
     let numZeros = totalStr.length - numStr.length;
     for (let i = 0; i < numZeros; i++) {
         numStr = '0' + numStr;
     }
-    let name = `image_${numStr}_${time}.png`;
-    let div = document.getElementById('image-download');
-    // Download with javascript: https://stackoverflow.com/a/16302092
-    // Origianl question: https://stackoverflow.com/questions/2408146
-    // Question by Pierre (https://stackoverflow.com/users/206808)
-    // Answer by Francisco Costa (https://stackoverflow.com/users/621727)
-    div.innerHTML += `<a href="${dataURL}" hidden="true" 
-                        id="a-download-${num}" download="${name}"></a>`;
-    // let aDownload = document.getElementById(`a-download-${num}`);
-    // aDownload.click();
+    return `image_${numStr}_${time}.png`;
 }
 
 function handleRecording(canvas) {
     if (guiData.takeScreenshot) {
+        let zipSize = Math.floor(guiData.nScreenshots/15);
+        if (zipSize <= 50) zipSize = 50;
         guiData.screenshots.push(canvas.toDataURL('image/png', 1));
+        let name = makeImageFilename(guiData.screenshotCount, 
+                                     guiData.nScreenshots);
+        guiData.screenshotNames.push(name);
         guiData.screenshotCount++;
-        downloadScreenshot();
+        guiControls.screenshotProgress.setValue(
+            `Recording: ${guiData.screenshotCount}/${guiData.nScreenshots}`);
         if (guiData.screenshotCount === guiData.nScreenshots) {
+            guiControls.screenshotProgress.setValue(
+                 `Handling zip file(s)...`);
+            let p = downloadScreenshotsZip(guiData.screenshots, 
+                guiData.screenshotNames).then(() => {
+                    // div.innerHTML = '';
+                    guiControls.screenshotProgress.setValue('');
+                });
             guiData.screenshotCount = 0;
-            guiData.screenshotDownloadCount = 0;
             guiData.takeScreenshot = false;
-            guiControls.screenshotProgress.setValue('');
+            return p;
+        }
+        if (guiData.screenshotCount > 0 && 
+            guiData.screenshotCount % zipSize === 0) {
+            let screenshots = [];
+            let screenshotNames = [];
+            for (let i = 0; i < zipSize ; i++) {
+                screenshots.push(guiData.screenshots.pop());
+                screenshotNames.push(guiData.screenshotNames.pop());
+            }
+            return downloadScreenshotsZip(screenshots, screenshotNames);
         }
     }
     if (guiData.recordVideo) {
@@ -242,6 +292,7 @@ function handleRecording(canvas) {
             guiData.mediaRecorder.start();
         }
     }
+    return Promise.resolve();
 }
 
 let mousePos = function(ev, mode) {

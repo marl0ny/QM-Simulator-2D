@@ -66,6 +66,7 @@ let guiData = {
     nScreenshots: 1,
     screenshotCount: 0,
     screenshotDownloadCount: 0,
+    screenshotNames: [],
     screenshots: [],
     screenshotProgress: '',
     streams: [],
