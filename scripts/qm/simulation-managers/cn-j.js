@@ -113,6 +113,22 @@ class CrankNicolsonSimulationManager extends SimulationManager {
         draw();
         unbind();
     }
+    jacobiIterations(params, initFrame, swapFrames, t, iterations) {
+        for (let i = 0; i < iterations; i++) {
+            if (i === 0) {
+                this.jacobiIter(params, initFrame, swapFrames[t-1]);
+            } else if (i % 2) {
+                this.jacobiIter(params, swapFrames[t-1], swapFrames[t]);
+            } else {
+                this.jacobiIter(params, swapFrames[t], swapFrames[t-1]);
+            }
+        }
+        if (iterations % 2 === 0) {
+            let tmp = swapFrames[t];
+            swapFrames[t] = swapFrames[t-1];
+            swapFrames[t-1] = tmp;
+        }
+    }
     step(params) {
         let t = this.t;
         let swapFrames = this.swapFrames;
@@ -123,8 +139,12 @@ class CrankNicolsonSimulationManager extends SimulationManager {
         let laplaceVal;
         let rScaleV;
         let width, height;
+        let iterations;
+        let assessConvergence;
+        let tolerance;
         ({dx, dy, dt, m, hbar, laplaceVal, 
-          width, height, rScaleV} = params);
+          width, height, rScaleV,
+          iterations, assessConvergence, tolerance} = params);
         storeFrame.useProgram(cnExplicitPartProgram);
         storeFrame.bind();
         storeFrame.setFloatUniforms({dx: dx, dy: dy, dt: dt,
@@ -137,15 +157,40 @@ class CrankNicolsonSimulationManager extends SimulationManager {
                                    });
         draw();
         unbind();
-        for (let i = 0; i < 10; i++) {
-            if (i === 0) {
-                this.jacobiIter(params, storeFrame, swapFrames[t-1]);
-            } else if (i % 2) {
-                this.jacobiIter(params, swapFrames[t-1], swapFrames[t]);
-            } else {
-                this.jacobiIter(params, swapFrames[t], swapFrames[t-1]);
+        this.jacobiIterations(params, storeFrame, swapFrames, t, iterations);
+        if (assessConvergence) {
+            let totalSteps = iterations;
+            let err = 0.0;
+            while ((err = this.computeDistOfLastTwoFrames()) > tolerance) {
+                this.jacobiIterations(params, swapFrames[t], swapFrames, t, 4);
+                totalSteps += 4;
             }
+            console.log('iterations: ', totalSteps, '\nerr: ', err);
         }
+    }
+    computeDistOfLastTwoFrames() {
+        let swapFrames = this.swapFrames;
+        let storeFrame = this.storeFrame;
+        let t = this.t;
+        this.swapFrames[t-3].useProgram(dist2Program);
+        this.swapFrames[t-3].bind();
+        this.swapFrames[t-3].setIntUniforms({
+            tex0: storeFrame.frameNumber,
+            tex1: swapFrames[t].frameNumber,
+            tex2: swapFrames[t-1].frameNumber
+        });
+        draw();
+        let dimensions = {x: 0, y: 0, w: pixelWidth, h: pixelHeight};
+        let norm2Arr = this.swapFrames[t-3].getTextureArray(dimensions);
+        let dist = 0.0;
+        let norm = 0.0;
+        for (let i = 0; i < norm2Arr.length; i+=4) {
+            dist += norm2Arr[i];
+            norm += norm2Arr[i + 1];
+        }
+        unbind();
+        return Math.sqrt(dist)/Math.sqrt(norm);
+
     }
     display(floatUniforms, intUniforms, vec3Uniforms) {
         let tex = this.vectorFieldFrame.frameNumber;

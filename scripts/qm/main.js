@@ -14,10 +14,21 @@ function main() {
 
     initializePotential('SHO');
 
-    /*let methodGridSizes;
+    let methodGridSizes;
+    let boundaryTypes = [];
     guiControls.methodControl.onChange(e => {
+        removeNonlinearControls();
+        removeIterationControls();
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
+            guiControls.dtSlider.max(0.01);
+            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
+            numberOfFrames = 7;
+            disableNonPowerTwo = false;
+        } if (e === 'Leapfrog 2') {
+            SimManager = Leapfrog2SimulationManager;
             guiControls.dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
@@ -31,7 +42,8 @@ function main() {
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = 7;
-            disableNonPowerTwo = false; 
+            disableNonPowerTwo = false;
+            addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
             guiControls.dtSlider.max(0.025);
@@ -39,6 +51,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = 8;
             disableNonPowerTwo = false;
+            addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
             guiControls.dtSlider.max(0.1);
@@ -59,6 +72,18 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
+        } else if (e === 'Leapfrog Nonlinear') {
+            SimManager = LeapfrogNonlinearSimulationManager;
+            guiControls.dtSlider.max(0.01);
+            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
+            numberOfFrames = 7;
+            disableNonPowerTwo = false;
+            addNonlinearControls();
+            guiControls.textEditNonlinearEntry.onChange(() => {
+                textEditNonlinearFuncLeapfrog(sim);
+            });
         } else if (e === 'Split-Op. Nonlinear') {
             SimManager = SplitStepNonlinearManager;
             guiControls.dtSlider.max(0.1);
@@ -71,8 +96,9 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
+            addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
-                guiControls.textEditNonlinearFunc(sim);
+                textEditNonlinearFuncSplitOperator(sim);
             });
         }
         guiControls.dtSlider.updateDisplay();
@@ -80,7 +106,7 @@ function main() {
         let innerHTML = ``;
         methodGridSizes.map(
             e => innerHTML += `<option value="${e}">${e}</option>`);
-        guiData.gridSelect.__select.innerHTML = innerHTML;
+        guiControls.gridSelect.__select.innerHTML = innerHTML;
         innerHTML = ``;
         boundaryTypes.map(
             e => innerHTML += `<option value="${e}">${e}</option>`);
@@ -90,7 +116,7 @@ function main() {
             if (!(evenPowers.some(e => e === pixelWidth) && 
                   evenPowers.some(e => e === pixelHeight)))
                 pixelWidth = 512, pixelHeight = 512;
-                guiData.gridSelect.setValue(`512x512`);
+                guiControls.gridSelect.setValue(`512x512`);
                 guiControls.boundariesSelect.setValue(`Periodic`);
         } else {
             if (guiData.borderAlpha === 0.0) {
@@ -103,7 +129,7 @@ function main() {
             }
         }
         guiControls.boundariesSelect.updateDisplay();
-        guiData.gridSelect.updateDisplay();
+        guiControls.gridSelect.updateDisplay();
         resizeCanvas(pixelWidth, pixelHeight);
         let context = (useWebGL2IfAvailable)? "webgl2": "webgl";
         gl = initializeCanvasGL(canvas, context);
@@ -115,7 +141,7 @@ function main() {
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
         sim = new SimManager(framesManager);
         initializePotential(guiData.presetPotential);
-    });*/
+    });
 
     guiData.setToImageDimensions = function () {
         let canvas = document.getElementById('image-canvas');
@@ -493,7 +519,9 @@ function main() {
                   dt: guiData.dt,
                   m: guiData.m, hbar: 1.0, 
                   laplaceVal: guiData.laplaceVal, rScaleV: guiData.rScaleV,
-                  width: width, height: height};
+                  width: width, height: height, 
+                  iterations: guiData.iterations, tolerance: guiData.tolerance,
+                  assessConvergence: guiData.assessConvergence};
         sim.step(params);
         guiData.rScaleV = 0.0;
     }

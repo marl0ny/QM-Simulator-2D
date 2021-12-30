@@ -9,7 +9,7 @@
  - [ ] Add a text-based way to initialize the wavefunction.
  - [ ] View wavefunction in momentum space
  - [ ] Compute and visualize energy eigenstates for arbitrary potentials. Construct wavefunctions from their superpositions. Add a measure energy feature.
- - [ ] Add iteration controls and error tolerance to the CN Jacobi method.
+ - [x] Add iteration controls and error tolerance to the CN Jacobi method.
  - [ ] For the different methods need to change the default time step and grid sizes. For the Split-Op method need to make periodic the only possible boundary condition.
  - [ ] Add new potentials (like Coulomb) for the Split-Step and CN Jacobi methods which Leapfrog was not able to handle. When using Leapfrog these potentials should not be available.
  - [ ] Add a method option which uses the exact analytical formulas (only analytical potentials would be available).
@@ -24,6 +24,7 @@ These proposed changes are only for visual effects and do not correspond to anyt
 
  #### Other Options
 - [ ] Add an undo/redo button for potential barrier sketching.
+- [ ] Implement a way to serialize the potential in a lossless format.
 
 #### Refactoring
 - Add helper methods for the base methods in SimulationManager base class.

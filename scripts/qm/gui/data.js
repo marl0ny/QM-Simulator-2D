@@ -70,6 +70,10 @@ let guiData = {
     screenshots: [],
     screenshotProgress: '',
     streams: [],
-    method: 'Leapfrog'
+    method: 'Leapfrog',
+    iterations: 10,
+    assessConvergence: false,
+    tolerance: 1e-5,
+    toleranceString: '1e-5'
 };
 guiData.measurePosition = () => guiData.measure = true;

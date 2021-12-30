@@ -42,6 +42,8 @@ Split-Step:
 
  - Antoine, X., Bao, W., Besse C. (2013). Computational methods for the dynamics of the nonlinear Schrödinger/Gross–Pitaevskii equations. <em>Computer Physics Communications, 184(12)</em>, 2621-2633. [https://doi.org/10.1016/j.cpc.2013.07.012](https://doi.org/10.1016/j.cpc.2013.07.012)
 
+- Ira Moxley III, F. (2013). [Generalized finite-difference time-domain schemes for solving nonlinear Schrödinger equations](https://digitalcommons.latech.edu/cgi/viewcontent.cgi?article=1284&context=dissertations). <em>Dissertation</em>, 290. 
+
  ###
 
 Approximating the vector potential:

@@ -129,6 +129,109 @@ function createWavefunctionShader(expr, uniforms) {
     return shaderID;
 }
 
+function createNonlinearLeapfrogShader(expr, uniforms) {
+    // Reference for how to solve the nonlinear Schrödinger equation
+    // in an explicit fashion:
+    // Ira Moxley III, F. (2013). 
+    // Generalized finite-difference time-domain schemes for 
+    // solving nonlinear Schrödinger equations. Dissertation, 290. 
+    let splitTemplateShader = [`
+    precision highp float;
+    #if __VERSION__ == 300
+    #define texture2D texture
+    in vec2 fragTexCoord;
+    out vec4 fragColor;
+    #else
+    #define fragColor gl_FragColor
+    varying highp vec2 fragTexCoord;
+    #endif
+    uniform float dx;
+    uniform float dy;
+    uniform float dt;
+    uniform float w;
+    uniform float h;
+    uniform float m;
+    uniform float hbar;
+    uniform float rScaleV;
+    uniform sampler2D texPsi1;
+    uniform sampler2D texPsi2;
+    uniform sampler2D texV;
+    uniform int laplacePoints;`, // 0
+    `// UNIFORMS HERE`, // 1
+    `
+    vec2 valueAt(sampler2D texPsi, vec2 coord) {
+        vec4 psiFragment = texture2D(texPsi, coord);
+        return psiFragment.xy*psiFragment.a;
+    }
+
+
+    vec2 div2Psi(sampler2D texPsi) {
+        vec2 c = valueAt(texPsi, fragTexCoord);
+        vec2 u = valueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));
+        vec2 d = valueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));
+        vec2 l = valueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));
+        vec2 r = valueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));
+        // Reference for different Laplacian stencil choices:
+        // Wikipedia contributors. (2021, February 17)
+        // Discrete Laplacian Operator 
+        // 1.5.1 Implementation via operator discretization
+        // https://en.wikipedia.org/wiki/Discrete_Laplace_operator
+        // #Implementation_via_operator_discretization
+        if (laplacePoints <= 5) {
+            return (u + d + l + r - 4.0*c)/(dx*dx);
+        } else {
+            vec2 ul = valueAt(texPsi, fragTexCoord + vec2(-dx/w, dy/h));
+            vec2 ur = valueAt(texPsi, fragTexCoord + vec2(dx/w, dy/h));
+            vec2 dl = valueAt(texPsi, fragTexCoord + vec2(-dx/w, -dy/h));
+            vec2 dr = valueAt(texPsi, fragTexCoord + vec2(dx/w, -dy/h));
+            return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
+                    0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*c)/(dx*dx);
+        }
+    }
+
+
+    void main() {
+        float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
+                    rScaleV*texture2D(texV, fragTexCoord).g;
+        vec4 psi1Fragment = texture2D(texPsi1, fragTexCoord);
+        float alpha = psi1Fragment.a;
+        vec2 psi1 = psi1Fragment.xy*alpha;
+        vec2 psi2 = valueAt(texPsi2, fragTexCoord);
+        float u = psi2.x*psi2.x + psi2.y*psi2.y;`, // 2
+    `   float nonlinear = `, // 3
+    `   vec2 hamiltonianPsi2 = -(0.5*hbar*hbar/m)*div2Psi(texPsi2) + V*psi2 + nonlinear*psi2;
+        fragColor = vec4(psi1.x + dt*hamiltonianPsi2.y/hbar,
+                        psi1.y - dt*hamiltonianPsi2.x/hbar,
+                        0.0, alpha);
+    }
+    `// 4
+    ];
+    console.log(expr);
+    splitTemplateShader[3] = splitTemplateShader[3] + expr + ';';
+    for (let uniform of uniforms) {
+        splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
+    }
+    splitTemplateShader[1] += '\n';
+    let templateShaderText = '';
+    for (let s of splitTemplateShader) {
+        templateShaderText += s + '\n';
+    }
+    if (context === "webgl2")
+        templateShaderText = "#version 300 es\n" + templateShaderText;
+    let shaderID = gl.createShader(gl.FRAGMENT_SHADER);
+    if (shaderID === 0) {
+        return null;
+    }
+    console.log(templateShaderText);
+    gl.shaderSource(shaderID, templateShaderText);
+    gl.compileShader(shaderID);
+    if (!gl.getShaderParameter(shaderID, gl.COMPILE_STATUS)) {
+        gl.deleteShader(shaderID);
+        return null;
+    }
+    return shaderID;
+}
+
 function createNonlinearExpPotentialShader(expr, uniforms) {
     let splitTemplateShader = [`
     precision highp float;
