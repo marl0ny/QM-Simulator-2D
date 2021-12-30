@@ -323,3 +323,65 @@ function setMouseInput() {
     });
     canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
 }
+
+function addIterationsControls() {
+    guiControls.iterations
+        = guiControls.intMethod.add(
+            guiData, 'iterations', 3, 20, 1).name('Min. Iter.');
+    guiControls.assessConvergence = guiControls.intMethod.add(
+        guiData, 'assessConvergence'
+    ).name('Check Error');
+    guiControls.setTol = guiControls.intMethod.add(
+        guiData, 'toleranceString').name('Max Error');
+    guiControls.setTol.onChange(e => {
+        num = parseFloat(e);
+        if (num >= 5e-8) {
+            guiData.tolerance = parseFloat(e);
+        }
+    });
+}
+
+function removeIterationControls() {
+    if (guiControls.iterations !== null &&
+        guiControls.assessConvergence !== null) {
+        guiControls.intMethod.remove(guiControls.iterations);
+        guiControls.intMethod.remove(guiControls.assessConvergence);
+        guiControls.intMethod.remove(guiControls.setTol);
+        guiControls.iterations = null;
+        guiControls.assessConvergence = null;
+        guiControls.setTol = null;
+    }
+}
+
+function addNonlinearControls() {
+    guiControls.textEditNonlinear
+            = guiControls.intMethod.addFolder('Nonlinear Terms');
+    // guiControls.textEditNonlinear
+    //     = guiControls.moreControlsFolder.addFolder('Nonlinear Terms');
+    guiControls.textEditNonlinearEntry
+        = guiControls.textEditNonlinear.add(guiData, 'enterNonlinear'
+                                            ).name('Enter terms');
+    guiControls.textEditNonlinearSubFolder
+        = guiControls.textEditNonlinear.addFolder('Edit Variables');
+    guiControls.textEditNonlinearSubFolder.controls = [];
+}
+// guiControls.addNonlinearControls = addNonlinearControls;
+
+function removeNonlinearControls() {
+    if (guiControls.textEditNonlinear !== null &&
+        guiControls.textEditNonlinearEntry !== null &&
+        guiControls.textEditNonlinearSubFolder !== null) {
+        for (let e of guiControls.textEditNonlinearSubFolder.controls) {
+            e.remove();
+        }
+        guiControls.textEditNonlinear.removeFolder(
+            guiControls.textEditNonlinearSubFolder);
+        guiControls.textEditNonlinear.remove(
+            guiControls.textEditNonlinearEntry);
+        guiControls.intMethod.removeFolder(guiControls.textEditNonlinear);
+        guiControls.textEditNonlinearSubFolder = null;
+        guiControls.textEditNonlinearEntry = null;
+        guiControls.textEditNonlinear = null;
+    }
+}
+// guiControls.removeNonlinearControls = removeNonlinearControls;

@@ -17,6 +17,8 @@ function main() {
     let methodGridSizes;
     let boundaryTypes = [];
     guiControls.methodControl.onChange(e => {
+        removeNonlinearControls();
+        removeIterationControls();
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
             guiControls.dtSlider.max(0.01);
@@ -40,7 +42,8 @@ function main() {
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = 7;
-            disableNonPowerTwo = false; 
+            disableNonPowerTwo = false;
+            addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
             guiControls.dtSlider.max(0.025);
@@ -48,6 +51,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = 8;
             disableNonPowerTwo = false;
+            addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
             guiControls.dtSlider.max(0.1);
@@ -76,6 +80,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = 7;
             disableNonPowerTwo = false;
+            addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);
             });
@@ -91,6 +96,7 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = 10;
             disableNonPowerTwo = true;
+            addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncSplitOperator(sim);
             });
@@ -513,7 +519,9 @@ function main() {
                   dt: guiData.dt,
                   m: guiData.m, hbar: 1.0, 
                   laplaceVal: guiData.laplaceVal, rScaleV: guiData.rScaleV,
-                  width: width, height: height};
+                  width: width, height: height, 
+                  iterations: guiData.iterations, tolerance: guiData.tolerance,
+                  assessConvergence: guiData.assessConvergence};
         sim.step(params);
         guiData.rScaleV = 0.0;
     }

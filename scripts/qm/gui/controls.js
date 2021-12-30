@@ -50,6 +50,9 @@ let guiControls = {
     screenshotProgress: null,
     intMethod: null,
     methodControl: null,
+    iterations: null,
+    assessConvergence: null,
+    setTol: null,
     editUniformsFolder: null,
     dtSlider: null,
     laplaceSelect: null,
@@ -131,17 +134,7 @@ guiControls.probColourController.onChange(e => {
     guiData.probColour[1] = e[1]/255.0;
     guiData.probColour[2] = e[2]/255.0;
 });
-guiControls.intMethod
-     = guiControls.moreControlsFolder.addFolder('Integration Method');
-guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
-                                  ['Leapfrog', 'Leapfrog 2',
-                                   'CN w/ Jacobi', 'CNJ w/ B-Field',
-                                   'Split-Op. (CPU FFT)', 
-                                   'Split-Op. (GPU FFT)',
-                                   'Split-Op. Nonlinear',
-                                   'Leapfrog Nonlinear'
-                                  ]
-                                 ).name('Methods');
+
 guiControls.showFolder
     = guiControls.moreControlsFolder.addFolder('Show Dimensions');
 guiControls.boxW = guiControls.showFolder.add(guiData.showValues, 
@@ -198,16 +191,8 @@ guiControls.textEditWavefuncSubFolder
     = guiControls.textEditWavefunc.addFolder('Edit variables');
 guiControls.textEditWavefuncSubFolder.controls = [];
 
-guiControls.textEditNonlinear
-    = guiControls.moreControlsFolder.addFolder('Nonlinear Terms');
-guiControls.textEditNonlinearEntry
-    = guiControls.textEditNonlinear.add(guiData, 'enterNonlinear'
-                                        ).name('Enter terms');
-guiControls.textEditNonlinearSubFolder
-    = guiControls.textEditNonlinear.addFolder('Edit Variables');
-guiControls.textEditNonlinearSubFolder.controls = [];
 guiControls.boundariesFolder
-    = guiControls.moreControlsFolder.addFolder('Edit Boundary Type');
+        = guiControls.moreControlsFolder.addFolder('Edit Boundary Type');
 guiControls.boundariesSelect 
     = guiControls.boundariesFolder.add(guiData, 'boundaryType', 
                                             ['Dirichlet', 'Neumann', 
@@ -261,6 +246,19 @@ guiControls.screenshotProgress
 guiControls.recordVideoFolder.add({'func': () => {
     guiData.recordVideo = true;
 }}, 'func').name('Start');
+
+guiControls.intMethod
+     = guiControls.moreControlsFolder.addFolder('Integration Method');
+guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
+                                  ['Leapfrog', 'Leapfrog 2',
+                                   'CN w/ Jacobi', 
+                                   'CNJ w/ B-Field',
+                                   'Split-Op. (CPU FFT)', 
+                                   'Split-Op. (GPU FFT)',
+                                   'Split-Op. Nonlinear',
+                                   'Leapfrog Nonlinear'
+                                  ]
+                                 ).name('Methods');
 
 guiControls.editUniformsFolder = 
     guiControls.moreControlsFolder.addFolder('Edit Other Values');

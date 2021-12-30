@@ -143,6 +143,7 @@ let imagePotentialProgram;
 let rearrangeProgram;
 let fftIterProgram;
 let initVectorPotentialProgram;
+let dist2Program;
 
 
 function initPrograms() {
@@ -216,6 +217,8 @@ function initPrograms() {
         initialVectorPotentialFragmentSource);
     initVectorPotentialProgram = makeProgram(vShader, 
                                              initVectorPotentialShader);
+    let dist2Shader = makeShader(gl.FRAGMENT_SHADER, dist2FragmentSource);
+    dist2Program = makeProgram(vShader, dist2Shader);
 
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
@@ -239,6 +242,7 @@ function initPrograms() {
     gl.deleteShader(fftIterShader);
     gl.deleteShader(rearrangeShader);
     gl.deleteShader(initVectorPotentialShader);
+    gl.deleteShader(dist2Shader);
 
 }
 
