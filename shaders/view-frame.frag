@@ -33,6 +33,8 @@ uniform vec3 potColour;
 #define DISPLAY_PHASE 1
 #define DISPLAY_CURRENT_WITH_PROB 2
 #define DISPLAY_CURRENT_WITH_PHASE 3
+#define DISPLAY_FALSE_COLOUR_POTENTIAL_WITH_PROB 4
+#define DISPLAY_FALSE_COLOUR_POTENTIAL_WITH_PHASE 5
 
 #define DISPLAY_BACKGROUND 1
 
@@ -116,7 +118,9 @@ void main () {
                    // *exp(-brightness*probDensity/16.0),
                    1.0);
     } else if (displayMode == DISPLAY_ONLY_PROB_DENSITY) {
-        /* vec3 colPotential = argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)*exp(-brightness*probDensity/16.0);
+        /*vec3 colPotential = col4.r*brightness2*
+            argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)*
+            exp(-brightness*probDensity/16.0);
         pix = vec4(probDensity*probColour[0]*(brightness/16.0) + colPotential.r,
                    probDensity*probColour[1]*(brightness/16.0) + colPotential.g,
                    probDensity*probColour[2]*(brightness/16.0) + colPotential.b, 

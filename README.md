@@ -7,6 +7,12 @@ Two other integration methods are also currently under development: [Crank-Nicol
 
 Also provided is a (work in progress) [simulation of a 2D relativistic quantum particle](https://marl0ny.github.io/QM-Simulator-2D/rel-qm.html) using the Dirac equation. The Dirac equation is numerically solved by updating each of the two two-component spinors separately at staggered time and spatial steps. This method is found in an [article](https://arxiv.org/abs/1306.5895) by R. Hammer and W. Pötz.
 
+## APIs and Frameworks Used
+- The [WebGL](https://www.khronos.org/webgl/) API
+- [dat.gui](https://github.com/dataarts/dat.gui) by [Google Data Arts Team](https://github.com/dataarts)
+- [stats.js](https://github.com/mrdoob/stats.js/) by the stats.js authors
+- [jszip](https://stuk.github.io/jszip/) by [Stuart Knightley](https://github.com/Stuk), [David Duponchel](https://github.com/dduponchel), Franz Buchinger, António Afonso
+
 # References
  - Gould, H., Tobochnik J., Christian W. (2007). Quantum Systems.
  In <em>An Introduction to Computer Simulation Methods</em>, 

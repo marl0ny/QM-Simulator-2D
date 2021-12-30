@@ -40,6 +40,13 @@ Note that the value of the potential at a given point may be cutoff if it's too 
 - **Upload Image** folder. Press the **Choose File** button if on Chrome to select an image and upload it. The **invert** checkbox inverts its grayscale. Press the **Use for Pot.** button to use it as the potential.
 - **Record Video** folder. Press **start** to begin video recording, and **Finish** to stop recording and save the video file.
 - **Take Screenshots** folder. Use the **Number of Frames** entry box to change the number of frames to screenshot. Press the **Start** button to start taking screenshots.
+- **Integration Methods** folder. Use this to change the methods used for the numerical integration. Some of these methods may contain additional options that substantially change the dynamics of the simulation. The methods to choose from are:
+    - **Leapfrog**. The real and imaginary parts of the wavefunction are alternatingly updated explicitly at each time step.
+    - **Leapfrog 2**. This differs from Leapfrog, in that both the real and imaginary parts are updated at the same time step. 
+    - **CN /w Jacobi**. Crank-Nicolson method where the implicit part is solved using Jacobi iteration.
+    - **Split-Op. (GPU FFT)**. Split Operator method, where the FFT is done in the GLSL shaders. Note that depending on the GPU on your machine, this method may not work properly.
+    - **Split-Op. Nonlinear**. Same as the Split Operator method, but the user is allowed to add nonlinear terms to the Schrödinger equation. Note that with the addition of these nonlinear terms, it is no longer appropriate to say that the simulation describes the quantum mechanics of a single particle, since this is governed by the purely linear Schrödinger equation. However the Schrödinger equation with the additional nonlinear terms can be used to describe other quantum phenomena such as Bose-Einstein condensates.
+    - **Leapfrog Nonlinear**. Same as the Leapfrog 2 method, but the user is allowed to add nonlinear terms to the Schrödinger equation.
 - **Edit Other Values** folder. This contains sliders to modify the mass **m** of the particle, the time step length **dt**, or the discrete **Laplacian** stencil size.
 
 
