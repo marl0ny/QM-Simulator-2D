@@ -179,7 +179,7 @@ guiControls.textEditSubFolder
     = guiControls.textEditPotential.addFolder('Edit variables');
 guiControls.textEditSubFolder.controls = [];
 
-guiControls.textEditWavefunc
+/* guiControls.textEditWavefunc
     = guiControls.moreControlsFolder.addFolder('Text Edit Wavefunction');
 // textEditWavefunc.hide();
 guiControls.wavefuncUseTex = guiControls.textEditWavefunc.add(guiData,
@@ -189,7 +189,7 @@ guiControls.textEditWavefuncEntry = guiControls.textEditWavefunc.add(guiData,
     'enterWavefunc').name('Enter ψ(x, y)');
 guiControls.textEditWavefuncSubFolder
     = guiControls.textEditWavefunc.addFolder('Edit variables');
-guiControls.textEditWavefuncSubFolder.controls = [];
+guiControls.textEditWavefuncSubFolder.controls = [];*/
 
 guiControls.boundariesFolder
         = guiControls.moreControlsFolder.addFolder('Edit Boundary Type');
@@ -252,8 +252,8 @@ guiControls.intMethod
 guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
                                   ['Leapfrog', 'Leapfrog 2',
                                    'CN w/ Jacobi', 
-                                   'CNJ w/ B-Field',
-                                   'Split-Op. (CPU FFT)', 
+                                   // 'CNJ w/ B-Field',
+                                   // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
                                    'Split-Op. Nonlinear',
                                    'Leapfrog Nonlinear'

@@ -264,8 +264,8 @@ function handleRecording(canvas) {
         guiControls.screenshotProgress.setValue(
             `Recording: ${guiData.screenshotCount}/${guiData.nScreenshots}`);
         if (guiData.screenshotCount === guiData.nScreenshots) {
-            guiControls.screenshotProgress.setValue(
-                 `Handling zip file(s)...`);
+            // guiControls.screenshotProgress.setValue(
+            //      `Handling zip file(s)...`);
             let p = downloadScreenshotsZip(guiData.screenshots, 
                 guiData.screenshotNames).then(() => {
                     // div.innerHTML = '';
