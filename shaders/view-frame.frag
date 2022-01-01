@@ -22,19 +22,25 @@ uniform sampler2D texV;
 uniform sampler2D vecTex;
 uniform sampler2D textTex;
 uniform sampler2D backgroundTex;
-// TODO: Split this up into separate modes that deal with the 
-// potential, wavefunction, and probability current individually.
 uniform int displayMode;
+uniform int wavefunctionDisplayMode;
+uniform int potentialDisplayMode;
+uniform int vectorDisplayMode;
 uniform int backgroundDisplayMode;
 uniform vec3 probColour;
 uniform vec3 potColour;
 
+const float pi = 3.141592653589793;
+
 #define DISPLAY_ONLY_PROB_DENSITY 0
 #define DISPLAY_PHASE 1
-#define DISPLAY_CURRENT_WITH_PROB 2
-#define DISPLAY_CURRENT_WITH_PHASE 3
-#define DISPLAY_FALSE_COLOUR_POTENTIAL_WITH_PROB 4
-#define DISPLAY_FALSE_COLOUR_POTENTIAL_WITH_PHASE 5
+#define DISPLAY_PROB_DENSITY_HEIGHT_MAP 2
+
+#define DISPLAY_POTENTIAL_SINGLE_COLOUR 0
+#define DISPLAY_POTENTIAL_COLOUR_MAP 1
+
+#define DISPLAY_NO_VECTOR 0
+#define DISPLAY_VECTOR 1
 
 #define DISPLAY_BACKGROUND 1
 
@@ -67,7 +73,6 @@ vec4 drawWindow(vec4 pix, float x, float y,
 
 
 vec3 argumentToColour(float argVal) {
-    float pi = 3.141592653589793;
     float maxCol = 1.0;
     float minCol = 50.0/255.0;
     float colRange = maxCol - minCol;
@@ -102,45 +107,57 @@ vec3 complexToColour(float re, float im) {
 
 
 void main () {
+
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
     vec4 col3 = texture2D(tex3, fragTexCoord);
-    vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*1.0);
     float probDensity = (col1.g*col3.g + col2.r*col2.r);
     float re = col2.r;
     float im = (col3.g + col1.g)/2.0;
-    vec4 pix;
-    vec3 potential = col4.r*brightness2*potColour;
-    if (displayMode == DISPLAY_PHASE) {
-        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
-                   potential,
-                   // argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)
-                   // *exp(-brightness*probDensity/16.0),
-                   1.0);
-    } else if (displayMode == DISPLAY_ONLY_PROB_DENSITY) {
-        /*vec3 colPotential = col4.r*brightness2*
+    vec3 wavefunction;
+    /*vec3 colPotential = col4.r*brightness2*
             argumentToColour(2.0*3.14159*col4.r*brightness2 - 1.0)*
-            exp(-brightness*probDensity/16.0);
-        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + colPotential.r,
-                   probDensity*probColour[1]*(brightness/16.0) + colPotential.g,
-                   probDensity*probColour[2]*(brightness/16.0) + colPotential.b, 
-                   1.0);*/
-        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
-                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
-                   probDensity*probColour[2]*(brightness/16.0) + potential.b, 
-                   1.0);
-    } else if (displayMode == DISPLAY_CURRENT_WITH_PHASE) {
-        pix = vec4(probDensity*complexToColour(re, im)*(brightness/16.0) +
-                   potential,
-                   1.0);
-        pix += 10.0*texture2D(vecTex, fragTexCoord);
-    } else if (displayMode == DISPLAY_CURRENT_WITH_PROB) {
-        pix = vec4(probDensity*probColour[0]*(brightness/16.0) + potential.r,
-                   probDensity*probColour[1]*(brightness/16.0) + potential.g,
-                   probDensity*probColour[2]*(brightness/16.0) + potential.b,
-                   1.0);
+            exp(-brightness*probDensity/16.0);*/
+
+    vec4 col4 = texture2D(texV, fragTexCoord)/(50.0*1.0);
+
+    vec3 potential;
+    if (potentialDisplayMode == DISPLAY_POTENTIAL_SINGLE_COLOUR) {
+        potential = col4.r*brightness2*potColour;
+    } else if (potentialDisplayMode == DISPLAY_POTENTIAL_COLOUR_MAP) {
+        float val = -3.0*pi*col4.r*brightness2 - 2.0*pi/3.0;
+        if (val < -pi) {
+            val = 2.0*pi + val;
+            if (val < -pi/4.0) {
+                val = -pi/4.0;
+            }
+        }
+        potential = argumentToColour(val); // min(col4.r*(brightness2), 1.25)*argumentToColour(val);
+    }
+
+    if (wavefunctionDisplayMode == DISPLAY_PHASE) {
+        wavefunction = probDensity*(brightness/16.0)*complexToColour(re, im);
+    } else if (wavefunctionDisplayMode == DISPLAY_ONLY_PROB_DENSITY) {
+        wavefunction = probDensity*probColour*(brightness/16.0);
+    } else if (wavefunctionDisplayMode == DISPLAY_PROB_DENSITY_HEIGHT_MAP) {
+        float val = -pi*probDensity*brightness/(4.0*8.0) - 2.0*pi/3.0;
+        if (val < -pi) {
+            val = 2.0*pi + val;
+            if (val < -pi/4.0) {
+                val = -pi/4.0;
+            }
+        }
+        wavefunction = min(probDensity*(brightness/16.0), 1.25)*
+                           argumentToColour(val);
+        // wavefunction = probDensity*(brightness/16.0)*
+        //                vec3(probDensity, 5.0 - probDensity, 0.0);
+    }
+
+    vec4 pix = vec4(wavefunction + potential, 1.0);
+    if (vectorDisplayMode == DISPLAY_VECTOR) {
         pix += 10.0*texture2D(vecTex, fragTexCoord);
     }
+
     fragColor = drawWindow(pix, fragTexCoord.x, fragTexCoord.y,
                               x0, y0, w, h, lineWidth) +
                               texture2D(textTex, fragTexCoord);

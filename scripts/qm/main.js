@@ -527,26 +527,37 @@ function main() {
     }
 
     function display() {
+        const MOUSE_MODE_PROB_IN_BOX = 'p';
         const DISPLAY_ONLY_PROB_DENSITY = 0;
         const DISPLAY_PHASE = 1;
-        const DISPLAY_CURRENT_WITH_PROB = 2
-        const DISPLAY_CURRENT_WITH_PHASE = 3;
-        let intUniforms = {displayMode: DISPLAY_PHASE};
-        if (!guiData.colourPhase) {
-            intUniforms['displayMode'] = DISPLAY_ONLY_PROB_DENSITY;
+        const DISPLAY_PROB_DENSITY_HEIGHT_MAP = 2;
+        const DISPLAY_NO_VECTOR = 0;
+        const DISPLAY_VECTOR = 1;
+        const DISPLAY_POTENTIAL_SINGLE_COLOUR = 0;
+        const DISPLAY_POTENTIAL_COLOUR_MAP = 1;
+        let wavefuncDisplayMode = DISPLAY_ONLY_PROB_DENSITY;
+        let potentialDisplayMode = DISPLAY_POTENTIAL_SINGLE_COLOUR;
+        if (guiData.colourPhase) {
+            wavefuncDisplayMode = DISPLAY_PHASE;
+        } else if (guiData.showProbHeightMap) {
+            wavefuncDisplayMode = DISPLAY_PROB_DENSITY_HEIGHT_MAP;
         }
+        if (guiData.showPotHeightMap) {
+            potentialDisplayMode = DISPLAY_POTENTIAL_COLOUR_MAP;
+        }
+        let intUniforms = {wavefunctionDisplayMode: wavefuncDisplayMode,
+                           potentialDisplayMode: potentialDisplayMode,
+                           vectorDisplayMode: DISPLAY_NO_VECTOR,
+                           backgroundDisplayMode: 0};
         if (guiData.viewProbCurrent) {
             sim.probCurrent({width: width, height: height,
                               hbar: 1.0, m: guiData.m});
-            let displayMode = (guiData.colourPhase)?
-                                DISPLAY_CURRENT_WITH_PHASE:
-                                DISPLAY_CURRENT_WITH_PROB;
-            intUniforms['displayMode'] = displayMode;
+            intUniforms.vectorDisplayMode = DISPLAY_VECTOR;
         }
         let vec3Uniforms = {probColour: guiData.probColour,
                             potColour: guiData.potColour};
         let floatUniforms;
-        if (guiData.mouseMode[0] == 'p') {
+        if (guiData.mouseMode[0] === MOUSE_MODE_PROB_IN_BOX) {
             floatUniforms = {x0: guiData.drawRect.x/canvas.width,
                              y0: (canvas.height 
                                    - guiData.drawRect.y)/canvas.height,
@@ -561,7 +572,7 @@ function main() {
                              brightness2: guiData.brightness2};
         }
         sim.display(floatUniforms, intUniforms, vec3Uniforms);
-        if (guiData.mouseMode[0] == 'p') {
+        if (guiData.mouseMode[0] == MOUSE_MODE_PROB_IN_BOX) {
             let prob = sim.getUnnormalizedProbDist();
             let j0 = pixelHeight - guiData.drawRect.y;
             let h = -guiData.drawRect.h;

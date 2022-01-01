@@ -14,6 +14,8 @@ let guiControls = {
     instructions: null,
     source: null,
     iter: null,
+    brightness: null,
+    colourPhase: null,
     mouseMode: null,
     presetPotentialSelect: null,
     mouseControls: null,
@@ -21,8 +23,10 @@ let guiControls = {
     moreControlsFolder: null,
     visualizationOptionsFolder: null,
     potColourController: null,
+    showPotHeightMap: null,
     visualizationOptionsFolder: null,
     probColourController: null,
+    showProbHeightMap: null,
     showFolder: null,
     boxW: null,
     boxH: null,
@@ -81,10 +85,13 @@ guiControls.source = gui.addColor(palette, 'color').name(
     + 'Source</a>'
 );
 guiControls.source.domElement.hidden = true;
-gui.add(guiData , 'brightness', 0, 10).name('Brightness');
-guiControls.iter = gui.add(guiData, 'speed', 0, 20).name('Speed');
+guiControls.brightness = gui.add(guiData , 'brightness', 
+                                 0, guiData.maxBrightness).name('Brightness');
+guiControls.iter = gui.add(guiData, 'speed', 0, 
+                           guiData.maxSpeed).name('Speed');
 guiControls.iter.step(1.0);
-gui.add(guiData, 'colourPhase').name('Colour Phase');
+guiControls.colourPhase
+     = gui.add(guiData, 'colourPhase').name('Colour Phase');
 
 // How to do dropdowns in dat.gui:
 // https://stackoverflow.com/questions/30372761/
@@ -115,14 +122,19 @@ guiControls.visualizationOptionsFolder =
         guiControls.moreControlsFolder.addFolder(
             'More Visualization Options');
 guiControls.visualizationOptionsFolder.add(guiData, 'brightness2', 
-        0.0, 10.0).name('Pot. brightness');
+        0.0, guiData.maxBrightness2).name('Pot. brightness');
 guiControls.potColourController
     = guiControls.visualizationOptionsFolder.addColor(
         {colour: [255.0, 255.0, 255.0]}, 'colour').name('Pot. Colour');
+guiControls.showPotHeightMap
+    = guiControls.visualizationOptionsFolder.add(
+        guiData, 'showPotHeightMap', false).name('Pot. Height Map');
 guiControls.potColourController.onChange(e => {
     guiData.potColour[0] = e[0]/255.0;
     guiData.potColour[1] = e[1]/255.0;
     guiData.potColour[2] = e[2]/255.0;
+    guiData.showPotHeightMap = false;
+    guiData.showPotHeightMap.updateDisplay(); 
 });
 guiControls.visualizationOptionsFolder.add(guiData, 'viewProbCurrent', 
                                            false).name('Prob. Current');
@@ -133,6 +145,17 @@ guiControls.probColourController.onChange(e => {
     guiData.probColour[0] = e[0]/255.0;
     guiData.probColour[1] = e[1]/255.0;
     guiData.probColour[2] = e[2]/255.0;
+    guiData.colourPhase = false;
+    guiControls.colourPhase.updateDisplay();
+    guiData.showProbHeightMap = false;
+    guiControls.showProbHeightMap.updateDisplay();
+});
+guiControls.showProbHeightMap
+        = guiControls.visualizationOptionsFolder.add(
+            guiData, 'showProbHeightMap', false).name('Prob. Height Map');
+guiControls.showProbHeightMap.onChange(e => {
+    guiData.colourPhase = false;
+    guiControls.colourPhase.updateDisplay();
 });
 
 guiControls.showFolder

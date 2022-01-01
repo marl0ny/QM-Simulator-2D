@@ -1,14 +1,19 @@
 
 let guiData = {
     brightness: 4, // brightness for wavefunction
+    maxBrightness: 10,
     brightness2: 1.0, // brightness for potential
+    maxBrightness2: 10,
     speed: 6, // number of steps per frame
+    maxSpeed: 20,
     bx: 0.0,
     by: 0.0,
     px: 0.0,
     py: 0.0,
     colourPhase: true,
     viewProbCurrent: false,
+    showProbHeightMap: false,
+    showPotHeightMap: false,
     displayOutline: false,
     mouseMode: 'new ψ(x, y)',
     mouseData: {name: () => {},
