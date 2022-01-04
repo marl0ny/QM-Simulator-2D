@@ -1,7 +1,7 @@
 
 let guiData = {
     brightness: 4, // brightness for wavefunction
-    maxBrightness: 10,
+    maxBrightness: 20,
     brightness2: 1.0, // brightness for potential
     maxBrightness2: 10,
     speed: 6, // number of steps per frame
@@ -64,6 +64,9 @@ let guiData = {
     setToImageDimensions: () => {},
     invertImage: false,
     takeScreenshot: false,
+    setStartSpeed: false,
+    startSpeed: 2,
+    pauseOnFinish: false,
     recordVideo: false,
     mediaRecorder: null,
     nVideoFrames: 0,

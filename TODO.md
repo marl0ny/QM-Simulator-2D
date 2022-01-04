@@ -13,6 +13,7 @@
  - [ ] For the different methods need to change the default time step and grid sizes. For the Split-Op method need to make periodic the only possible boundary condition.
  - [ ] Add new potentials (like Coulomb) for the Split-Step and CN Jacobi methods which Leapfrog was not able to handle. When using Leapfrog these potentials should not be available.
  - [ ] Add a method option which uses the exact analytical formulas (only analytical potentials would be available).
+ - [ ] Nonlocal interactions for nonlinear methods.
  - [ ] Asynchronous programming to properly handle web workers for the Split-Step CPU implementation.
 
  #### Visualization Options
@@ -52,3 +53,5 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - Also for the Dirac simulation, the conserved probability density and current may not be calculated properly given the staggered grid. This may be the reason for the 'checkerboard' numerical artifacts that sometimes appear.
   - The Dirac simulation doesn't seem to be symmetric under time reversal, as can be seen when switching from a positive to a negative time step.
   - When using the dimensions of an image for the simulation need to update the grid size controls as well.
+  - Switching to periodic locks the resolution to 512x512; attempting to switch to 256x256 or 512x512 changes the boundary conditions to Neumann.
+  - The measure position button changes the norm when using a non 512x512 resolution.

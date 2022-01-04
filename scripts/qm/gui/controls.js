@@ -52,6 +52,9 @@ let guiControls = {
     numberOfFramesEntry: null,
     downloadScreenshotsButton: null,
     screenshotProgress: null,
+    setStartSpeed: null,
+    startSpeed: null,
+    pauseOnFinish: null,
     intMethod: null,
     methodControl: null,
     iterations: null,
@@ -134,7 +137,7 @@ guiControls.potColourController.onChange(e => {
     guiData.potColour[1] = e[1]/255.0;
     guiData.potColour[2] = e[2]/255.0;
     guiData.showPotHeightMap = false;
-    guiData.showPotHeightMap.updateDisplay(); 
+    guiControls.showPotHeightMap.updateDisplay(); 
 });
 guiControls.visualizationOptionsFolder.add(guiData, 'viewProbCurrent', 
                                            false).name('Prob. Current');
@@ -258,14 +261,27 @@ guiControls.numberOfFramesEntry
                                         ).name('Number of frames');
 guiControls.downloadScreenshotsButton = 
     guiControls.screenshotsFolder.add(
-        {download: () => guiData.takeScreenshot = true},
+        {download: () => {
+            guiData.takeScreenshot = true;
+            if (guiData.setStartSpeed) {
+                guiData.speed = guiData.startSpeed;
+                guiControls.iter.updateDisplay();
+            }
+        }},
             'download').name('Start');
 guiControls.screenshotProgress
     = guiControls.screenshotsFolder.add(guiData, 
                                         'screenshotProgress'
                                         ).name('Progress');
-
-
+guiControls.setStartSpeed = guiControls.screenshotsFolder.add(
+    guiData, 'setStartSpeed', false
+).name('Set Start Speed');
+guiControls.startSpeed = guiControls.screenshotsFolder.add(
+    guiData, 'startSpeed', 0, guiData.maxSpeed, 1
+).name('Start Speed');
+guiControls.pauseOnFinish = guiControls.screenshotsFolder.add(
+    guiData, 'pauseOnFinish', false
+).name('Pause On Finish');
 guiControls.recordVideoFolder.add({'func': () => {
     guiData.recordVideo = true;
 }}, 'func').name('Start');

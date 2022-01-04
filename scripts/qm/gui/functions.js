@@ -271,6 +271,10 @@ function handleRecording(canvas) {
                     // div.innerHTML = '';
                     guiControls.screenshotProgress.setValue('');
                 });
+            if (guiData.pauseOnFinish) {
+                guiData.speed = 0;
+                guiControls.iter.updateDisplay();
+            }
             guiData.screenshotCount = 0;
             guiData.takeScreenshot = false;
             return p;

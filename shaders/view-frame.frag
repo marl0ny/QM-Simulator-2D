@@ -140,11 +140,11 @@ void main () {
     } else if (wavefunctionDisplayMode == DISPLAY_ONLY_PROB_DENSITY) {
         wavefunction = probDensity*probColour*(brightness/16.0);
     } else if (wavefunctionDisplayMode == DISPLAY_PROB_DENSITY_HEIGHT_MAP) {
-        float val = -pi*probDensity*brightness/(4.0*8.0) - 2.0*pi/3.0;
+        float val = -pi*probDensity*brightness/(4.0*10.0) - 2.0*pi/3.0;
         if (val < -pi) {
             val = 2.0*pi + val;
-            if (val < -pi/4.0) {
-                val = -pi/4.0;
+            if (val < 0.0) {
+                val = 0.0;
             }
         }
         wavefunction = min(probDensity*(brightness/16.0), 1.25)*

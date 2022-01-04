@@ -39,14 +39,16 @@ float getDiv2RePsi(float rePsi) {
     // #Implementation_via_operator_discretization
     if (laplacePoints <= 5) {
         return (u + d + l + r - 4.0*rePsi)/(dx*dx);
-    } else {
+    } else if (laplacePoints <= 9) {
         float ul = realValueAt(fragTexCoord + vec2(-dx/w, dy/h));
         float ur = realValueAt(fragTexCoord + vec2(dx/w, dy/h));
         float dl = realValueAt(fragTexCoord + vec2(-dx/w, -dy/h));
         float dr = realValueAt(fragTexCoord + vec2(dx/w, -dy/h));
         return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l + 
                 0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*rePsi)/(dx*dx);
-    }
+    } /*else {
+        
+    }*/
 }
 
 void main () {
