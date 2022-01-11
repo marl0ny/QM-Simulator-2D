@@ -144,6 +144,7 @@ let rearrangeProgram;
 let fftIterProgram;
 let initVectorPotentialProgram;
 let dist2Program;
+let copyScaleFlipProgram;
 
 
 function initPrograms() {
@@ -219,6 +220,9 @@ function initPrograms() {
                                              initVectorPotentialShader);
     let dist2Shader = makeShader(gl.FRAGMENT_SHADER, dist2FragmentSource);
     dist2Program = makeProgram(vShader, dist2Shader);
+    let copyScaleFlipShader = makeShader(gl.FRAGMENT_SHADER, 
+                                         copyScaleFlipFragmentSource);
+    copyScaleFlipProgram = makeProgram(vShader, copyScaleFlipShader);
 
     // gl.deleteShader(vShader);
     gl.deleteShader(realTimeStepShader);
@@ -243,6 +247,7 @@ function initPrograms() {
     gl.deleteShader(rearrangeShader);
     gl.deleteShader(initVectorPotentialShader);
     gl.deleteShader(dist2Shader);
+    gl.deleteShader(copyScaleFlipShader);
 
 }
 

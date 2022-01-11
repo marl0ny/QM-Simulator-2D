@@ -47,6 +47,8 @@ let guiControls = {
     boundariesSelect: null,
     imagePotentialFolder: null,
     uploadImageButton: null,
+    displayBG: null,
+    bgBrightness: null,
     recordVideoFolder: null,
     screenshotsFolder: null,
     numberOfFramesEntry: null,
@@ -249,6 +251,19 @@ guiControls.imagePotentialFolder.add({'useImageDimensions':
                           'useImageDimensions').name('Use Dim.');
 guiControls.imagePotentialFolder.add({'submit': () => guiData.imageFunc()},
                          'submit').name('Use for Pot.');
+// guiControls.imagePotentialFolder.add({submit2: () =>
+//                                       guiData.imageBackgroundFunc()}, 
+//                                       'submit2'
+//                                      ).name('Use for bg.');
+guiControls.displayBG = guiControls.imagePotentialFolder.add(
+                                    guiData, 'displayBGImage'
+                                    ).name('Display as B.G.');
+guiControls.displayBG.onChange(e => {
+    if (e === true) guiData.imageBackgroundFunc();
+});
+guiControls.bgBrightness = guiControls.imagePotentialFolder.add(
+    guiData, 'bgBrightness', 0.0, 1.0
+).name('B.G. Scale');
 guiControls.recordVideoFolder
      = guiControls.moreControlsFolder.addFolder('Record Video');
 guiControls.screenshotsFolder

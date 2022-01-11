@@ -5,7 +5,8 @@ main();
 function main() {
 
     let framesManager = new FramesManager();
-    let numberOfFrames = 7;
+    let defaultNumberOfFrames = 8;
+    let numberOfFrames = 8;
     framesManager.addFrames(canvas.width, canvas.height, numberOfFrames);
     framesManager.addVectorFieldFrame(canvas.width, canvas.height);
     let SimManager = LeapfrogSimulationManager;
@@ -25,7 +26,7 @@ function main() {
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
         } if (e === 'Leapfrog 2') {
             SimManager = Leapfrog2SimulationManager;
@@ -33,7 +34,7 @@ function main() {
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationManager;
@@ -41,7 +42,7 @@ function main() {
             if (guiData.dt > 0.025) guiData.dt = 0.025;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
@@ -49,7 +50,7 @@ function main() {
             guiControls.dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
             methodGridSizes = gridSizes;
-            numberOfFrames = 8;
+            numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
             addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
@@ -58,7 +59,7 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationManager;
@@ -70,7 +71,7 @@ function main() {
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
-            numberOfFrames = 10;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
         } else if (e === 'Leapfrog Nonlinear') {
             SimManager = LeapfrogNonlinearSimulationManager;
@@ -78,7 +79,7 @@ function main() {
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
@@ -94,7 +95,7 @@ function main() {
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
-            numberOfFrames = 10;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
@@ -179,6 +180,38 @@ function main() {
         sim.imagePotential(imageData, guiData.invertImage);
         guiData.potChanged = true;
     }
+
+    guiData.imageBackgroundFunc = function() {
+        guiData.displayBGImage = true;
+        guiControls.displayBG.updateDisplay();
+        let canvas = document.getElementById('image-canvas');
+        console.log(canvas.width, canvas.height);
+        let ctx = canvas.getContext("2d");
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.fill();
+        let im = document.getElementById('image');
+        let w = canvas.width, h = canvas.height;
+        console.log(im.width/im.height, w/h);
+        if (im.width/im.height > w/h) {
+            let r = (im.height/im.width)/(h/w);
+            let heightOffset = parseInt(`${0.5*h*(1.0 - r)}`);
+            ctx.drawImage(im, 0, heightOffset, 
+                          w, parseInt(`${w*im.height/im.width}`));
+        } else {
+            let r = (im.width/im.height)/(w/h);
+            let widthOffset = parseInt(`${0.5*w*(1.0 - r)}`);
+            ctx.drawImage(im, widthOffset, 0, 
+                          parseInt(`${h*im.width/im.height}`), h);
+        }
+        let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
+                                                          w, h
+                                                          ).data);
+        for (let i = 0; i < imageData.length; i++) {
+            imageData[i] *= (15.0/255.0);
+        }
+        sim.bgImage(imageData, guiData.bgBrightness);
+    }
+    guiControls.bgBrightness.onChange(() => guiData.imageBackgroundFunc());
 
     function changeBoundaries(s, t) {
         if (s === gl.REPEAT || t === gl.REPEAT) {
@@ -535,6 +568,8 @@ function main() {
         const DISPLAY_VECTOR = 1;
         const DISPLAY_POTENTIAL_SINGLE_COLOUR = 0;
         const DISPLAY_POTENTIAL_COLOUR_MAP = 1;
+        const DISPLAY_NO_BACKGROUND = 0;
+        const DISPLAY_BACKGROUND = 1;
         let wavefuncDisplayMode = DISPLAY_ONLY_PROB_DENSITY;
         let potentialDisplayMode = DISPLAY_POTENTIAL_SINGLE_COLOUR;
         if (guiData.colourPhase) {
@@ -548,7 +583,9 @@ function main() {
         let intUniforms = {wavefunctionDisplayMode: wavefuncDisplayMode,
                            potentialDisplayMode: potentialDisplayMode,
                            vectorDisplayMode: DISPLAY_NO_VECTOR,
-                           backgroundDisplayMode: 0};
+                           backgroundDisplayMode: 
+                           (guiData.displayBGImage)?
+                            DISPLAY_BACKGROUND: DISPLAY_NO_BACKGROUND};
         if (guiData.viewProbCurrent) {
             sim.probCurrent({width: width, height: height,
                               hbar: 1.0, m: guiData.m});

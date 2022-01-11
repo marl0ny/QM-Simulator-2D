@@ -331,12 +331,12 @@ function initWavefunc(customData = null) {
         }
         f.bind();
         let t = 0.0;
-        if (f.frameNumber === uFrames[0].frameNumber) {
+        /*if (f.frameNumber === uFrames[0].frameNumber) {
             t = 2.0*wavefuncData.dt;
         } else if (f.frameNumber === vFrames[0].frameNumber || 
                    f.frameNumber === vFrames[1].frameNumber) {
             t = wavefuncData.dt;
-        }
+        }*/
         f.setFloatUniforms(
             {"bx": wavefuncData.bx, "by": wavefuncData.by, 
             "sx": sigma, "sy": sigma, 
@@ -350,6 +350,45 @@ function initWavefunc(customData = null) {
         draw();
         unbind();
     }
+    let dt = data.dt;
+    console.log(dt);
+    let w = data.w, h = data.h;
+    let hbar = data.hbar;
+    let m = data.m;
+    let c = data.c;
+    // uFrames[0].useProgram(stepUpProgram);
+    // uFrames[0].bind();
+    // uFrames[0].setFloatUniforms(
+    //     {"dt": dt/2.0, "dx": w/pixelWidth, "dy": h/pixelHeight,
+    //      "w": w, "h": h, "m": m, 
+    //      "hbar": hbar, "c": c}
+    // );
+    // uFrames[0].setIntUniforms(
+    //     {"vTex": vFrames[1].frameNumber,
+    //      "uTex": uFrames[1].frameNumber,
+    //      "potTex": potFrame.frameNumber,
+    //      "useVecPot": (data.useVectorPotential)? 1: 0,
+    //      "vecPotTex": vectorPotentialFrame.frameNumber}
+    // );
+    // draw();
+    // unbind();
+    vFrames[0].useProgram(stepDownProgram);
+    vFrames[0].bind();
+    vFrames[0].setFloatUniforms(
+        {"dt": dt/2.0, "dx": w/pixelWidth, "dy": h/pixelHeight,
+         "w": w, "h": h, "m": m, 
+         "hbar": hbar, "c": c}
+    );
+    vFrames[0].setIntUniforms(
+        {"vTex": vFrames[1].frameNumber,
+         "uTex": uFrames[1].frameNumber,
+         "potTex": potFrame.frameNumber,
+         "useVecPot": (data.useVectorPotential)? 1: 0,
+         "vecPotTex": vectorPotentialFrame.frameNumber}
+    );
+    draw();
+    unbind();
+
 }
 
 function initializePotential(type) {

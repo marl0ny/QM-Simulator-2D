@@ -6,6 +6,7 @@ class SimulationManager {
                                            framesManager.frames[i]);
         this.storeFrame = framesManager.frames[5];
         this.potentialFrame = framesManager.frames[6];
+        this.storeFrame2 = framesManager.frames[7];
         this.vectorFieldFrame = framesManager.vectorFieldFrames[0];
         this.t = 3;
         this.nullTexNumber = framesManager.nullTexNumber;
@@ -208,6 +209,16 @@ class SimulationManager {
         draw();
         unbind();
     }
+    bgImage(imageData, bgBrightness) {
+        this.storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+            gl.FLOAT, imageData);
+        this.storeFrame2.useProgram(copyScaleFlipProgram);
+        this.storeFrame2.bind();
+        this.storeFrame2.setIntUniforms({tex1: this.storeFrame.frameNumber});
+        this.storeFrame2.setFloatUniforms({scale1: bgBrightness})
+        draw();
+        unbind();
+    } 
     presetPotential(potentialType, potentialUniforms) {
         this.potentialFrame.useProgram(initPotentialProgram);
         this.potentialFrame.bind();
@@ -270,10 +281,11 @@ class SimulationManager {
         let swapFrames = this.swapFrames;
         let t = this.t;
         intUniforms['vecTex'] = tex;
-        intUniforms['tex1'] = swapFrames[t].frameNumber,
-        intUniforms['tex2'] = swapFrames[t-3].frameNumber,
-        intUniforms['tex3'] = swapFrames[t-2].frameNumber,
-        intUniforms['texV'] = potentialFrame.frameNumber
+        intUniforms['tex1'] = swapFrames[t].frameNumber;
+        intUniforms['tex2'] = swapFrames[t-3].frameNumber;
+        intUniforms['tex3'] = swapFrames[t-2].frameNumber;
+        intUniforms['texV'] = potentialFrame.frameNumber;
+        intUniforms['backgroundTex'] = this.storeFrame2.frameNumber;
         this.viewFrame.useProgram(displayProgram);
         this.viewFrame.bind();
         this.viewFrame.setIntUniforms(intUniforms);
