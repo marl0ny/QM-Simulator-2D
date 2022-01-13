@@ -6,7 +6,7 @@ function main() {
 
     let framesManager = new FramesManager();
     let defaultNumberOfFrames = 8;
-    let numberOfFrames = 8;
+    let numberOfFrames = defaultNumberOfFrames;
     framesManager.addFrames(canvas.width, canvas.height, numberOfFrames);
     framesManager.addVectorFieldFrame(canvas.width, canvas.height);
     let SimManager = LeapfrogSimulationManager;
@@ -145,8 +145,18 @@ function main() {
     });
 
     guiData.setToImageDimensions = function () {
-        let canvas = document.getElementById('image-canvas');
+        // let canvas = document.getElementById('image-canvas');
         let im = document.getElementById('image');
+        console.log(im.width, im.height);
+        if (disableNonPowerTwo) {
+            if (im.width !== im.height ||
+                ![256, 512, 1024, 2048, 4096].some(
+                    e => e === parseInt(im.width)) ||
+                ![256, 512, 1024, 2048, 4096].some(
+                    e => e === parseInt(im.height))) {
+                return;
+            }
+        }
         setFrameDimensions(parseInt(im.width/2.0), 
                            parseInt(im.height/2.0));
     }
@@ -273,6 +283,8 @@ function main() {
             h: canvasStyleHeight/canvas.height};
         guiData.showValues.w = width;
         guiData.showValues.h = height;
+        guiData.displayBGImage = false;
+        guiControls.displayBG.updateDisplay();
         guiControls.boxW.updateDisplay();
         guiControls.boxH.updateDisplay();
 
@@ -334,8 +346,14 @@ function main() {
                           borderAlpha: guiData.borderAlpha,
                           laplaceVal: guiData.laplaceVal,
                           width: width, height: height};
-            let wavefuncParams = {amp: 37.5,
-                                  sx: 4.0/canvas.width, sy: 4.0/canvas.height,
+            let sigma = (canvas.width > canvas.height)? 
+                         4.0/canvas.height: 4.0/canvas.width;
+            let wavefuncParams = {amp: 5.0*30.0/(sigma*512.0),
+                                  // sx: 4.0/canvas.width, sy: 4.0/canvas.height,
+                                  sx: (canvas.width > canvas.height)? 
+                                       sigma*canvas.height/canvas.width: sigma,
+                                  sy: (canvas.width > canvas.height)?
+                                       sigma: sigma*canvas.width/canvas.height,
                                   bx: u/canvas.width, by: v/canvas.height,
                                   px: 0.0, py: 0.0};
             sim.initWavefunc(params, wavefuncParams);

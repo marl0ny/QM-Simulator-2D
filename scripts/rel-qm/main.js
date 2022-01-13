@@ -61,7 +61,17 @@ let data = {
     potBrightness: 1.0,
     gridDimensions: '512x512',
     imageName: '',
-    imageFunc: () => {}
+    imageFunc: () => {},
+    screenshots: [],
+    screenshotNames: [],
+    screenshotCount: 0,
+    nScreenshots: 1,
+    takeScreenshot: false,
+    setStartSpeed: false,
+    startSpeed: 1,
+    screenshotProgress: '',
+    pauseOnFinish: false
+
 };
 
 function setFrameDimensions(newWidth, newHeight) {
@@ -102,7 +112,8 @@ source = gui.addColor(palette, 'color').name(
     + 'Source</a>'
 );
 source.domElement.hidden = true;
-gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
+let speedSelect
+    = gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
 let potSelect = gui.add(data, 'presetPotentials', 
                         ['Free (Periodic)', 'SHO', 'Double Slit',
                          'Single Slit', 'Step', 'Coulomb']
@@ -182,6 +193,134 @@ let uploadImageButton = imageOptions.add({'uploadImage': () => {}},
 uploadImageButton.domElement.hidden = true;
 let uploadImage = document.getElementById("uploadImage");
 let imageNameDisplay = imageOptions.add(data, 'imageName').name('File: ');
+let screenshotsOptions = moreControls.addFolder('Take Screenshots');
+let numberOfFramesEntry = screenshotsOptions.add(
+    data, 'nScreenshots').name('Number of Screenshots');
+downloadScreenshotsButton = screenshotsOptions.add(
+    {download: () => {
+        data.takeScreenshot = true;
+        if (data.setStartSpeed) {
+            data.stepsPerFrame = data.startSpeed;
+            speedSelect.updateDisplay();
+        }
+    }}, 'download'
+).name('Start');
+let screenshotProgress = screenshotsOptions.add(data, 'screenshotProgress'
+    ).name('Progress');
+let setStartSpeed = screenshotsOptions.add(
+    data, 'setStartSpeed', false).name('Set Start Speed');
+let startSpeed = screenshotsOptions.add(
+    data, 'startSpeed', 0, 20, 1).name('Start Speed');
+let pauseOnFinish = screenshotsOptions.add(
+    data, 'pauseOnFinish', false
+).name('Pause On Finish');
+
+
+function downloadScreenshotsZip(screenshots, screenshotNames) {
+    if (screenshots.length > 100) {
+        newScreenshots = [];
+        newScreenshotNames = [];
+        for (let i = 0; i < 100; i++) {
+            newScreenshots.push(screenshots.pop());
+            newScreenshotNames.push(screenshotNames.pop());
+        }
+        return downloadScreenshotsZip(newScreenshots, 
+            newScreenshotNames).then(() =>
+                downloadScreenshotsZip(screenshots, screenshotNames)
+            );
+    }
+    let zip = new JSZip();
+    while (screenshots.length > 0) {
+        let dataURL = screenshots.pop();
+        let imageName = screenshotNames.pop();
+        zip.file(imageName, dataURL.slice(22), {base64: true});
+    }
+    let time = Date.now();
+
+    // let options = {type: "blob",
+    //                compression: "DEFLATE",
+    //                compressionOptions: {level: 2}
+    //             };
+    // return zip.generateAsync(options).then( data => {
+    //     let zipFile = new File([data], `images-${time}.zip`, 
+    //                             {type: "application/zip"});
+    // });
+
+    let options = {type: "base64",
+                   compression: "STORE",
+                   // compression: "DEFLATE",
+                   compressionOptions: {level: 2}
+                };
+    return zip.generateAsync(options).then( data => {
+        // let div = document.getElementById('image-download');
+        let aTag = document.createElement('a');
+        aTag.hidden = true;
+        aTag.id = `a-download-${time}-zip`;
+        aTag.download = `"images-${time}.zip`;
+        aTag.href = `data:application/zip;base64,${data}`;
+        /*div.innerHTML += `<a href="data:application/zip;base64,${data}"
+                            hidden="true" 
+                            id="a-download-${time}-zip" 
+                            download="images-${time}.zip"></a>`;*/
+        return aTag;
+    }).then(aTag => {
+        // let aTag = document.getElementById(`a-download-${time}-zip`);
+        // console.log(aTag);
+        aTag.click();
+        return aTag;
+    }).then(aTag => {
+        aTag.remove();
+    });
+}
+
+
+function makeImageFilename(num, total) {
+    let time = Date.now();
+    let numStr = `${num + 1}`, totalStr = `${total}`;
+    let numZeros = totalStr.length - numStr.length;
+    for (let i = 0; i < numZeros; i++) {
+        numStr = '0' + numStr;
+    }
+    return `image_${numStr}_${time}.png`;
+}
+
+function handleRecording(canvas) {
+    if(data.takeScreenshot) {
+        let zipSize = Math.floor(data.nScreenshots/15);
+        if (zipSize <= 50) zipSize = 50;
+        data.screenshots.push(canvas.toDataURL("image/png", 1));
+        let name = makeImageFilename(data.screenshotCount, data.nScreenshots);
+        data.screenshotNames.push(name);
+        data.screenshotCount++;
+        screenshotProgress.setValue(
+            `Recording ${data.screenshotCount}/${data.nScreenshots}`);
+        if (data.screenshotCount === data.nScreenshots) {
+            let p = downloadScreenshotsZip(
+                data.screenshots, data.screenshotNames).then(() => {
+                    screenshotProgress.setValue('');
+                })
+            if (data.pauseOnFinish) {
+                data.stepsPerFrame = 0;
+                speedSelect.updateDisplay();
+            }
+            data.screenshotCount = 0;
+            data.takeScreenshot = false;
+            return p;
+        }
+        if (data.screenshotCount > 0 && 
+            data.screenshotCount % zipSize === 0) {
+            let screenshots = [];
+            let screenshotNames = [];
+            for (let i = 0; i < zipSize; i++) {
+                screenshots.push(data.screenshots.pop());
+                screenshotNames.push(data.screenshotNames.pop());
+            }
+            return downloadScreenshotsZip(screenshots, screenshotNames);
+        }
+    }
+    return Promise.resolve();
+}
+
 
 
 /*vectorPotOptions.onChange(e => {
@@ -790,7 +929,8 @@ function animation() {
     draw();
     unbind();
     if (stats) stats.end();
-    requestAnimationFrame(animation);
+    handleRecording(canvas).then(
+        () => requestAnimationFrame(animation));
 }
 
 animation();

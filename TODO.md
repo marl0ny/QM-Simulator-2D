@@ -54,4 +54,5 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - The Dirac simulation doesn't seem to be symmetric under time reversal, as can be seen when switching from a positive to a negative time step.
   - When using the dimensions of an image for the simulation need to update the grid size controls as well.
   - Switching to periodic locks the resolution to 512x512; attempting to switch to 256x256 or 512x512 changes the boundary conditions to Neumann.
-  - The measure position button changes the norm when using a non 512x512 resolution.
+  - <s>The measure position button changes the norm when using a non 512x512 resolution.</s>
+  - Background image does not work with non 512x512 resolution.

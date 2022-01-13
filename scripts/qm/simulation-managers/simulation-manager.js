@@ -33,7 +33,7 @@ class SimulationManager {
         this.viewFrame.setTexture(pixelWidth, pixelHeight, 
                                   {s: gl.CLAMP_TO_EDGE, t: gl.CLAMP_TO_EDGE});
         unbind();
-        let frames = [].concat(this.swapFrames, this.storeFrame, 
+        let frames = [].concat(this.swapFrames, this.storeFrame, this.storeFrame2,
                                this.potentialFrame, this.vectorFieldFrame);
         for (let frame of frames) {
             frame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
