@@ -51,14 +51,21 @@ let data = {
     phaseOptions: ['ψ1 Phase', 'ψ2 Phase', 'ψ3 Phase', 'ψ4 Phase', 
                    '|ψ12|-|ψ34|', 'None'],
     phaseMode: 0,
+    showWavefuncHeightMap: false,
+    showPotentialHeightMap: false,
+    potentialDisplayMode: 0,
     mouseAction: false,
+    mouseCount: 0,
+    reshapePotentialRecursionLevel: 0,
     presetPotentialSettings: {"a": 10000.0/137.036, "y0": 0.45, "w": 0.02, 
                               "spacing": 0.03, "x1": 0.43, "x2": 0.57},
     measurePosition: e => {},
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
     probInRegion: '0',
     viewProbCurrent: false,
+    probColour: [1.0, 1.0, 1.0],
     potBrightness: 1.0,
+    potColour: [1.0, 1.0, 1.0],
     gridDimensions: '512x512',
     imageName: '',
     imageFunc: () => {},
@@ -158,19 +165,57 @@ let viewOptionsFolder = gui.addFolder('Visualization Options');
 let viewOptions = viewOptionsFolder.addFolder('ψ(x, y)');
 viewOptions.add(data, 'brightness', 0.0, 8.0);
 phaseOptions = viewOptions.add(data, 'phaseOption', 
-                               data.phaseOptions).name('Colour Options');
-phaseOptions.onChange(e => {data.phaseMode
-                             = data.phaseOptions.indexOf(e);});
+                               data.phaseOptions).name('Phase Options');
 viewOptions.add(data, 'showPsi1').name('Show |ψ1|^2');
 viewOptions.add(data, 'showPsi2').name('Show |ψ2|^2');
 viewOptions.add(data, 'showPsi3').name('Show |ψ3|^2');
 viewOptions.add(data, 'showPsi4').name('Show |ψ4|^2');
 viewOptions.add(data, 'applyPhaseShift').name('Adjust Global Phase');
 viewOptions.add(data, 'viewProbCurrent').name('Show Current');
+let probColourControls = viewOptions.addColor(
+    {colour: [255.0, 255.0, 255.0]}, 'colour').name('|ψ|^2 Colour');
+let wavefuncHeightMap = viewOptions.add(
+    data, 'showWavefuncHeightMap').name('Show Height Map');
+wavefuncHeightMap.onChange(() => {
+    data.phaseOption = 'None';
+    phaseOptions.updateDisplay();
+});
+probColourControls.onChange(
+    e => {
+        data.probColour[0] = e[0]/255.0;
+        data.probColour[1] = e[1]/255.0;
+        data.probColour[2] = e[2]/255.0;
+        data.phaseMode = 5;
+        data.phaseOption = 'None';
+        phaseOptions.updateDisplay();
+        data.showWavefuncHeightMap = false;
+        wavefuncHeightMap.updateDisplay();
+    }
+);
+phaseOptions.onChange(e => {
+    data.phaseMode = data.phaseOptions.indexOf(e);
+    data.showWavefuncHeightMap = false;
+    wavefuncHeightMap.updateDisplay();
+});
 let potViewOptions = 
     viewOptionsFolder.addFolder('Potential');
 potViewOptions.add(data, 'potBrightness', 0.0, 8.0).name('brightness');
 let dx = data.w/pixelWidth;
+let potColourControls = potViewOptions.addColor(
+    {colour: [255.0, 255.0, 255.0]}, 'colour').name('V(x, y) Colour');
+let potHeightMap = potViewOptions.add(
+    data, 'showPotentialHeightMap').name('Show Height Map');
+potHeightMap.onChange(e => {
+    data.potentialDisplayMode = (e === true)? 1: 0; 
+});
+potColourControls.onChange(e => {
+    data.potColour[0] = e[0]/255.0;
+    data.potColour[1] = e[1]/255.0;
+    data.potColour[2] = e[2]/255.0;
+    data.potentialDisplayMode = 0;
+    data.showPotentialHeightMap = false;
+    potHeightMap.updateDisplay();
+});
 dtControl = gui.add(data, 'dt', -0.5*dx/data.c, 0.999*dx/data.c).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
@@ -615,7 +660,26 @@ for (let e of guiControls.presetPotOptions.additions) {
     e.onChange(onPotentialSettingsChange);
 }
 
-function reshapePotential(mode) {
+function reshapePotential(mode, data) {
+    let drawWidth = data.drawSize*canvas.width;
+    if (data.mouseCount > 1 && data.drawSize > 0.0 && 
+        (Math.abs(data.px) > drawWidth ||
+         Math.abs(data.py) > drawWidth)) {
+        if (data.reshapePotentialRecursionLevel < 100) {
+            console.log(data.reshapePotentialRecursionLevel);
+            let newData = Object.create(data);
+            let dist = Math.sqrt(data.px**2 + data.py**2);
+            let dx = drawWidth*data.px/dist;
+            let dy = drawWidth*data.py/dist;
+            newData.bx -= data.drawSize*data.px/dist;
+            newData.by -= data.drawSize*data.py/dist;
+            newData.px -= dx;
+            newData.py -= dy;
+            newData.reshapePotentialRecursionLevel++;
+            console.log(newData.bx, newData.by);
+            reshapePotential(mode, newData);  
+        }
+    }
     let drawMode = 0;
     if (data.drawShape === 'circle') {
         drawMode = 1;
@@ -633,6 +697,7 @@ function reshapePotential(mode) {
     potFrame.setIntUniforms({"tex1": extraFrame.frameNumber, 
                              "eraseMode": mode,
                              "drawMode" : drawMode});
+    // console.log(data.bx, data.by);
     potFrame.setFloatUniforms({
         "drawWidth": data.drawSize,
         "drawHeight": data.drawSize,
@@ -832,6 +897,7 @@ function step() {
 let mouseUse = false;
 let mousePos = function(ev, mode) {
     if (mode == 'move') {
+        data.mouseCount++;
         let prevBx = data.bx;
         let prevBy = data.by;
         data.bx = Math.floor((ev.clientX 
@@ -862,11 +928,17 @@ canvas.addEventListener("mouseup", ev => {
     guiControls.pxControl.updateDisplay();
     guiControls.pyControl.updateDisplay();
     mousePos(ev, 'up');
+    data.mouseCount = 0;
     mouseUse = false;
 });
 canvas.addEventListener("mousedown", ev => {
     data.drawRect.w = 0.0;
     data.drawRect.h = 0.0;
+    data.bx = Math.floor((ev.clientX 
+        - canvas.offsetLeft))/canvasStyleWidth;
+    data.by = 1.0 - Math.floor((ev.clientY
+                - canvas.offsetTop)
+                )/canvasStyleHeight;
     data.drawRect.x = Math.floor((ev.clientX
                                        - canvas.offsetLeft)
                                     )/canvasStyleWidth;
@@ -885,9 +957,9 @@ function animation() {
         if (data.mouseSelect === 'New ψ(x, y)') 
             initWavefunc();
         else if (data.mouseSelect === 'Draw Barrier')
-            reshapePotential(0);
+            reshapePotential(0, data);
         else if (data.mouseSelect === 'Erase Barrier')
-            reshapePotential(1);
+            reshapePotential(1, data);
         else if (data.mouseSelect === 'Prob. in Box')
             changeProbBoxDisplay();
         data.mouseAction = false;
@@ -910,7 +982,9 @@ function animation() {
          "vTex2": vFrames[1].frameNumber, 
          "potTex": potFrame.frameNumber,
          "guiTex": (showBox)? guiFrame.frameNumber: nullTex,
-         "displayMode": data.phaseMode,
+         "wavefuncDisplayMode": (data.showWavefuncHeightMap)? 
+                                6: data.phaseMode,
+         "potentialDisplayMode": data.potentialDisplayMode,
          "vecTex": (data.viewProbCurrent)? 
                     vectorFieldFrame.frameNumber: nullTex}
     );
@@ -924,7 +998,10 @@ function animation() {
          "showPsi2": (data.showPsi2)? 1.0: 0.0,
          "showPsi3": (data.showPsi3)? 1.0: 0.0, 
          "showPsi4": (data.showPsi4)? 1.0: 0.0}
-    )
+    );
+    viewFrame.setVec3Uniforms(
+        {probColour: data.probColour, potColour: data.potColour}
+    );
     logFPS();
     draw();
     unbind();
