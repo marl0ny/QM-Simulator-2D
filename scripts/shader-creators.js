@@ -191,8 +191,11 @@ function createNonlinearLeapfrogShader(expr, uniforms) {
 
 
     void main() {
-        float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
-                    rScaleV*texture2D(texV, fragTexCoord).g;
+        vec4 arrV = texture2D(texV, fragTexCoord);
+        float V = (1.0 - rScaleV)*arrV[0] + rScaleV*arrV[1];
+        float imV = arrV[2];
+        float f1 = 1.0 - dt*imV/hbar;
+        float f2 = 1.0 + dt*imV/hbar;
         vec4 psi1Fragment = texture2D(texPsi1, fragTexCoord);
         float alpha = psi1Fragment.a;
         vec2 psi1 = psi1Fragment.xy*alpha;
@@ -200,9 +203,9 @@ function createNonlinearLeapfrogShader(expr, uniforms) {
         float u = psi2.x*psi2.x + psi2.y*psi2.y;`, // 2
     `   float nonlinear = `, // 3
     `   vec2 hamiltonianPsi2 = -(0.5*hbar*hbar/m)*div2Psi(texPsi2) + V*psi2 + nonlinear*psi2;
-        fragColor = vec4(psi1.x + dt*hamiltonianPsi2.y/hbar,
-                        psi1.y - dt*hamiltonianPsi2.x/hbar,
-                        0.0, alpha);
+        fragColor = vec4(psi1.x*(f2/f1) + dt*hamiltonianPsi2.y/(f1*hbar),
+                         psi1.y*(f2/f1) - dt*hamiltonianPsi2.x/(f1*hbar),
+                         0.0, alpha);
     }
     `// 4
     ];

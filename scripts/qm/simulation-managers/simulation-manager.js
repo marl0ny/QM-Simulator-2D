@@ -219,11 +219,14 @@ class SimulationManager {
         draw();
         unbind();
     } 
-    presetPotential(potentialType, potentialUniforms) {
+    presetPotential(potentialType, dissipativePotentialType,
+                    potentialUniforms) {
         this.potentialFrame.useProgram(initPotentialProgram);
         this.potentialFrame.bind();
         this.potentialFrame.setFloatUniforms(potentialUniforms);
-        this.potentialFrame.setIntUniforms({potentialType: potentialType});
+        this.potentialFrame.setIntUniforms({potentialType: potentialType,
+                                            dissipativePotentialType:
+                                            dissipativePotentialType});
         draw();
         unbind();
     }
@@ -274,6 +277,35 @@ class SimulationManager {
                                         laplacePoints: laplaceVal});
         draw();
         unbind();
+    }
+    scaleWavefunction(scaleVal) {
+        for (let f of this.swapFrames) {
+            this.storeFrame.bind();
+            this.storeFrame.useProgram(copyScaleProgram);
+            this.storeFrame.setIntUniforms({tex1: f.frameNumber,
+                                            tex2: this.nullTexNumber});
+            this.storeFrame.setFloatUniforms({scale1: scaleVal,
+                                              scale2: 0.0});
+            draw();
+            unbind();
+            f.bind();
+            f.useProgram(copyScaleProgram);
+            f.setIntUniforms({tex1: this.storeFrame.frameNumber,
+                              tex2: this.nullTexNumber});
+            f.setFloatUniforms({scale1: 1.0, scale2: 0.0});
+            draw();
+            unbind();
+        }
+    }
+    normalizeScaleWavefunction(scaleVal) {
+        let probDist = this.getUnnormalizedProbDist();
+        unbind();
+        let sum = 0.0;
+        for (let i = 0; i < probDist.length; i+=4) {
+            sum += probDist[i];
+        }
+        // console.log(sum);
+        this.scaleWavefunction(scaleVal/Math.sqrt(sum));
     }
     display(floatUniforms, intUniforms, vec3Uniforms) {
         let tex = this.vectorFieldFrame.frameNumber;

@@ -162,8 +162,10 @@ extends SplitStepSimulationManager {
         this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
                             this._dt, this._hbar);
     }
-    presetPotential(potentialType, potentialUniforms) {
-        super.presetPotential(potentialType, potentialUniforms);
+    presetPotential(potentialType, dissipativePotentialType, 
+                    potentialUniforms) {
+        super.presetPotential(potentialType, dissipativePotentialType, 
+                              potentialUniforms);
         this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
                             this._dt, this._hbar);
     }

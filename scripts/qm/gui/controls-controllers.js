@@ -385,9 +385,9 @@ function addIterationsControls() {
             guiData, 'iterations', 3, 20, 1).name('Min. Iter.');
     guiControls.assessConvergence = guiControls.intMethod.add(
         guiData, 'assessConvergence'
-    ).name('Check Error');
+    ).name('Check Conv.');
     guiControls.setTol = guiControls.intMethod.add(
-        guiData, 'toleranceString').name('Max Error');
+        guiData, 'toleranceString').name('Tolerance');
     guiControls.setTol.onChange(e => {
         num = parseFloat(e);
         if (num >= 5e-8) {
@@ -422,6 +422,33 @@ function addNonlinearControls() {
 }
 // guiControls.addNonlinearControls = addNonlinearControls;
 
+function addNonlinearNonlocalControls(sim) {
+    guiControls.textEditNonlocal
+        = guiControls.intMethod.addFolder('Nonlocal Int.');
+    guiControls.useNonlocal
+        = guiControls.textEditNonlocal.add(
+            guiData, 'useNonlocal').name('Use nonlocal');
+    guiControls.useNonlocal.onChange(e => {
+        sim.nonlinearNonlocal({
+            strength: guiData.nonlocalInteractionStrength,
+            nIter: guiData.nonlocalPoissonJacobiIterations,
+            use: e
+        });
+    });
+    guiControls.nonlocalStrength
+        = guiControls.textEditNonlocal.add(
+            guiData, 'nonlocalInteractionStrength', -1.0, 1.0
+        ).name('Strength');
+    guiControls.nonlocalStrength.onChange(val => {
+        sim.nonlinearNonlocal({
+            strength: val,
+            nIter: guiData.nonlocalPoissonJacobiIterations,
+            use: guiData.useNonlocal
+        });
+    });
+}
+
+
 function removeNonlinearControls() {
     if (guiControls.textEditNonlinear !== null &&
         guiControls.textEditNonlinearEntry !== null &&
@@ -439,4 +466,24 @@ function removeNonlinearControls() {
         guiControls.textEditNonlinear = null;
     }
 }
+
+function removeNonlinearNonlocalControls() {
+    if (guiControls.textEditNonlocal !== null && 
+        guiControls.useNonlocal !== null &&
+        guiControls.nonlocalStrength !== null) {
+        guiControls.textEditNonlocal.remove(
+            guiControls.useNonlocal
+        );
+        guiControls.textEditNonlocal.remove(
+            guiControls.nonlocalStrength
+        );
+        guiControls.intMethod.removeFolder(
+            guiControls.textEditNonlocal
+        );
+        guiControls.textEditNonlocal = null; 
+        guiControls.useNonlocal = null;
+        guiControls.nonlocalStrength = null; 
+    }
+}
+
 // guiControls.removeNonlinearControls = removeNonlinearControls;

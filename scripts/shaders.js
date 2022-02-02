@@ -52,6 +52,15 @@ in vec2 fragTexCoord;out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 uniform float dx;uniform float dy;uniform float w;uniform float h;uniform float hbar;uniform float m;uniform sampler2D tex;float realValueAt(sampler2D texPsi, vec2 location) {vec4 tmp = texture2D(texPsi, location);return tmp.r*tmp.a;}float imagValueAt(sampler2D texPsi, vec2 location) {vec4 tmp = texture2D(texPsi, location);return tmp.g*tmp.a;}vec2 getDivRePsi(sampler2D texPsi) {float u = realValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));float d = realValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));float l = realValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));float r = realValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);}vec2 getDivImPsi(sampler2D texPsi) {float u = imagValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));float d = imagValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));float l = imagValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));float r = imagValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);}void main() {float rePsi = texture2D(tex, fragTexCoord).r;float imPsi = texture2D(tex, fragTexCoord).g;vec2 divRePsi = getDivRePsi(tex);vec2 divImPsi = getDivImPsi(tex);vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);}`;
+const curlFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;uniform float dy;uniform float w;uniform float h;uniform sampler2D tex;uniform int type;int FOWARD = 0;int CENTRED = 1;int BACKWARD = 2;void main() {vec4 u, d, l, r;if (type == FOWARD) {/*vec4 cc = texture2D(tex, fragTexCoord);vec4 rc = texture2D(tex, fragTexCoord + vec2(dx/w, 0.0));vec4 cu = texture2D(tex, fragTexcoord + vec2(0.0, dy/h));vec4 ru = texture2D(tex, fragTexcoord + vec2(dx/w, dy/h));vec4 u = (cu + ru)/2.0;vec4 d = (cc + rc)/2.0;vec4 l = (cc + cu)/2.0;vec4 r = (ru + rc)/2.0;*/vec4 u = texture2D(tex, fragTexCoord + vec2(0.5*dx/w, dy/h));vec4 d = texture2D(tex, fragTexCoord + vec2(0.5*dx/w, 0.0));vec4 l = texture2D(tex, fragTexCoord + vec2(0.0, 0.5*dy/h));vec4 r = texture2D(tex, fragTexCoord + vec2(dx/w, 0.5*dy/h));} else if (type == CENTRED) {vec4 u = 0.5*texture2D(tex, fragTexCoord + vec2(0.0, dy/h));vec4 d = 0.5*texture2D(tex, fragTexCoord + vec2(0.0, -dy/h));vec4 l = 0.5*texture2D(tex, fragTexCoord + vec2(-dx/w, 0.0));vec4 r = 0.5*texture2D(tex, fragTexCoord + vec2(dx/w, 0.0));} else if (type == BACKWARD) {vec4 u = texture2D(tex, fragTexCoord + vec2(-0.5*dx/w, 0.0));vec4 d = texture2D(tex, fragTexCoord + vec2(-0.5*dx/w, -dy/h));vec4 l = texture2D(tex, fragTexCoord + vec2(-dx/w, -0.5*dy/h));vec4 r = texture2D(tex, fragTexCoord + vec2(0.0, -0.5*dy/h));}vec4 dAdx = (r - l)/dx;vec4 dAdy = (u - d)/dy;vec3 curl = vec3(dAdy.z, -dAdx.z, dAdx.y - dAdy.x);fragColor = vec4(curl, 1.0);}`;
 const initialPotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -60,7 +69,7 @@ in vec2 fragTexCoord;out vec4 fragColor;
 #define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
 #endif
-uniform int potentialType;uniform float a;uniform float y0;uniform float w;uniform float spacing;uniform float x1;uniform float x2;
+uniform int potentialType;uniform int dissipativePotentialType;uniform float a;uniform float y0;uniform float w;uniform float spacing;uniform float x1;uniform float x2;uniform float aImag;
 #define SHO 1
 #define DOUBLE_SLIT 2
 #define SINGLE_SLIT 3
@@ -68,7 +77,12 @@ uniform int potentialType;uniform float a;uniform float y0;uniform float w;unifo
 #define INV_R 5
 #define TRIPLE_SLIT 6
 #define NEG_INV_R 7
-void main() {float x = fragTexCoord.x;float y = fragTexCoord.y;if (potentialType == SHO) {fragColor = vec4(a*((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)), 0.0, 0.0, 1.0);} else if (potentialType == DOUBLE_SLIT) {if (y <= (y0 + w/2.0) &&y >= (y0 - w/2.0) &&(x <= x1 - spacing/2.0 ||(x >= x1 + spacing/2.0 &&x <= x2 - spacing/2.0) || x >= x2 + spacing/2.0)) {fragColor = vec4(a, 0.0, 0.0, 1.0);} else {fragColor = vec4(0.0, 0.0, 0.0, 1.0);}} else if (potentialType == SINGLE_SLIT) {if (y <= (y0 + w/2.0) &&y >= (y0 - w/2.0) &&(x <= x1 - spacing/2.0 ||x >= x1 + spacing/2.0)) {fragColor = vec4(a, 0.0, 0.0, 1.0);} else {fragColor = vec4(0.0, 0.0, 0.0, 1.0);}} else if (potentialType == STEP) {if (y > y0) {fragColor = vec4(a, 0.0, 0.0, 1.0);} else {fragColor = vec4(0.0, 0.0, 0.0, 1.0);}} else if (potentialType == INV_R) {float u = 10.0*(x - 0.5);float v = 10.0*(y - 0.5);float oneOverR = 1.0/sqrt(u*u + v*v);float val = (oneOverR < 50.0)? oneOverR: 50.0;fragColor = vec4(val, 0.0, 0.0, 1.0);} else if (potentialType == TRIPLE_SLIT) {float val = 15.0;if ((y <= 0.45 || y >= 0.48) || (x > 0.49 && x < 0.51)|| (x > 0.43 && x < 0.45) || (x > 0.55 && x < 0.57)) {fragColor = vec4(0.0, 0.0, 0.0, 1.0);} else {fragColor = vec4(val, 0.0, 0.0, 1.0);}} else if (potentialType == NEG_INV_R) {float u = 2.0*(x - 0.5);float v = 2.0*(y - 0.5);float oneOverR = -1.0/sqrt(u*u + v*v);float val = (oneOverR < -150.0)? -150.0: oneOverR;fragColor = vec4(val + 50.0, 0.0, 0.0, 1.0);} else {float val = 0.0;fragColor = vec4(0.0, 0.0, -val, 1.0);}}`;
+#define CIRCLE 8
+
+#define NO_DISSIPATION 0
+#define BOUNDARY_DISSIPATION 1
+#define UNIFORM_DISSIPATION 2
+void main() {float x = fragTexCoord.x;float y = fragTexCoord.y;float imagVal = 0.0;if (dissipativePotentialType == BOUNDARY_DISSIPATION) {imagVal -= 30.0*exp(-0.5*y*y/(0.01*0.01));imagVal -= 30.0*exp(-0.5*(y-1.0)*(y-1.0)/(0.01*0.01));imagVal -= 30.0*exp(-0.5*x*x/(0.01*0.01));imagVal -= 30.0*exp(-0.5*(x-1.0)*(x-1.0)/(0.01*0.01));} else if (dissipativePotentialType == UNIFORM_DISSIPATION) {imagVal = -10.0;}if (potentialType == SHO) {fragColor = vec4(a*((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)), 0.0,imagVal, 1.0);} else if (potentialType == DOUBLE_SLIT) {if (y <= (y0 + w/2.0) &&y >= (y0 - w/2.0) &&(x <= x1 - spacing/2.0 ||(x >= x1 + spacing/2.0 &&x <= x2 - spacing/2.0) || x >= x2 + spacing/2.0)) {fragColor = vec4(a, 0.0, imagVal, 1.0);} else {fragColor = vec4(0.0, 0.0, imagVal, 1.0);}} else if (potentialType == SINGLE_SLIT) {if (y <= (y0 + w/2.0) &&y >= (y0 - w/2.0) &&(x <= x1 - spacing/2.0 ||x >= x1 + spacing/2.0)) {fragColor = vec4(a, 0.0, imagVal, 1.0);} else {fragColor = vec4(0.0, 0.0, imagVal, 1.0);}} else if (potentialType == STEP) {if (y > y0) {fragColor = vec4(a, 0.0, imagVal, 1.0);} else {fragColor = vec4(0.0, 0.0, imagVal, 1.0);}} else if (potentialType == INV_R) {float u = 10.0*(x - 0.5);float v = 10.0*(y - 0.5);float oneOverR = 1.0/sqrt(u*u + v*v);float val = (oneOverR < 50.0)? oneOverR: 50.0;fragColor = vec4(val, 0.0, imagVal, 1.0);} else if (potentialType == TRIPLE_SLIT) {float val = 15.0;if ((y <= 0.45 || y >= 0.48) || (x > 0.49 && x < 0.51)|| (x > 0.43 && x < 0.45) || (x > 0.55 && x < 0.57)) {fragColor = vec4(0.0, 0.0, imagVal, 1.0);} else {fragColor = vec4(val, 0.0, imagVal, 1.0);}} else if (potentialType == NEG_INV_R) {float u = 2.0*(x - 0.5);float v = 2.0*(y - 0.5);float oneOverR = -1.0/sqrt(u*u + v*v);float val = (oneOverR < -150.0)? -150.0: oneOverR;fragColor = vec4(val + 50.0, 0.0, imagVal, 1.0);} else if (potentialType == CIRCLE) {float u = x - 0.5;float v = y - 0.5;float r = sqrt(u*u + v*v);float val = 25.0*smoothstep(0.34, 0.36, r);fragColor = vec4(val, 0.0, imagVal, 1.0);} else {fragColor = vec4(0.0, 0.0, imagVal, 1.0);}}`;
 const initialUpperSpinorFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -143,6 +157,15 @@ in vec2 fragTexCoord;out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 uniform sampler2D tex;void main() {vec4 col = texture2D(tex, fragTexCoord);float probDensity = col.r*col.r + col.g*col.g;fragColor = vec4(probDensity, 0.0, 0.0, 1.0);}`;
+const poissonJacobiIterFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;uniform float dy;uniform float w;uniform float h;uniform float bScale;uniform int laplacianType;uniform sampler2D bTex;uniform sampler2D prevTex;const int FIVE_POINT = 5;const int NINE_POINT = 9;void main() {vec4 u = texture2D(prevTex, fragTexCoord + vec2(0.0, dy/h));vec4 d = texture2D(prevTex, fragTexCoord + vec2(0.0, -dy/h));vec4 l = texture2D(prevTex, fragTexCoord + vec2(-dx/w, 0.0));vec4 r = texture2D(prevTex, fragTexCoord + vec2(dx/w, 0.0));vec4 b = texture2D(bTex, fragTexCoord);if (laplacianType <= FIVE_POINT) {fragColor = bScale*b*dx*dx/4.0 + (u + d + l + r)/4.0;} else {vec4 ul = texture2D(prevTex, fragTexCoord + vec2(-dx/w, dy/h));vec4 ur = texture2D(prevTex, fragTexCoord + vec2(dx/w, dy/h));vec4 dl = texture2D(prevTex, fragTexCoord + vec2(-dx/w, -dy/h));vec4 dr = texture2D(prevTex, fragTexCoord + vec2(dx/w, -dy/h));fragColor = -(-bScale*b*dx*dx - (u + d + l + r)/2.0- (ul + ur + dl + dr)/4.0)/3.0;}}`;
 const reshapePotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -173,7 +196,7 @@ in vec2 fragTexCoord;out vec4 fragColor;
 #define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
 #endif
-uniform float dx;uniform float dy;uniform float dt;uniform float w;uniform float h;uniform float m;uniform float hbar;uniform float rScaleV;uniform sampler2D texPsi1;uniform sampler2D texPsi2;uniform sampler2D texV;uniform int laplacePoints;vec2 valueAt(sampler2D texPsi, vec2 coord) {vec4 psiFragment = texture2D(texPsi, coord);return psiFragment.xy*psiFragment.a;}vec2 div2Psi(sampler2D texPsi) {vec2 c = valueAt(texPsi, fragTexCoord);vec2 u = valueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));vec2 d = valueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));vec2 l = valueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));vec2 r = valueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));if (laplacePoints <= 5) {return (u + d + l + r - 4.0*c)/(dx*dx);} else {vec2 ul = valueAt(texPsi, fragTexCoord + vec2(-dx/w, dy/h));vec2 ur = valueAt(texPsi, fragTexCoord + vec2(dx/w, dy/h));vec2 dl = valueAt(texPsi, fragTexCoord + vec2(-dx/w, -dy/h));vec2 dr = valueAt(texPsi, fragTexCoord + vec2(dx/w, -dy/h));return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l +0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*c)/(dx*dx);}}void main() {float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r +rScaleV*texture2D(texV, fragTexCoord).g;vec4 psi1Fragment = texture2D(texPsi1, fragTexCoord);float alpha = psi1Fragment.a;vec2 psi1 = psi1Fragment.xy*alpha;vec2 psi2 = valueAt(texPsi2, fragTexCoord);vec2 hamiltonianPsi2 = -(0.5*hbar*hbar/m)*div2Psi(texPsi2) + V*psi2;fragColor = vec4(psi1.x + dt*hamiltonianPsi2.y/hbar,psi1.y - dt*hamiltonianPsi2.x/hbar,0.0, alpha);}`;
+uniform float dx;uniform float dy;uniform float dt;uniform float w;uniform float h;uniform float m;uniform float hbar;uniform float rScaleV;uniform sampler2D texPsi1;uniform sampler2D texPsi2;uniform sampler2D texV;uniform int laplacePoints;vec2 valueAt(sampler2D texPsi, vec2 coord) {vec4 psiFragment = texture2D(texPsi, coord);return psiFragment.xy*psiFragment.a;}vec2 div2Psi(sampler2D texPsi) {vec2 c = valueAt(texPsi, fragTexCoord);vec2 u = valueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));vec2 d = valueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));vec2 l = valueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));vec2 r = valueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));if (laplacePoints <= 5) {return (u + d + l + r - 4.0*c)/(dx*dx);} else {vec2 ul = valueAt(texPsi, fragTexCoord + vec2(-dx/w, dy/h));vec2 ur = valueAt(texPsi, fragTexCoord + vec2(dx/w, dy/h));vec2 dl = valueAt(texPsi, fragTexCoord + vec2(-dx/w, -dy/h));vec2 dr = valueAt(texPsi, fragTexCoord + vec2(dx/w, -dy/h));return (0.25*ur + 0.5*u + 0.25*ul + 0.5*l +0.25*dl + 0.5*d + 0.25*dr + 0.5*r - 3.0*c)/(dx*dx);}}void main() {vec4 arrV = texture2D(texV, fragTexCoord);float V = (1.0 - rScaleV)*arrV[0] + rScaleV*arrV[1];float imV = arrV[2];float f1 = 1.0 - dt*imV/hbar;float f2 = 1.0 + dt*imV/hbar;vec4 psi1Fragment = texture2D(texPsi1, fragTexCoord);float alpha = psi1Fragment.a;vec2 psi1 = psi1Fragment.xy*alpha;vec2 psi2 = valueAt(texPsi2, fragTexCoord);vec2 hamiltonianPsi2 = -(0.5*hbar*hbar/m)*div2Psi(texPsi2) + V*psi2;fragColor = vec4(psi1.x*(f2/f1) + dt*hamiltonianPsi2.y/(f1*hbar),psi1.y*(f2/f1) - dt*hamiltonianPsi2.x/(f1*hbar),0.0, alpha);}`;
 const rearrangeFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -214,6 +237,15 @@ in vec2 fragTexCoord;out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 uniform int invert;uniform sampler2D tex;void main() {vec2 st = vec2(fragTexCoord.x, 1.0 - fragTexCoord.y);vec4 col = texture2D(tex, st);float avgCol = (col.r + col.g + col.b)/3.0;if (invert == 1) {avgCol = 20.0 - avgCol;}fragColor = vec4(avgCol, avgCol/2.0, 0.0, 1.0);}`;
+const copyScaleFragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform sampler2D tex1;uniform sampler2D tex2;uniform float scale1;uniform float scale2;void main () {vec4 col1 = texture2D(tex1, fragTexCoord);vec4 col2 = texture2D(tex2, fragTexCoord);vec3 col = scale1*col1.rgb + scale2*col2.rgb;fragColor = vec4(col, col1.a);}`;
 const viewFrameFragmentSource = `
 #define NAME viewFrameFragmentSource
 precision highp float;
@@ -274,7 +306,7 @@ in vec2 fragTexCoord;out vec4 fragColor;
 #define fragColor gl_FragColor
 varying highp vec2 fragTexCoord;
 #endif
-uniform sampler2D tex1;uniform sampler2D tex2;void main() {vec4 col1 = texture2D(tex1, fragTexCoord);vec4 col2 = texture2D(tex2, fragTexCoord);fragColor = vec4(col1.r*col2.r - col1.g*col2.g,col1.r*col2.g + col1.g*col2.r, 0.0, 1.0);}`;
+uniform sampler2D tex1;uniform sampler2D tex2;void main() {vec4 col1 = texture2D(tex1, fragTexCoord);vec4 col2 = texture2D(tex2, fragTexCoord);fragColor = vec4(col1.r*col2.r - col1.g*col2.g,col1.r*col2.g + col1.g*col2.r, 0.0, col2.a);}`;
 const jacobiIterationFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture
@@ -302,6 +334,15 @@ in vec2 fragTexCoord;out vec4 fragColor;
 varying highp vec2 fragTexCoord;
 #endif
 uniform sampler2D tex0;uniform sampler2D tex1;uniform sampler2D tex2;void main() {vec4 v0 = texture2D(tex0, fragTexCoord);vec4 v1 = texture2D(tex1, fragTexCoord);vec4 v2 = texture2D(tex2, fragTexCoord);vec4 diff = v2 - v1;fragColor = vec4(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z,v0.x*v0.x + v0.y*v0.y + v0.z*v0.z, 0.0,0.0);}`;
+const probCurrent2FragmentSource = `precision highp float;
+#if __VERSION__ == 300
+#define texture2D texture
+in vec2 fragTexCoord;out vec4 fragColor;
+#else
+#define fragColor gl_FragColor
+varying highp vec2 fragTexCoord;
+#endif
+uniform float dx;uniform float dy;uniform float w;uniform float h;uniform float hbar;uniform float m;uniform sampler2D tex;uniform sampler2D texA;float realValueAt(sampler2D texPsi, vec2 location) {vec4 tmp = texture2D(texPsi, location);return tmp.r*tmp.a;}float imagValueAt(sampler2D texPsi, vec2 location) {vec4 tmp = texture2D(texPsi, location);return tmp.g*tmp.a;}vec2 getDivRePsi(sampler2D texPsi) {float u = realValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));float d = realValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));float l = realValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));float r = realValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);}vec2 getDivImPsi(sampler2D texPsi) {float u = imagValueAt(texPsi, fragTexCoord + vec2(0.0, dy/h));float d = imagValueAt(texPsi, fragTexCoord + vec2(0.0, -dy/h));float l = imagValueAt(texPsi, fragTexCoord + vec2(-dx/w, 0.0));float r = imagValueAt(texPsi, fragTexCoord + vec2(dx/w, 0.0));return vec2(0.5*(r - l)/dx, 0.5*(u - d)/dy);}void main() {float rePsi = texture2D(tex, fragTexCoord).r;float imPsi = texture2D(tex, fragTexCoord).g;vec2 divRePsi = getDivRePsi(tex);vec2 divImPsi = getDivImPsi(tex);vec2 probCurrent = (hbar/m)*(-imPsi*divRePsi + rePsi*divImPsi);fragColor = vec4(probCurrent.x, probCurrent.y, 0.0, 1.0);}`;
 const expPotentialFragmentSource = `precision highp float;
 #if __VERSION__ == 300
 #define texture2D texture

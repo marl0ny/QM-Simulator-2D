@@ -43,6 +43,9 @@ let guiControls = {
     textEditNonlinear: null,
     textEditNonlinearEntry: null,
     textEditNonlinearSubFolder: null,
+    textEditNonlocal: null,
+    useNonlocal: null,
+    nonlocalStrength: null,
     boundariesFolder: null,
     boundariesSelect: null,
     imagePotentialFolder: null,
@@ -113,7 +116,7 @@ guiControls.mouseMode = gui.add(guiData, 'mouseMode',
 guiControls.presetPotentialSelect = gui.add(guiData, 'presetPotential',
                                     ['ISW', 'SHO', 'Double Slit',
                                      'Single Slit', 'Step', 'Spike',
-                                     'Triple Slit']).name('Preset Potential');
+                                     'Triple Slit', 'Circle']).name('Preset Potential');
 guiControls.mouseControls = gui.addFolder('Mouse Usage Controls');
 guiControls.mouseControls.widgets = [];
 
@@ -309,6 +312,7 @@ guiControls.methodControl = guiControls.intMethod.add(guiData, 'method',
                                    // 'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
+                                   // 'Time Split CN-J',
                                    'Split-Op. Nonlinear',
                                    'Leapfrog Nonlinear'
                                   ]
@@ -326,3 +330,4 @@ guiControls.laplaceSelect
 guiControls.laplaceSelect.onChange(e => {
     guiData.laplaceVal = parseInt(e.split(' ')[0]);
 });
+// guiCOntrols.normalizeAtEachStep

@@ -20,6 +20,8 @@ function main() {
     guiControls.methodControl.onChange(e => {
         removeNonlinearControls();
         removeIterationControls();
+        removeNonlinearNonlocalControls();
+        let addNonlocalControls = false;
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
             guiControls.dtSlider.max(0.01);
@@ -45,7 +47,7 @@ function main() {
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addIterationsControls();
-       } else if (e === 'CNJ w/ B-Field') {
+       } /* else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
             guiControls.dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
@@ -53,7 +55,7 @@ function main() {
             numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
             addIterationsControls();
-        } else if (e === 'Split-Op. (CPU FFT)') {
+        } */ else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
             guiControls.dtSlider.max(0.1);
             if (guiData.dt > 0.1) guiData.dt = 0.1;
@@ -73,14 +75,28 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
+        } else if (e === 'Time Split CN-J') {
+            SimManager = TimeSplitWithCNJNonlinearSimulationManager;
+            guiControls.dtSlider.max(0.025);
+            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
+            numberOfFrames = defaultNumberOfFrames + 2;
+            disableNonPowerTwo = false;
+            addIterationsControls();
+            /* addNonlinearControls();
+            guiControls.textEditNonlinearEntry.onChange(() => {
+                textEditNonlinearFuncSplitOperator(sim);
+            });*/
         } else if (e === 'Leapfrog Nonlinear') {
             SimManager = LeapfrogNonlinearSimulationManager;
             guiControls.dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = defaultNumberOfFrames;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
+            // addNonlocalControls = true;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);
@@ -141,6 +157,9 @@ function main() {
         framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
         sim = new SimManager(framesManager);
+        if (addNonlocalControls) {
+            addNonlinearNonlocalControls(sim);
+        }
         initializePotential(guiData.presetPotential);
     });
 
@@ -370,12 +389,14 @@ function main() {
         let pyMax = canvas.height/512.0*40.0;
         if (type === 'SHO') {
             let items = {a: 20.0};
-            sim.presetPotential(1, items);
+            sim.presetPotential(1, guiData.dissipation, items);
             let aVar
                  = guiControls.presetControlsFolder.add(items,
                                                         'a', 0.0, 40.0
                                                         ).name('Strength');
-            aVar.onChange(() => sim.presetPotential(1, items));
+            aVar.onChange(() => 
+                          sim.presetPotential(1, guiData.dissipation, 
+                                              items));
             guiControls.presetControlsFolder.controls.push(aVar);
             guiData.bx = canvas.width/2;
             guiData.by = canvas.height*0.75;
@@ -387,7 +408,7 @@ function main() {
         } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
                                       spacing: 0.02, a: 30.0};
-            sim.presetPotential(2, doubleSlitUniforms);
+            sim.presetPotential(2, guiData.dissipation, doubleSlitUniforms);
             for (let e of Object.keys(doubleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
@@ -408,7 +429,8 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     doubleSlitUniforms[e] = val;
-                    sim.presetPotential(2, doubleSlitUniforms);
+                    sim.presetPotential(2, guiData.dissipation, 
+                                        doubleSlitUniforms);
                 });
                 guiControls.presetControlsFolder.controls.push(slider);
             }
@@ -422,7 +444,8 @@ function main() {
         } else if (type == 'Single Slit') {
             let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5,
                                       spacing: 0.02, a: 30.0};
-            sim.presetPotential(3, singleSlitUniforms);
+            sim.presetPotential(3, guiData.dissipation, 
+                                singleSlitUniforms);
             for (let e of Object.keys(singleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
@@ -443,7 +466,8 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     singleSlitUniforms[e] = val;
-                    sim.presetPotential(3, singleSlitUniforms);
+                    sim.presetPotential(3, guiData.dissipation,
+                                        singleSlitUniforms);
                 });
                 guiControls.presetControlsFolder.controls.push(slider);
             }
@@ -455,20 +479,21 @@ function main() {
             guiControls.mouseMode.updateDisplay();
         } else if (type == 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
-            sim.presetPotential(4, stepUniforms);
+            sim.presetPotential(4, guiData.dissipation,
+                                stepUniforms);
             let aSlider = guiControls.presetControlsFolder.add(
                 stepUniforms, 'a', 0.0, 10.0
             ).step(0.1).name('strength');
             aSlider.onChange(val => {
                 stepUniforms['a'] = val;
-                sim.presetPotential(4, stepUniforms);
+                sim.presetPotential(4, guiData.dissipation, stepUniforms);
             });
             let y0Slider = guiControls.presetControlsFolder.add(
                 stepUniforms, 'y0', 0.25, 0.75
             );
             y0Slider.onChange(val => {
                 stepUniforms['y0'] = val;
-                sim.presetPotential(4, stepUniforms);
+                sim.presetPotential(4, guiData.dissipation, stepUniforms);
             });
             guiControls.presetControlsFolder.controls.push(y0Slider);
             guiControls.presetControlsFolder.controls.push(aSlider);
@@ -484,11 +509,13 @@ function main() {
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             if (type == 'Spike') {
-                sim.presetPotential(5, {});
+                sim.presetPotential(5, guiData.dissipation, {});
             } else if (type == 'Triple Slit') {
-                sim.presetPotential(6, {});
+                sim.presetPotential(6, guiData.dissipation, {});
+            } else if (type == 'Circle') {
+                sim.presetPotential(8, guiData.dissipation, {});
             } else {
-                sim.presetPotential(8, {});
+                sim.presetPotential(9, guiData.dissipation, {});
                 guiData.bx = canvas.width/3;
                 guiData.by = canvas.height*0.75;
                 guiData.py = (0.75*pyMax)/guiData.scaleP;
@@ -806,6 +833,7 @@ function main() {
             timeStepWave();
             sim.swap();
         }
+        // sim.normalizeScaleWavefunction(Math.sqrt(70677));
         display();
         measurePosition();
         if (stats) stats.end();

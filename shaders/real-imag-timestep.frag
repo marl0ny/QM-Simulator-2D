@@ -53,14 +53,17 @@ vec2 div2Psi(sampler2D texPsi) {
 
 
 void main() {
-    float V = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 
-                rScaleV*texture2D(texV, fragTexCoord).g;
+    vec4 arrV = texture2D(texV, fragTexCoord);
+    float V = (1.0 - rScaleV)*arrV[0] + rScaleV*arrV[1];
+    float imV = arrV[2];
+    float f1 = 1.0 - dt*imV/hbar;
+    float f2 = 1.0 + dt*imV/hbar;
     vec4 psi1Fragment = texture2D(texPsi1, fragTexCoord);
     float alpha = psi1Fragment.a;
     vec2 psi1 = psi1Fragment.xy*alpha;
     vec2 psi2 = valueAt(texPsi2, fragTexCoord);
     vec2 hamiltonianPsi2 = -(0.5*hbar*hbar/m)*div2Psi(texPsi2) + V*psi2;
-    fragColor = vec4(psi1.x + dt*hamiltonianPsi2.y/hbar,
-                     psi1.y - dt*hamiltonianPsi2.x/hbar,
+    fragColor = vec4(psi1.x*(f2/f1) + dt*hamiltonianPsi2.y/(f1*hbar),
+                     psi1.y*(f2/f1) - dt*hamiltonianPsi2.x/(f1*hbar),
                      0.0, alpha);
 }

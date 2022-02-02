@@ -582,8 +582,6 @@ function initializePotential(type) {
     data.potBrightness = (type == 'Coulomb')? 0.25: 1.0;
     if (type == 'SHO') {
         data.potentialType = 1;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.30, by: 0.30, 
                               px: -10.0, py: 10.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
@@ -594,8 +592,6 @@ function initializePotential(type) {
         data.presetPotentialSettings.x2 = 0.57;
         data.presetPotentialSettings.w = 0.02;
         data.presetPotentialSettings.spacing = 0.03;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true, 
                               mouseSelect: 'New ψ(x, y)'};
@@ -605,8 +601,6 @@ function initializePotential(type) {
         data.presetPotentialSettings.x1 = 0.5;
         data.presetPotentialSettings.w = 0.01;
         data.presetPotentialSettings.spacing = 0.01;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
@@ -614,23 +608,22 @@ function initializePotential(type) {
     } else if (type == 'Step') {
         data.potentialType = 4;
         data.presetPotentialSettings.a = 5000/data.c
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Coulomb') {
         data.potentialType = 7;
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else {
         data.potentialType = 8;
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
     }
+    potFrame.setFloatUniforms(data.presetPotentialSettings);
+    potFrame.setIntUniforms({"potentialType": data.potentialType,
+                             "dissipativePotentialType": 1});
     draw();
     unbind();
     data.isDisplayUpdate = true;
