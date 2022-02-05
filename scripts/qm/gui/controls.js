@@ -70,7 +70,8 @@ let guiControls = {
     laplaceSelect: null,
     uploadImage: null,
     imageNameWidget: null,
-    invertImageControl: null
+    invertImageControl: null,
+    normalizeEachFrame: null
 };
 
 let palette0 = {color: '#1b191b'};
@@ -330,4 +331,9 @@ guiControls.laplaceSelect
 guiControls.laplaceSelect.onChange(e => {
     guiData.laplaceVal = parseInt(e.split(' ')[0]);
 });
-// guiCOntrols.normalizeAtEachStep
+guiControls.normalizeEachFrame = guiControls.editUniformsFolder.add(
+    guiData, 'normalizeEachFrame', false
+).name('Normalize');
+guiControls.normalizeEachFrame.onChange(e => {
+    guiData.normalizeEachFrame = e;
+});

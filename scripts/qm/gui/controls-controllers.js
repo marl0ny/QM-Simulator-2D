@@ -467,6 +467,8 @@ function removeNonlinearControls() {
     }
 }
 
+// guiControls.removeNonlinearControls = removeNonlinearControls;
+
 function removeNonlinearNonlocalControls() {
     if (guiControls.textEditNonlocal !== null && 
         guiControls.useNonlocal !== null &&
@@ -485,5 +487,3 @@ function removeNonlinearNonlocalControls() {
         guiControls.nonlocalStrength = null; 
     }
 }
-
-// guiControls.removeNonlinearControls = removeNonlinearControls;

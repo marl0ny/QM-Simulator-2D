@@ -47,7 +47,7 @@ function main() {
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addIterationsControls();
-       } /* else if (e === 'CNJ w/ B-Field') {
+       } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
             guiControls.dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
@@ -55,7 +55,7 @@ function main() {
             numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
             addIterationsControls();
-        } */ else if (e === 'Split-Op. (CPU FFT)') {
+        } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
             guiControls.dtSlider.max(0.1);
             if (guiData.dt > 0.1) guiData.dt = 0.1;
@@ -503,6 +503,32 @@ function main() {
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
+        } else if (type == 'Circle'){
+            let circleUniforms = {a: 20.0, spacing: 0.45};
+            sim.presetPotential(8, guiData.dissipation, {});
+            for (let e of Object.keys(circleUniforms)) {
+                let name = (e == 'a')? 'a': 'radius';
+                let minVal = (e == 'a')? 0.0: 0.27;
+                let maxVal = (e == 'a')? 20.0: 0.48;
+                let slider = guiControls.presetControlsFolder.add(
+                    circleUniforms, e,
+                    minVal,
+                    maxVal
+                ).name(name);
+                slider.onChange(val => {
+                    circleUniforms[e] = val;
+                    sim.presetPotential(8, guiData.dissipation,
+                                         circleUniforms);
+                });
+                slider.setValue(circleUniforms[e]);
+                guiControls.presetControlsFolder.controls.push(slider);
+            }
+            guiData.bx = canvas.width/2;
+            guiData.by = canvas.height*0.75;
+            guiData.py = pyMax/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
+            guiControls.mouseMode.updateDisplay();
         } else {
             guiData.bx = canvas.width/2;
             guiData.by = canvas.height*0.75;
@@ -512,8 +538,6 @@ function main() {
                 sim.presetPotential(5, guiData.dissipation, {});
             } else if (type == 'Triple Slit') {
                 sim.presetPotential(6, guiData.dissipation, {});
-            } else if (type == 'Circle') {
-                sim.presetPotential(8, guiData.dissipation, {});
             } else {
                 sim.presetPotential(9, guiData.dissipation, {});
                 guiData.bx = canvas.width/3;
@@ -833,7 +857,12 @@ function main() {
             timeStepWave();
             sim.swap();
         }
-        // sim.normalizeScaleWavefunction(Math.sqrt(70677));
+        if (guiData.normalizeEachFrame) {
+            let normFact2 = 0.920345*(pixelWidth > pixelHeight? 
+                                      pixelHeight: pixelWidth)**2
+                                      *(5.0*30.0/512.0);
+            sim.normalizeScaleWavefunction(Math.sqrt(normFact2));
+        }
         display();
         measurePosition();
         if (stats) stats.end();

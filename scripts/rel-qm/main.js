@@ -619,7 +619,7 @@ function initializePotential(type) {
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else {
-        data.potentialType = 8;
+        data.potentialType = 0;
     }
     potFrame.setFloatUniforms(data.presetPotentialSettings);
     potFrame.setIntUniforms({"potentialType": data.potentialType,

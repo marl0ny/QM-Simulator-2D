@@ -89,6 +89,7 @@ let guiData = {
     iterations: 10,
     assessConvergence: false,
     tolerance: 1e-5,
-    toleranceString: '1e-5'
+    toleranceString: '1e-5',
+    normalizeEachFrame: false,
 };
 guiData.measurePosition = () => guiData.measure = true;

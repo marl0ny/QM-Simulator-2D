@@ -102,7 +102,8 @@ void main() {
         float u = x - 0.5;
         float v = y - 0.5;
         float r = sqrt(u*u + v*v);
-        float val = 25.0*smoothstep(0.34, 0.36, r);
+        float val = a*smoothstep(spacing - 0.02, 
+                                 spacing + 0.02, r);
         fragColor = vec4(val, 0.0, imagVal, 1.0);
     } else {
         fragColor = vec4(0.0, 0.0, imagVal, 1.0); 
