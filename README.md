@@ -36,6 +36,8 @@ Split-Step:
 
 - Wikipedia contributors. (2021, May 6). [Split-step method](https://en.wikipedia.org/wiki/Split-step_method). In <em>Wikipedia, The Free Encyclopedia</em>.
 
+ - Bauke, H., Keitel, C. (2011). Accelerating the Fourier split operator method via graphics processing units. <em>Computer Physics Communications, 182(12)</em>, 2454-2463. [https://doi.org/10.1016/j.cpc.2011.07.003](https://doi.org/10.1016/j.cpc.2011.07.003)
+
  Dirac Equation:
 
  - Wikipedia contributors. (2021, June 16). [Dirac equation](https://en.wikipedia.org/wiki/Dirac_equation). In <em>Wikipedia, The Free Encyclopedia</em>.

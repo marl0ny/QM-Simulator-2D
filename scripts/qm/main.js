@@ -100,6 +100,14 @@ function main() {
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncSplitOperator(sim);
             });
+        } else if (e === 'Leapfrog 3') {
+            SimManager = Leapfrog3SimulationManager;
+            guiControls.dtSlider.max(0.01);
+            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
+            numberOfFrames = 7;
+            disableNonPowerTwo = false;
         }
         guiControls.dtSlider.updateDisplay();
 

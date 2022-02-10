@@ -289,7 +289,8 @@ guiControls.recordVideoFolder.add({'func': () => {
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
 guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
-                                  ['Leapfrog', 'Leapfrog 2',
+                                  ['Leapfrog', 'Leapfrog 2', 
+                                   'Leapfrog 3',
                                    'CN w/ Jacobi', 
                                    // 'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 

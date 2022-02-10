@@ -125,6 +125,7 @@ class ShaderPrograms {
 let realTimeStepProgram;
 let imagTimeStepProgram;
 let realImagTimeStepProgram;
+let realImagTimeStep2Program;
 let initialWaveProgram;
 let initPotentialProgram;
 let shapePotentialProgram;
@@ -159,6 +160,10 @@ function initPrograms() {
                                             realImagTimestepFragmentSource);
     realImagTimeStepProgram = makeProgram(vShader,
                                           realImagTimeStepShader);
+    let realImagTimeStep2Shader = makeShader(gl.FRAGMENT_SHADER,
+        realImagTimestep2FragmentSource);
+    realImagTimeStep2Program = makeProgram(
+        vShader, realImagTimeStep2Shader);
     let initialWaveShader = makeShader(gl.FRAGMENT_SHADER,
                                         initialWavepacketFragmentSource);
     
