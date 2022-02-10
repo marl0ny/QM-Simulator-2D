@@ -96,7 +96,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
-            // addNonlocalControls = true;
+            addNonlocalControls = true;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);

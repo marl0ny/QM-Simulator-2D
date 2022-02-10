@@ -309,12 +309,12 @@ guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
 guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
                                   ['Leapfrog', 'Leapfrog 2', 
-                                   'Leapfrog 3',
+                                   // 'Leapfrog 3',
                                    'CN w/ Jacobi', 
-                                   // 'CNJ w/ B-Field',
+                                   'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
-                                   // 'Time Split CN-J',
+                                   'Time Split CN-J',
                                    'Split-Op. Nonlinear',
                                    'Leapfrog Nonlinear'
                                   ]
