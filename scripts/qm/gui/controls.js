@@ -43,10 +43,15 @@ let guiControls = {
     textEditNonlinear: null,
     textEditNonlinearEntry: null,
     textEditNonlinearSubFolder: null,
+    textEditNonlocal: null,
+    useNonlocal: null,
+    nonlocalStrength: null,
     boundariesFolder: null,
     boundariesSelect: null,
     imagePotentialFolder: null,
     uploadImageButton: null,
+    displayBG: null,
+    bgBrightness: null,
     recordVideoFolder: null,
     screenshotsFolder: null,
     numberOfFramesEntry: null,
@@ -65,7 +70,8 @@ let guiControls = {
     laplaceSelect: null,
     uploadImage: null,
     imageNameWidget: null,
-    invertImageControl: null
+    invertImageControl: null,
+    normalizeEachFrame: null
 };
 
 let palette0 = {color: '#1b191b'};
@@ -111,7 +117,7 @@ guiControls.mouseMode = gui.add(guiData, 'mouseMode',
 guiControls.presetPotentialSelect = gui.add(guiData, 'presetPotential',
                                     ['ISW', 'SHO', 'Double Slit',
                                      'Single Slit', 'Step', 'Spike',
-                                     'Triple Slit']).name('Preset Potential');
+                                     'Triple Slit', 'Circle']).name('Preset Potential');
 guiControls.mouseControls = gui.addFolder('Mouse Usage Controls');
 guiControls.mouseControls.widgets = [];
 
@@ -249,6 +255,19 @@ guiControls.imagePotentialFolder.add({'useImageDimensions':
                           'useImageDimensions').name('Use Dim.');
 guiControls.imagePotentialFolder.add({'submit': () => guiData.imageFunc()},
                          'submit').name('Use for Pot.');
+// guiControls.imagePotentialFolder.add({submit2: () =>
+//                                       guiData.imageBackgroundFunc()}, 
+//                                       'submit2'
+//                                      ).name('Use for bg.');
+guiControls.displayBG = guiControls.imagePotentialFolder.add(
+                                    guiData, 'displayBGImage'
+                                    ).name('Display as B.G.');
+guiControls.displayBG.onChange(e => {
+    if (e === true) guiData.imageBackgroundFunc();
+});
+guiControls.bgBrightness = guiControls.imagePotentialFolder.add(
+    guiData, 'bgBrightness', 0.0, 1.0
+).name('B.G. Scale');
 guiControls.recordVideoFolder
      = guiControls.moreControlsFolder.addFolder('Record Video');
 guiControls.screenshotsFolder
@@ -295,6 +314,7 @@ guiControls.methodControl = guiControls.intMethod.add(guiData, 'method',
                                    // 'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
+                                   // 'Time Split CN-J',
                                    'Split-Op. Nonlinear',
                                    'Leapfrog Nonlinear'
                                   ]
@@ -311,4 +331,10 @@ guiControls.laplaceSelect
                                           10).name('Laplacian');
 guiControls.laplaceSelect.onChange(e => {
     guiData.laplaceVal = parseInt(e.split(' ')[0]);
+});
+guiControls.normalizeEachFrame = guiControls.editUniformsFolder.add(
+    guiData, 'normalizeEachFrame', false
+).name('Normalize');
+guiControls.normalizeEachFrame.onChange(e => {
+    guiData.normalizeEachFrame = e;
 });

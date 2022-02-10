@@ -35,6 +35,7 @@ let guiData = {
                 },
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
     presetPotential: 'SHO',
+    dissipation: 0,
     useTextureCoordinates: true,
     enterPotential: 'V(x, y)',
     enterPotentialExpr: '',
@@ -42,6 +43,9 @@ let guiData = {
     enterWavefuncExpr: '',
     enterNonlinear: 'f(u)',
     enterNonlinearExpr: '',
+    useNonlocal: false,
+    nonlocalPoissonJacobiIterations: 10,
+    nonlocalInteractionStrength: 0.01,
     measure: false,
     measurePosition: () => {},
     dt: 0.01,
@@ -61,7 +65,10 @@ let guiData = {
     potColour: [1.0, 1.0, 1.0],
     imageName: '',
     imageFunc: () => {},
+    imageBackgroundFunc: () => {},
     setToImageDimensions: () => {},
+    displayBGImage: false,
+    bgBrightness: 1.0,
     invertImage: false,
     takeScreenshot: false,
     setStartSpeed: false,
@@ -82,6 +89,7 @@ let guiData = {
     iterations: 10,
     assessConvergence: false,
     tolerance: 1e-5,
-    toleranceString: '1e-5'
+    toleranceString: '1e-5',
+    normalizeEachFrame: false,
 };
 guiData.measurePosition = () => guiData.measure = true;

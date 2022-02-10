@@ -15,6 +15,6 @@ void main() {
     vec4 col1 = texture2D(tex1, fragTexCoord);
     vec4 col2 = texture2D(tex2, fragTexCoord);
     fragColor = vec4(col1.r*col2.r - col1.g*col2.g, 
-                     col1.r*col2.g + col1.g*col2.r, 0.0, 1.0);
+                     col1.r*col2.g + col1.g*col2.r, 0.0, col2.a);
 
 }

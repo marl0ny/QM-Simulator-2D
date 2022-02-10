@@ -51,17 +51,34 @@ let data = {
     phaseOptions: ['ψ1 Phase', 'ψ2 Phase', 'ψ3 Phase', 'ψ4 Phase', 
                    '|ψ12|-|ψ34|', 'None'],
     phaseMode: 0,
+    showWavefuncHeightMap: false,
+    showPotentialHeightMap: false,
+    potentialDisplayMode: 0,
     mouseAction: false,
+    mouseCount: 0,
+    reshapePotentialRecursionLevel: 0,
     presetPotentialSettings: {"a": 10000.0/137.036, "y0": 0.45, "w": 0.02, 
                               "spacing": 0.03, "x1": 0.43, "x2": 0.57},
     measurePosition: e => {},
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
     probInRegion: '0',
     viewProbCurrent: false,
+    probColour: [1.0, 1.0, 1.0],
     potBrightness: 1.0,
+    potColour: [1.0, 1.0, 1.0],
     gridDimensions: '512x512',
     imageName: '',
-    imageFunc: () => {}
+    imageFunc: () => {},
+    screenshots: [],
+    screenshotNames: [],
+    screenshotCount: 0,
+    nScreenshots: 1,
+    takeScreenshot: false,
+    setStartSpeed: false,
+    startSpeed: 1,
+    screenshotProgress: '',
+    pauseOnFinish: false
+
 };
 
 function setFrameDimensions(newWidth, newHeight) {
@@ -102,7 +119,8 @@ source = gui.addColor(palette, 'color').name(
     + 'Source</a>'
 );
 source.domElement.hidden = true;
-gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
+let speedSelect
+    = gui.add(data , 'stepsPerFrame', 0, 20).name('speed').step(1);
 let potSelect = gui.add(data, 'presetPotentials', 
                         ['Free (Periodic)', 'SHO', 'Double Slit',
                          'Single Slit', 'Step', 'Coulomb']
@@ -147,19 +165,57 @@ let viewOptionsFolder = gui.addFolder('Visualization Options');
 let viewOptions = viewOptionsFolder.addFolder('ψ(x, y)');
 viewOptions.add(data, 'brightness', 0.0, 8.0);
 phaseOptions = viewOptions.add(data, 'phaseOption', 
-                               data.phaseOptions).name('Colour Options');
-phaseOptions.onChange(e => {data.phaseMode
-                             = data.phaseOptions.indexOf(e);});
+                               data.phaseOptions).name('Phase Options');
 viewOptions.add(data, 'showPsi1').name('Show |ψ1|^2');
 viewOptions.add(data, 'showPsi2').name('Show |ψ2|^2');
 viewOptions.add(data, 'showPsi3').name('Show |ψ3|^2');
 viewOptions.add(data, 'showPsi4').name('Show |ψ4|^2');
 viewOptions.add(data, 'applyPhaseShift').name('Adjust Global Phase');
 viewOptions.add(data, 'viewProbCurrent').name('Show Current');
+let probColourControls = viewOptions.addColor(
+    {colour: [255.0, 255.0, 255.0]}, 'colour').name('|ψ|^2 Colour');
+let wavefuncHeightMap = viewOptions.add(
+    data, 'showWavefuncHeightMap').name('Show Height Map');
+wavefuncHeightMap.onChange(() => {
+    data.phaseOption = 'None';
+    phaseOptions.updateDisplay();
+});
+probColourControls.onChange(
+    e => {
+        data.probColour[0] = e[0]/255.0;
+        data.probColour[1] = e[1]/255.0;
+        data.probColour[2] = e[2]/255.0;
+        data.phaseMode = 5;
+        data.phaseOption = 'None';
+        phaseOptions.updateDisplay();
+        data.showWavefuncHeightMap = false;
+        wavefuncHeightMap.updateDisplay();
+    }
+);
+phaseOptions.onChange(e => {
+    data.phaseMode = data.phaseOptions.indexOf(e);
+    data.showWavefuncHeightMap = false;
+    wavefuncHeightMap.updateDisplay();
+});
 let potViewOptions = 
     viewOptionsFolder.addFolder('Potential');
 potViewOptions.add(data, 'potBrightness', 0.0, 8.0).name('brightness');
 let dx = data.w/pixelWidth;
+let potColourControls = potViewOptions.addColor(
+    {colour: [255.0, 255.0, 255.0]}, 'colour').name('V(x, y) Colour');
+let potHeightMap = potViewOptions.add(
+    data, 'showPotentialHeightMap').name('Show Height Map');
+potHeightMap.onChange(e => {
+    data.potentialDisplayMode = (e === true)? 1: 0; 
+});
+potColourControls.onChange(e => {
+    data.potColour[0] = e[0]/255.0;
+    data.potColour[1] = e[1]/255.0;
+    data.potColour[2] = e[2]/255.0;
+    data.potentialDisplayMode = 0;
+    data.showPotentialHeightMap = false;
+    potHeightMap.updateDisplay();
+});
 dtControl = gui.add(data, 'dt', -0.5*dx/data.c, 0.999*dx/data.c).name('dt');
 gui.add(data, 'm', 0.0, 2.0).name('m');
 // gui.add(data, 'c', 1.0, 140.0).name('c');
@@ -182,6 +238,134 @@ let uploadImageButton = imageOptions.add({'uploadImage': () => {}},
 uploadImageButton.domElement.hidden = true;
 let uploadImage = document.getElementById("uploadImage");
 let imageNameDisplay = imageOptions.add(data, 'imageName').name('File: ');
+let screenshotsOptions = moreControls.addFolder('Take Screenshots');
+let numberOfFramesEntry = screenshotsOptions.add(
+    data, 'nScreenshots').name('Number of Screenshots');
+downloadScreenshotsButton = screenshotsOptions.add(
+    {download: () => {
+        data.takeScreenshot = true;
+        if (data.setStartSpeed) {
+            data.stepsPerFrame = data.startSpeed;
+            speedSelect.updateDisplay();
+        }
+    }}, 'download'
+).name('Start');
+let screenshotProgress = screenshotsOptions.add(data, 'screenshotProgress'
+    ).name('Progress');
+let setStartSpeed = screenshotsOptions.add(
+    data, 'setStartSpeed', false).name('Set Start Speed');
+let startSpeed = screenshotsOptions.add(
+    data, 'startSpeed', 0, 20, 1).name('Start Speed');
+let pauseOnFinish = screenshotsOptions.add(
+    data, 'pauseOnFinish', false
+).name('Pause On Finish');
+
+
+function downloadScreenshotsZip(screenshots, screenshotNames) {
+    if (screenshots.length > 100) {
+        newScreenshots = [];
+        newScreenshotNames = [];
+        for (let i = 0; i < 100; i++) {
+            newScreenshots.push(screenshots.pop());
+            newScreenshotNames.push(screenshotNames.pop());
+        }
+        return downloadScreenshotsZip(newScreenshots, 
+            newScreenshotNames).then(() =>
+                downloadScreenshotsZip(screenshots, screenshotNames)
+            );
+    }
+    let zip = new JSZip();
+    while (screenshots.length > 0) {
+        let dataURL = screenshots.pop();
+        let imageName = screenshotNames.pop();
+        zip.file(imageName, dataURL.slice(22), {base64: true});
+    }
+    let time = Date.now();
+
+    // let options = {type: "blob",
+    //                compression: "DEFLATE",
+    //                compressionOptions: {level: 2}
+    //             };
+    // return zip.generateAsync(options).then( data => {
+    //     let zipFile = new File([data], `images-${time}.zip`, 
+    //                             {type: "application/zip"});
+    // });
+
+    let options = {type: "base64",
+                   compression: "STORE",
+                   // compression: "DEFLATE",
+                   compressionOptions: {level: 2}
+                };
+    return zip.generateAsync(options).then( data => {
+        // let div = document.getElementById('image-download');
+        let aTag = document.createElement('a');
+        aTag.hidden = true;
+        aTag.id = `a-download-${time}-zip`;
+        aTag.download = `"images-${time}.zip`;
+        aTag.href = `data:application/zip;base64,${data}`;
+        /*div.innerHTML += `<a href="data:application/zip;base64,${data}"
+                            hidden="true" 
+                            id="a-download-${time}-zip" 
+                            download="images-${time}.zip"></a>`;*/
+        return aTag;
+    }).then(aTag => {
+        // let aTag = document.getElementById(`a-download-${time}-zip`);
+        // console.log(aTag);
+        aTag.click();
+        return aTag;
+    }).then(aTag => {
+        aTag.remove();
+    });
+}
+
+
+function makeImageFilename(num, total) {
+    let time = Date.now();
+    let numStr = `${num + 1}`, totalStr = `${total}`;
+    let numZeros = totalStr.length - numStr.length;
+    for (let i = 0; i < numZeros; i++) {
+        numStr = '0' + numStr;
+    }
+    return `image_${numStr}_${time}.png`;
+}
+
+function handleRecording(canvas) {
+    if(data.takeScreenshot) {
+        let zipSize = Math.floor(data.nScreenshots/15);
+        if (zipSize <= 50) zipSize = 50;
+        data.screenshots.push(canvas.toDataURL("image/png", 1));
+        let name = makeImageFilename(data.screenshotCount, data.nScreenshots);
+        data.screenshotNames.push(name);
+        data.screenshotCount++;
+        screenshotProgress.setValue(
+            `Recording ${data.screenshotCount}/${data.nScreenshots}`);
+        if (data.screenshotCount === data.nScreenshots) {
+            let p = downloadScreenshotsZip(
+                data.screenshots, data.screenshotNames).then(() => {
+                    screenshotProgress.setValue('');
+                })
+            if (data.pauseOnFinish) {
+                data.stepsPerFrame = 0;
+                speedSelect.updateDisplay();
+            }
+            data.screenshotCount = 0;
+            data.takeScreenshot = false;
+            return p;
+        }
+        if (data.screenshotCount > 0 && 
+            data.screenshotCount % zipSize === 0) {
+            let screenshots = [];
+            let screenshotNames = [];
+            for (let i = 0; i < zipSize; i++) {
+                screenshots.push(data.screenshots.pop());
+                screenshotNames.push(data.screenshotNames.pop());
+            }
+            return downloadScreenshotsZip(screenshots, screenshotNames);
+        }
+    }
+    return Promise.resolve();
+}
+
 
 
 /*vectorPotOptions.onChange(e => {
@@ -331,12 +515,12 @@ function initWavefunc(customData = null) {
         }
         f.bind();
         let t = 0.0;
-        if (f.frameNumber === uFrames[0].frameNumber) {
+        /*if (f.frameNumber === uFrames[0].frameNumber) {
             t = 2.0*wavefuncData.dt;
         } else if (f.frameNumber === vFrames[0].frameNumber || 
                    f.frameNumber === vFrames[1].frameNumber) {
             t = wavefuncData.dt;
-        }
+        }*/
         f.setFloatUniforms(
             {"bx": wavefuncData.bx, "by": wavefuncData.by, 
             "sx": sigma, "sy": sigma, 
@@ -350,6 +534,45 @@ function initWavefunc(customData = null) {
         draw();
         unbind();
     }
+    let dt = data.dt;
+    console.log(dt);
+    let w = data.w, h = data.h;
+    let hbar = data.hbar;
+    let m = data.m;
+    let c = data.c;
+    // uFrames[0].useProgram(stepUpProgram);
+    // uFrames[0].bind();
+    // uFrames[0].setFloatUniforms(
+    //     {"dt": dt/2.0, "dx": w/pixelWidth, "dy": h/pixelHeight,
+    //      "w": w, "h": h, "m": m, 
+    //      "hbar": hbar, "c": c}
+    // );
+    // uFrames[0].setIntUniforms(
+    //     {"vTex": vFrames[1].frameNumber,
+    //      "uTex": uFrames[1].frameNumber,
+    //      "potTex": potFrame.frameNumber,
+    //      "useVecPot": (data.useVectorPotential)? 1: 0,
+    //      "vecPotTex": vectorPotentialFrame.frameNumber}
+    // );
+    // draw();
+    // unbind();
+    vFrames[0].useProgram(stepDownProgram);
+    vFrames[0].bind();
+    vFrames[0].setFloatUniforms(
+        {"dt": dt/2.0, "dx": w/pixelWidth, "dy": h/pixelHeight,
+         "w": w, "h": h, "m": m, 
+         "hbar": hbar, "c": c}
+    );
+    vFrames[0].setIntUniforms(
+        {"vTex": vFrames[1].frameNumber,
+         "uTex": uFrames[1].frameNumber,
+         "potTex": potFrame.frameNumber,
+         "useVecPot": (data.useVectorPotential)? 1: 0,
+         "vecPotTex": vectorPotentialFrame.frameNumber}
+    );
+    draw();
+    unbind();
+
 }
 
 function initializePotential(type) {
@@ -359,8 +582,6 @@ function initializePotential(type) {
     data.potBrightness = (type == 'Coulomb')? 0.25: 1.0;
     if (type == 'SHO') {
         data.potentialType = 1;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.30, by: 0.30, 
                               px: -10.0, py: 10.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
@@ -371,8 +592,6 @@ function initializePotential(type) {
         data.presetPotentialSettings.x2 = 0.57;
         data.presetPotentialSettings.w = 0.02;
         data.presetPotentialSettings.spacing = 0.03;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true, 
                               mouseSelect: 'New ψ(x, y)'};
@@ -382,8 +601,6 @@ function initializePotential(type) {
         data.presetPotentialSettings.x1 = 0.5;
         data.presetPotentialSettings.w = 0.01;
         data.presetPotentialSettings.spacing = 0.01;
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
@@ -391,23 +608,22 @@ function initializePotential(type) {
     } else if (type == 'Step') {
         data.potentialType = 4;
         data.presetPotentialSettings.a = 5000/data.c
-        potFrame.setFloatUniforms(data.presetPotentialSettings);
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else if (type == 'Coulomb') {
         data.potentialType = 7;
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
         let newDataVals = {bx: 0.5, by: 0.20, 
                               px: 0.0, py: 30.0, mouseAction: true,
                               mouseSelect: 'New ψ(x, y)'};
         Object.entries(newDataVals).forEach(e => data[e[0]] = e[1]);
     } else {
-        data.potentialType = 8;
-        potFrame.setIntUniforms({"potentialType": data.potentialType});
+        data.potentialType = 0;
     }
+    potFrame.setFloatUniforms(data.presetPotentialSettings);
+    potFrame.setIntUniforms({"potentialType": data.potentialType,
+                             "dissipativePotentialType": 1});
     draw();
     unbind();
     data.isDisplayUpdate = true;
@@ -437,7 +653,26 @@ for (let e of guiControls.presetPotOptions.additions) {
     e.onChange(onPotentialSettingsChange);
 }
 
-function reshapePotential(mode) {
+function reshapePotential(mode, data) {
+    let drawWidth = data.drawSize*canvas.width;
+    if (data.mouseCount > 1 && data.drawSize > 0.0 && 
+        (Math.abs(data.px) > drawWidth ||
+         Math.abs(data.py) > drawWidth)) {
+        if (data.reshapePotentialRecursionLevel < 100) {
+            console.log(data.reshapePotentialRecursionLevel);
+            let newData = Object.create(data);
+            let dist = Math.sqrt(data.px**2 + data.py**2);
+            let dx = drawWidth*data.px/dist;
+            let dy = drawWidth*data.py/dist;
+            newData.bx -= data.drawSize*data.px/dist;
+            newData.by -= data.drawSize*data.py/dist;
+            newData.px -= dx;
+            newData.py -= dy;
+            newData.reshapePotentialRecursionLevel++;
+            console.log(newData.bx, newData.by);
+            reshapePotential(mode, newData);  
+        }
+    }
     let drawMode = 0;
     if (data.drawShape === 'circle') {
         drawMode = 1;
@@ -455,6 +690,7 @@ function reshapePotential(mode) {
     potFrame.setIntUniforms({"tex1": extraFrame.frameNumber, 
                              "eraseMode": mode,
                              "drawMode" : drawMode});
+    // console.log(data.bx, data.by);
     potFrame.setFloatUniforms({
         "drawWidth": data.drawSize,
         "drawHeight": data.drawSize,
@@ -654,6 +890,7 @@ function step() {
 let mouseUse = false;
 let mousePos = function(ev, mode) {
     if (mode == 'move') {
+        data.mouseCount++;
         let prevBx = data.bx;
         let prevBy = data.by;
         data.bx = Math.floor((ev.clientX 
@@ -684,11 +921,17 @@ canvas.addEventListener("mouseup", ev => {
     guiControls.pxControl.updateDisplay();
     guiControls.pyControl.updateDisplay();
     mousePos(ev, 'up');
+    data.mouseCount = 0;
     mouseUse = false;
 });
 canvas.addEventListener("mousedown", ev => {
     data.drawRect.w = 0.0;
     data.drawRect.h = 0.0;
+    data.bx = Math.floor((ev.clientX 
+        - canvas.offsetLeft))/canvasStyleWidth;
+    data.by = 1.0 - Math.floor((ev.clientY
+                - canvas.offsetTop)
+                )/canvasStyleHeight;
     data.drawRect.x = Math.floor((ev.clientX
                                        - canvas.offsetLeft)
                                     )/canvasStyleWidth;
@@ -707,9 +950,9 @@ function animation() {
         if (data.mouseSelect === 'New ψ(x, y)') 
             initWavefunc();
         else if (data.mouseSelect === 'Draw Barrier')
-            reshapePotential(0);
+            reshapePotential(0, data);
         else if (data.mouseSelect === 'Erase Barrier')
-            reshapePotential(1);
+            reshapePotential(1, data);
         else if (data.mouseSelect === 'Prob. in Box')
             changeProbBoxDisplay();
         data.mouseAction = false;
@@ -732,7 +975,9 @@ function animation() {
          "vTex2": vFrames[1].frameNumber, 
          "potTex": potFrame.frameNumber,
          "guiTex": (showBox)? guiFrame.frameNumber: nullTex,
-         "displayMode": data.phaseMode,
+         "wavefuncDisplayMode": (data.showWavefuncHeightMap)? 
+                                6: data.phaseMode,
+         "potentialDisplayMode": data.potentialDisplayMode,
          "vecTex": (data.viewProbCurrent)? 
                     vectorFieldFrame.frameNumber: nullTex}
     );
@@ -746,12 +991,16 @@ function animation() {
          "showPsi2": (data.showPsi2)? 1.0: 0.0,
          "showPsi3": (data.showPsi3)? 1.0: 0.0, 
          "showPsi4": (data.showPsi4)? 1.0: 0.0}
-    )
+    );
+    viewFrame.setVec3Uniforms(
+        {probColour: data.probColour, potColour: data.potColour}
+    );
     logFPS();
     draw();
     unbind();
     if (stats) stats.end();
-    requestAnimationFrame(animation);
+    handleRecording(canvas).then(
+        () => requestAnimationFrame(animation));
 }
 
 animation();

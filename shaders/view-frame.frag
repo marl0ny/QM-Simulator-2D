@@ -38,10 +38,12 @@ const float pi = 3.141592653589793;
 
 #define DISPLAY_POTENTIAL_SINGLE_COLOUR 0
 #define DISPLAY_POTENTIAL_COLOUR_MAP 1
+#define DISPLAY_POTENTIAL_COLOUR 2
 
 #define DISPLAY_NO_VECTOR 0
 #define DISPLAY_VECTOR 1
 
+#define DISPLAY_NO_BACKGROUND 0
 #define DISPLAY_BACKGROUND 1
 
 
@@ -132,7 +134,10 @@ void main () {
                 val = -pi/4.0;
             }
         }
-        potential = argumentToColour(val); // min(col4.r*(brightness2), 1.25)*argumentToColour(val);
+        potential = argumentToColour(val); 
+        // min(col4.r*(brightness2), 1.25)*argumentToColour(val);
+    } else if (potentialDisplayMode == DISPLAY_POTENTIAL_COLOUR) {
+        
     }
 
     if (wavefunctionDisplayMode == DISPLAY_PHASE) {
@@ -153,7 +158,12 @@ void main () {
         //                vec3(probDensity, 5.0 - probDensity, 0.0);
     }
 
-    vec4 pix = vec4(wavefunction + potential, 1.0);
+    vec3 background;
+    if (backgroundDisplayMode == DISPLAY_BACKGROUND) {
+        background = texture2D(backgroundTex, fragTexCoord).rgb;
+    }
+
+    vec4 pix = vec4(wavefunction + potential + background/4.0, 1.0);
     if (vectorDisplayMode == DISPLAY_VECTOR) {
         pix += 10.0*texture2D(vecTex, fragTexCoord);
     }

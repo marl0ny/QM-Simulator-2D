@@ -31,6 +31,7 @@ These proposed changes are only for visual effects and do not correspond to anyt
 - Add helper methods for the base methods in SimulationManager base class.
 - Use the non-staggered implementations as the base method for SimulationManager. The Leapfrog class will overwrite these with its staggered implementations.
 - Instead of having many of the gui functions within the main function, perhaps put these outside instead in a better file.
+- Make the width and height variables found in the canvas.js file not be tied to the canvas and instead part of the simulation data.
 - Add comments and descriptions for the shaders.
 - Add tests
 
@@ -46,7 +47,6 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - <s>Need to now fix that when changing to a non-square dimension the actual dimensions remain a square.</s>
   - <s>For Split-Op. Nonlinear, the potential changes when dt changes.</s>
   - Adding a nonlinear term with additional parameters in the nonlinear entry controls and then subsequently entering a potential also with additional parameters in the edit potential entry controls causes the parameters for the nonlinear controls to be deleted.
-  - Using the Crank-Nicolson with Jacobi method then switching to another method and then switching back causes the iterations to not be done correctly, which causes instability and other numerical artifacts to appear.
   - The transmission and reflection for Split-Operator and the other methods are different, with Split-Operator admitting more transmittance. This is evident with the default step potential example.
  - The Split-Op. method does not work with WebGL 1. This is because when using WebGL 1 the interpolation is set to only LINEAR, which causes the rearrange shader program that handles reverse bit sorting to fail.
   - For the Dirac simulation, setting the interpolation to NEAREST causes the simulation to be instable, since with this setting the spinors are no longer accessed in a staggered fashion. Add parameters to the gl creation functions that set the interpolation instead of controlling it in the functions themselves.
@@ -54,4 +54,5 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - The Dirac simulation doesn't seem to be symmetric under time reversal, as can be seen when switching from a positive to a negative time step.
   - When using the dimensions of an image for the simulation need to update the grid size controls as well.
   - Switching to periodic locks the resolution to 512x512; attempting to switch to 256x256 or 512x512 changes the boundary conditions to Neumann.
-  - The measure position button changes the norm when using a non 512x512 resolution.
+  - <s>The measure position button changes the norm when using a non 512x512 resolution.</s>
+  - Background image does not work with non 512x512 resolution.

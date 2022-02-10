@@ -6,6 +6,7 @@ class SimulationManager {
                                            framesManager.frames[i]);
         this.storeFrame = framesManager.frames[5];
         this.potentialFrame = framesManager.frames[6];
+        this.storeFrame2 = framesManager.frames[7];
         this.vectorFieldFrame = framesManager.vectorFieldFrames[0];
         this.t = 3;
         this.nullTexNumber = framesManager.nullTexNumber;
@@ -32,7 +33,7 @@ class SimulationManager {
         this.viewFrame.setTexture(pixelWidth, pixelHeight, 
                                   {s: gl.CLAMP_TO_EDGE, t: gl.CLAMP_TO_EDGE});
         unbind();
-        let frames = [].concat(this.swapFrames, this.storeFrame, 
+        let frames = [].concat(this.swapFrames, this.storeFrame, this.storeFrame2,
                                this.potentialFrame, this.vectorFieldFrame);
         for (let frame of frames) {
             frame.setTexture(pixelWidth, pixelHeight, {s: gl.CLAMP_TO_EDGE,
@@ -208,11 +209,24 @@ class SimulationManager {
         draw();
         unbind();
     }
-    presetPotential(potentialType, potentialUniforms) {
+    bgImage(imageData, bgBrightness) {
+        this.storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+            gl.FLOAT, imageData);
+        this.storeFrame2.useProgram(copyScaleFlipProgram);
+        this.storeFrame2.bind();
+        this.storeFrame2.setIntUniforms({tex1: this.storeFrame.frameNumber});
+        this.storeFrame2.setFloatUniforms({scale1: bgBrightness})
+        draw();
+        unbind();
+    } 
+    presetPotential(potentialType, dissipativePotentialType,
+                    potentialUniforms) {
         this.potentialFrame.useProgram(initPotentialProgram);
         this.potentialFrame.bind();
         this.potentialFrame.setFloatUniforms(potentialUniforms);
-        this.potentialFrame.setIntUniforms({potentialType: potentialType});
+        this.potentialFrame.setIntUniforms({potentialType: potentialType,
+                                            dissipativePotentialType:
+                                            dissipativePotentialType});
         draw();
         unbind();
     }
@@ -264,16 +278,46 @@ class SimulationManager {
         draw();
         unbind();
     }
+    scaleWavefunction(scaleVal) {
+        for (let f of this.swapFrames) {
+            this.storeFrame.bind();
+            this.storeFrame.useProgram(copyScaleProgram);
+            this.storeFrame.setIntUniforms({tex1: f.frameNumber,
+                                            tex2: this.nullTexNumber});
+            this.storeFrame.setFloatUniforms({scale1: scaleVal,
+                                              scale2: 0.0});
+            draw();
+            unbind();
+            f.bind();
+            f.useProgram(copyScaleProgram);
+            f.setIntUniforms({tex1: this.storeFrame.frameNumber,
+                              tex2: this.nullTexNumber});
+            f.setFloatUniforms({scale1: 1.0, scale2: 0.0});
+            draw();
+            unbind();
+        }
+    }
+    normalizeScaleWavefunction(scaleVal) {
+        let probDist = this.getUnnormalizedProbDist();
+        unbind();
+        let sum = 0.0;
+        for (let i = 0; i < probDist.length; i+=4) {
+            sum += probDist[i];
+        }
+        // console.log(sum);
+        this.scaleWavefunction(scaleVal/Math.sqrt(sum));
+    }
     display(floatUniforms, intUniforms, vec3Uniforms) {
         let tex = this.vectorFieldFrame.frameNumber;
         let potentialFrame = this.potentialFrame;
         let swapFrames = this.swapFrames;
         let t = this.t;
         intUniforms['vecTex'] = tex;
-        intUniforms['tex1'] = swapFrames[t].frameNumber,
-        intUniforms['tex2'] = swapFrames[t-3].frameNumber,
-        intUniforms['tex3'] = swapFrames[t-2].frameNumber,
-        intUniforms['texV'] = potentialFrame.frameNumber
+        intUniforms['tex1'] = swapFrames[t].frameNumber;
+        intUniforms['tex2'] = swapFrames[t-3].frameNumber;
+        intUniforms['tex3'] = swapFrames[t-2].frameNumber;
+        intUniforms['texV'] = potentialFrame.frameNumber;
+        intUniforms['backgroundTex'] = this.storeFrame2.frameNumber;
         this.viewFrame.useProgram(displayProgram);
         this.viewFrame.bind();
         this.viewFrame.setIntUniforms(intUniforms);

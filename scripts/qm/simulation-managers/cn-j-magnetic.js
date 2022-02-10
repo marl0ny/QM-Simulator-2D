@@ -3,7 +3,7 @@ class CrankNicolsonWithAFieldSimulationManager
 extends CrankNicolsonSimulationManager {
     constructor(framesManager) {
         super(framesManager);
-        this.vectorPotentialFrame = framesManager.frames[7];
+        this.vectorPotentialFrame = framesManager.frames[8];
         this.vectorPotentialFrame.useProgram(initVectorPotentialProgram);
         this.vectorPotentialFrame.bind();
         this.vectorPotentialFrame.setIntUniforms({potentialType: 1});

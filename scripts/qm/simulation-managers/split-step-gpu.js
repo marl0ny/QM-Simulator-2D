@@ -3,9 +3,9 @@ class SplitStepGPUSimulationManager
 extends SplitStepSimulationManager {
     constructor(framesManager) {
         super(framesManager);
-        this.expPotentialFrame = framesManager.frames[7];
-        this.expKineticFrame = framesManager.frames[8];
-        this.revBitSort2LookupFrame = framesManager.frames[9];
+        this.expPotentialFrame = framesManager.frames[8];
+        this.expKineticFrame = framesManager.frames[9];
+        this.revBitSort2LookupFrame = framesManager.frames[10];
         this.initRevBitSort2LookupFrame();
     }
     setFrameDimensions(pixelWidth, pixelHeight) {
@@ -162,8 +162,10 @@ extends SplitStepSimulationManager {
         this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
                             this._dt, this._hbar);
     }
-    presetPotential(potentialType, potentialUniforms) {
-        super.presetPotential(potentialType, potentialUniforms);
+    presetPotential(potentialType, dissipativePotentialType, 
+                    potentialUniforms) {
+        super.presetPotential(potentialType, dissipativePotentialType, 
+                              potentialUniforms);
         this.makeExpPotential(this.potentialFrame, this.expPotentialFrame,
                             this._dt, this._hbar);
     }

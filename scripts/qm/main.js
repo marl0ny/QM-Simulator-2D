@@ -5,7 +5,8 @@ main();
 function main() {
 
     let framesManager = new FramesManager();
-    let numberOfFrames = 7;
+    let defaultNumberOfFrames = 8;
+    let numberOfFrames = defaultNumberOfFrames;
     framesManager.addFrames(canvas.width, canvas.height, numberOfFrames);
     framesManager.addVectorFieldFrame(canvas.width, canvas.height);
     let SimManager = LeapfrogSimulationManager;
@@ -19,13 +20,15 @@ function main() {
     guiControls.methodControl.onChange(e => {
         removeNonlinearControls();
         removeIterationControls();
+        removeNonlinearNonlocalControls();
+        let addNonlocalControls = false;
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
             guiControls.dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
         } if (e === 'Leapfrog 2') {
             SimManager = Leapfrog2SimulationManager;
@@ -33,7 +36,7 @@ function main() {
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationManager;
@@ -41,7 +44,7 @@ function main() {
             if (guiData.dt > 0.025) guiData.dt = 0.025;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
@@ -49,7 +52,7 @@ function main() {
             guiControls.dtSlider.max(0.025);
             if (guiData.dt > 0.025) guiData.dt = 0.025;
             methodGridSizes = gridSizes;
-            numberOfFrames = 8;
+            numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
             addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
@@ -58,7 +61,7 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationManager;
@@ -70,16 +73,30 @@ function main() {
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
-            numberOfFrames = 10;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
+        } else if (e === 'Time Split CN-J') {
+            SimManager = TimeSplitWithCNJNonlinearSimulationManager;
+            guiControls.dtSlider.max(0.025);
+            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
+            methodGridSizes = gridSizes;
+            numberOfFrames = defaultNumberOfFrames + 2;
+            disableNonPowerTwo = false;
+            addIterationsControls();
+            /* addNonlinearControls();
+            guiControls.textEditNonlinearEntry.onChange(() => {
+                textEditNonlinearFuncSplitOperator(sim);
+            });*/
         } else if (e === 'Leapfrog Nonlinear') {
             SimManager = LeapfrogNonlinearSimulationManager;
             guiControls.dtSlider.max(0.01);
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
+            // addNonlocalControls = true;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);
@@ -94,7 +111,7 @@ function main() {
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
             if (guiData.dt > 0.1) guiData.dt = 0.1;
-            numberOfFrames = 10;
+            numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
@@ -148,12 +165,25 @@ function main() {
         framesManager.addFrames(pixelWidth, pixelHeight, numberOfFrames);
         framesManager.addVectorFieldFrame(pixelWidth, pixelHeight);
         sim = new SimManager(framesManager);
+        if (addNonlocalControls) {
+            addNonlinearNonlocalControls(sim);
+        }
         initializePotential(guiData.presetPotential);
     });
 
     guiData.setToImageDimensions = function () {
-        let canvas = document.getElementById('image-canvas');
+        // let canvas = document.getElementById('image-canvas');
         let im = document.getElementById('image');
+        console.log(im.width, im.height);
+        if (disableNonPowerTwo) {
+            if (im.width !== im.height ||
+                ![256, 512, 1024, 2048, 4096].some(
+                    e => e === parseInt(im.width)) ||
+                ![256, 512, 1024, 2048, 4096].some(
+                    e => e === parseInt(im.height))) {
+                return;
+            }
+        }
         setFrameDimensions(parseInt(im.width/2.0), 
                            parseInt(im.height/2.0));
     }
@@ -187,6 +217,38 @@ function main() {
         sim.imagePotential(imageData, guiData.invertImage);
         guiData.potChanged = true;
     }
+
+    guiData.imageBackgroundFunc = function() {
+        guiData.displayBGImage = true;
+        guiControls.displayBG.updateDisplay();
+        let canvas = document.getElementById('image-canvas');
+        console.log(canvas.width, canvas.height);
+        let ctx = canvas.getContext("2d");
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.fill();
+        let im = document.getElementById('image');
+        let w = canvas.width, h = canvas.height;
+        console.log(im.width/im.height, w/h);
+        if (im.width/im.height > w/h) {
+            let r = (im.height/im.width)/(h/w);
+            let heightOffset = parseInt(`${0.5*h*(1.0 - r)}`);
+            ctx.drawImage(im, 0, heightOffset, 
+                          w, parseInt(`${w*im.height/im.width}`));
+        } else {
+            let r = (im.width/im.height)/(w/h);
+            let widthOffset = parseInt(`${0.5*w*(1.0 - r)}`);
+            ctx.drawImage(im, widthOffset, 0, 
+                          parseInt(`${h*im.width/im.height}`), h);
+        }
+        let imageData = new Float32Array(ctx.getImageData(0.0, 0.0, 
+                                                          w, h
+                                                          ).data);
+        for (let i = 0; i < imageData.length; i++) {
+            imageData[i] *= (15.0/255.0);
+        }
+        sim.bgImage(imageData, guiData.bgBrightness);
+    }
+    guiControls.bgBrightness.onChange(() => guiData.imageBackgroundFunc());
 
     function changeBoundaries(s, t) {
         if (s === gl.REPEAT || t === gl.REPEAT) {
@@ -248,6 +310,8 @@ function main() {
             h: canvasStyleHeight/canvas.height};
         guiData.showValues.w = width;
         guiData.showValues.h = height;
+        guiData.displayBGImage = false;
+        guiControls.displayBG.updateDisplay();
         guiControls.boxW.updateDisplay();
         guiControls.boxH.updateDisplay();
 
@@ -309,8 +373,14 @@ function main() {
                           borderAlpha: guiData.borderAlpha,
                           laplaceVal: guiData.laplaceVal,
                           width: width, height: height};
-            let wavefuncParams = {amp: 37.5,
-                                  sx: 4.0/canvas.width, sy: 4.0/canvas.height,
+            let sigma = (canvas.width > canvas.height)? 
+                         4.0/canvas.height: 4.0/canvas.width;
+            let wavefuncParams = {amp: 5.0*30.0/(sigma*512.0),
+                                  // sx: 4.0/canvas.width, sy: 4.0/canvas.height,
+                                  sx: (canvas.width > canvas.height)? 
+                                       sigma*canvas.height/canvas.width: sigma,
+                                  sy: (canvas.width > canvas.height)?
+                                       sigma: sigma*canvas.width/canvas.height,
                                   bx: u/canvas.width, by: v/canvas.height,
                                   px: 0.0, py: 0.0};
             sim.initWavefunc(params, wavefuncParams);
@@ -327,12 +397,14 @@ function main() {
         let pyMax = canvas.height/512.0*40.0;
         if (type === 'SHO') {
             let items = {a: 20.0};
-            sim.presetPotential(1, items);
+            sim.presetPotential(1, guiData.dissipation, items);
             let aVar
                  = guiControls.presetControlsFolder.add(items,
                                                         'a', 0.0, 40.0
                                                         ).name('Strength');
-            aVar.onChange(() => sim.presetPotential(1, items));
+            aVar.onChange(() => 
+                          sim.presetPotential(1, guiData.dissipation, 
+                                              items));
             guiControls.presetControlsFolder.controls.push(aVar);
             guiData.bx = canvas.width/2;
             guiData.by = canvas.height*0.75;
@@ -344,7 +416,7 @@ function main() {
         } else if (type == 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
                                       spacing: 0.02, a: 30.0};
-            sim.presetPotential(2, doubleSlitUniforms);
+            sim.presetPotential(2, guiData.dissipation, doubleSlitUniforms);
             for (let e of Object.keys(doubleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
@@ -365,7 +437,8 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     doubleSlitUniforms[e] = val;
-                    sim.presetPotential(2, doubleSlitUniforms);
+                    sim.presetPotential(2, guiData.dissipation, 
+                                        doubleSlitUniforms);
                 });
                 guiControls.presetControlsFolder.controls.push(slider);
             }
@@ -379,7 +452,8 @@ function main() {
         } else if (type == 'Single Slit') {
             let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5,
                                       spacing: 0.02, a: 30.0};
-            sim.presetPotential(3, singleSlitUniforms);
+            sim.presetPotential(3, guiData.dissipation, 
+                                singleSlitUniforms);
             for (let e of Object.keys(singleSlitUniforms)) {
                 let minVal, maxVal, name;
                 if (e === 'a') {
@@ -400,7 +474,8 @@ function main() {
                 ).name(name);
                 slider.onChange(val => {
                     singleSlitUniforms[e] = val;
-                    sim.presetPotential(3, singleSlitUniforms);
+                    sim.presetPotential(3, guiData.dissipation,
+                                        singleSlitUniforms);
                 });
                 guiControls.presetControlsFolder.controls.push(slider);
             }
@@ -412,23 +487,50 @@ function main() {
             guiControls.mouseMode.updateDisplay();
         } else if (type == 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
-            sim.presetPotential(4, stepUniforms);
+            sim.presetPotential(4, guiData.dissipation,
+                                stepUniforms);
             let aSlider = guiControls.presetControlsFolder.add(
                 stepUniforms, 'a', 0.0, 10.0
             ).step(0.1).name('strength');
             aSlider.onChange(val => {
                 stepUniforms['a'] = val;
-                sim.presetPotential(4, stepUniforms);
+                sim.presetPotential(4, guiData.dissipation, stepUniforms);
             });
             let y0Slider = guiControls.presetControlsFolder.add(
                 stepUniforms, 'y0', 0.25, 0.75
             );
             y0Slider.onChange(val => {
                 stepUniforms['y0'] = val;
-                sim.presetPotential(4, stepUniforms);
+                sim.presetPotential(4, guiData.dissipation, stepUniforms);
             });
             guiControls.presetControlsFolder.controls.push(y0Slider);
             guiControls.presetControlsFolder.controls.push(aSlider);
+            guiData.bx = canvas.width/2;
+            guiData.by = canvas.height*0.75;
+            guiData.py = pyMax/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
+            guiControls.mouseMode.updateDisplay();
+        } else if (type == 'Circle'){
+            let circleUniforms = {a: 20.0, spacing: 0.45};
+            sim.presetPotential(8, guiData.dissipation, {});
+            for (let e of Object.keys(circleUniforms)) {
+                let name = (e == 'a')? 'a': 'radius';
+                let minVal = (e == 'a')? 0.0: 0.27;
+                let maxVal = (e == 'a')? 20.0: 0.48;
+                let slider = guiControls.presetControlsFolder.add(
+                    circleUniforms, e,
+                    minVal,
+                    maxVal
+                ).name(name);
+                slider.onChange(val => {
+                    circleUniforms[e] = val;
+                    sim.presetPotential(8, guiData.dissipation,
+                                         circleUniforms);
+                });
+                slider.setValue(circleUniforms[e]);
+                guiControls.presetControlsFolder.controls.push(slider);
+            }
             guiData.bx = canvas.width/2;
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
@@ -441,11 +543,11 @@ function main() {
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
             if (type == 'Spike') {
-                sim.presetPotential(5, {});
+                sim.presetPotential(5, guiData.dissipation, {});
             } else if (type == 'Triple Slit') {
-                sim.presetPotential(6, {});
+                sim.presetPotential(6, guiData.dissipation, {});
             } else {
-                sim.presetPotential(8, {});
+                sim.presetPotential(9, guiData.dissipation, {});
                 guiData.bx = canvas.width/3;
                 guiData.by = canvas.height*0.75;
                 guiData.py = (0.75*pyMax)/guiData.scaleP;
@@ -543,6 +645,8 @@ function main() {
         const DISPLAY_VECTOR = 1;
         const DISPLAY_POTENTIAL_SINGLE_COLOUR = 0;
         const DISPLAY_POTENTIAL_COLOUR_MAP = 1;
+        const DISPLAY_NO_BACKGROUND = 0;
+        const DISPLAY_BACKGROUND = 1;
         let wavefuncDisplayMode = DISPLAY_ONLY_PROB_DENSITY;
         let potentialDisplayMode = DISPLAY_POTENTIAL_SINGLE_COLOUR;
         if (guiData.colourPhase) {
@@ -556,7 +660,9 @@ function main() {
         let intUniforms = {wavefunctionDisplayMode: wavefuncDisplayMode,
                            potentialDisplayMode: potentialDisplayMode,
                            vectorDisplayMode: DISPLAY_NO_VECTOR,
-                           backgroundDisplayMode: 0};
+                           backgroundDisplayMode: 
+                           (guiData.displayBGImage)?
+                            DISPLAY_BACKGROUND: DISPLAY_NO_BACKGROUND};
         if (guiData.viewProbCurrent) {
             sim.probCurrent({width: width, height: height,
                               hbar: 1.0, m: guiData.m});
@@ -758,6 +864,12 @@ function main() {
         for (let i = 0; i < guiData.speed; i++) {
             timeStepWave();
             sim.swap();
+        }
+        if (guiData.normalizeEachFrame) {
+            let normFact2 = 0.920345*(pixelWidth > pixelHeight? 
+                                      pixelHeight: pixelWidth)**2
+                                      *(5.0*30.0/512.0);
+            sim.normalizeScaleWavefunction(Math.sqrt(normFact2));
         }
         display();
         measurePosition();
