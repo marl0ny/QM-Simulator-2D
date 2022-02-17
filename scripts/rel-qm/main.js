@@ -1,25 +1,68 @@
-// (?:[a-zA-Z]*[fF]rames*|nullTex)
-let viewFrame = new Frame(pixelWidth, pixelHeight, 0);
-uFrames = [1, 2].map(e => new Frame(pixelWidth, pixelHeight, e));
-let uSwap = () => uFrames = [uFrames[1], uFrames[0]];
-vFrames = [3, 4].map(e => new Frame(pixelWidth, pixelHeight, e));
-let vSwap = () => vFrames = [vFrames[1], vFrames[0]];
-let potFrame = new Frame(pixelWidth, pixelHeight, 5);
-let guiFrame = new Frame(pixelWidth, pixelHeight, 6);
-let vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
-let vectorPotentialFrame = new Frame(pixelWidth, pixelHeight, 8);
-let extraFrame = new Frame(pixelWidth, pixelHeight, 9);
-let nullTex = 10;
-var frames = [];
-frames.push(viewFrame);
-uFrames.forEach(e => frames.push(e));
-vFrames.forEach(e => frames.push(e));
-frames.push(potFrame);
-frames.push(extraFrame);
-for (let f of frames) {
-    f.setTexture(canvas.width, canvas.height, {s: gl.REPEAT, t: gl.REPEAT});
-    f.activateFramebuffer();
+
+
+let sim = new SplitStepSimulationManager();
+
+
+
+function initializePotential(type) {
+    guiData.presetPotentialSettings.a = 10000/guiData.c;
+    guiData.potBrightness = (type == 'Coulomb')? 0.25: 1.0;
+    let newDataVals;
+    if (type == 'SHO') {
+        guiData.potentialType = 1;
+        newDataVals = {bx: 0.30, by: 0.30, 
+                       px: -10.0, py: 10.0, mouseAction: true,
+                       mouseSelect: 'New ψ(x, y)'};
+    } else if (type == 'Double Slit') {
+        guiData.potentialType = 2;
+        guiData.presetPotentialSettings.x1 = 0.43;
+        guiData.presetPotentialSettings.x2 = 0.57;
+        guiData.presetPotentialSettings.w = 0.02;
+        guiData.presetPotentialSettings.spacing = 0.03;
+        newDataVals = {bx: 0.5, by: 0.20, 
+                       px: 0.0, py: 30.0, mouseAction: true, 
+                       mouseSelect: 'New ψ(x, y)'};
+    } else if (type == 'Single Slit') {
+        guiData.potentialType = 3;
+        guiData.presetPotentialSettings.x1 = 0.5;
+        guiData.presetPotentialSettings.w = 0.01;
+        guiData.presetPotentialSettings.spacing = 0.01;
+        newDataVals = {bx: 0.5, by: 0.20, 
+                       px: 0.0, py: 30.0, mouseAction: true,
+                       mouseSelect: 'New ψ(x, y)'};
+    } else if (type == 'Step') {
+        guiData.potentialType = 4;
+        guiData.presetPotentialSettings.a = 5000/guiData.c
+        newDataVals = {bx: 0.5, by: 0.20, 
+                       px: 0.0, py: 30.0, mouseAction: true,
+                       mouseSelect: 'New ψ(x, y)'};
+    } else if (type == 'Coulomb') {
+        guiData.potentialType = 7;
+        newDataVals = {bx: 0.5, by: 0.20, 
+                       px: 0.0, py: 30.0, mouseAction: true,
+                       mouseSelect: 'New ψ(x, y)'};
+    } else {
+        guiData.potentialType = 0;
+    }
+    if (guiData.potentialType >= 1 && guiData.potentialType <= 7) {
+        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
+    }
+    sim.presetPotential(guiData.potentialType, 
+                        0, guiData.presetPotentialSettings);
+    unbind();
+    guiData.isDisplayUpdate = true;
+    guiControls.mouseSelect.updateDisplay();
+    for (let e of guiControls.presetPotOptions.additions) e.updateDisplay();
+    guiData.isDisplayUpdate = false;
 }
+
+
+guiControls.potSelect.onChange(e => {
+    initializePotential(e);
+    // guiControls.newWavefuncOptions.open();
+    guiControls.drawBarrierOptions.close();
+    guiControls.probInBoxFolder.close();
+});
 
 
 function setFrameDimensions(newWidth, newHeight) {
@@ -27,16 +70,7 @@ function setFrameDimensions(newWidth, newHeight) {
     document.getElementById('sketch-canvas').height = newHeight;
     pixelWidth = newWidth;
     pixelHeight = newHeight;
-    gl.viewport(0, 0, pixelWidth, pixelHeight);
-    let frames = [viewFrame, potFrame, guiFrame, 
-                  vectorFieldFrame, extraFrame];
-    uFrames.forEach(e => frames.push(e));
-    vFrames.forEach(e => frames.push(e));
-    for (let f of frames) {
-        f.setTexture(pixelWidth, pixelHeight, {s: gl.REPEAT, t: gl.REPEAT});
-        f.activateFramebuffer();
-        unbind();
-    }
+    sim.setFrameDimensions(newWidth, newHeight);
 }
 
 
@@ -50,7 +84,7 @@ changeGrid.onChange(
         dtControl.max(0.9*dx/guiData.c);
         dtControl.setValue(0.3508*dx/guiData.c);
         dtControl.updateDisplay();
-        initializePotential(guiData.presetPotentials, potFrame, potProgram);
+        initializePotential(guiData.presetPotentials);
         guiControls.drawBarrierOptions.close();
         guiControls.probInBoxFolder.close();
         document.getElementById('sketch-canvas').width = w;
@@ -86,168 +120,27 @@ guiData.imageFunc = function () {
     for (let i = 0; i < imageData.length; i++) {
         imageData[i] *= (100.0/255.0);
     }
-    extraFrame.substituteTextureArray(pixelWidth, pixelHeight, 
-                                      gl.FLOAT, imageData);
-    potFrame.useProgram(imagePotentialProgram);
-    potFrame.bind();
-    potFrame.setIntUniforms({tex: extraFrame.frameNumber,
-                             invert: false});
-    draw();
-    unbind();
+    sim.imagePotential(imageData, 0);
 }
 
 function initWavefunc(customData = null) {
     guiData.t = 0.0;
-    let frames = [];
-    uFrames.forEach(e => frames.push(e));
-    vFrames.forEach(e => frames.push(e));
+    let simData = {
+        dt: guiData.dt, 
+        w: guiData.w, h: guiData.h, 
+        hbar: guiData.hbar, m: guiData.m, c: guiData.c, 
+        useVectorPotential: guiData.useVectorPotential
+    };
     let wavefuncData = (customData !== null)? 
                             customData: guiData;
-    let sigma = wavefuncData.sigma;
-    for (let f of frames) {
-        if (f.frameNumber === vFrames[0].frameNumber || 
-            f.frameNumber === vFrames[1].frameNumber) {
-            f.useProgram(initWave2Program);
-        } else {
-            f.useProgram(initWaveProgram);
-        }
-        f.bind();
-        let t = 0.0;
-        /*if (f.frameNumber === uFrames[0].frameNumber) {
-            t = 2.0*wavefuncData.dt;
-        } else if (f.frameNumber === vFrames[0].frameNumber || 
-                   f.frameNumber === vFrames[1].frameNumber) {
-            t = wavefuncData.dt;
-        }*/
-        f.setFloatUniforms(
-            {"bx": wavefuncData.bx, "by": wavefuncData.by, 
-            "sx": sigma, "sy": sigma, 
-            "amp": 2.0*30.0/(sigma*512.0),
-            "pixelW": pixelWidth, "pixelH": pixelHeight,
-            "m": wavefuncData.m, "c": wavefuncData.c,
-            "kx": wavefuncData.px, "ky": wavefuncData.py,
-            "w": wavefuncData.w, "h": wavefuncData.h,
-            "t": t, "hbar": wavefuncData.hbar}
-        );
-        draw();
-        unbind();
-    }
-    let dt = guiData.dt;
-    console.log(dt);
-    let w = guiData.w, h = guiData.h;
-    let hbar = guiData.hbar;
-    let m = guiData.m;
-    let c = guiData.c;
-    // uFrames[0].useProgram(stepUpProgram);
-    // uFrames[0].bind();
-    // uFrames[0].setFloatUniforms(
-    //     {"dt": dt/2.0, "dx": w/pixelWidth, "dy": h/pixelHeight,
-    //      "w": w, "h": h, "m": m, 
-    //      "hbar": hbar, "c": c}
-    // );
-    // uFrames[0].setIntUniforms(
-    //     {"vTex": vFrames[1].frameNumber,
-    //      "uTex": uFrames[1].frameNumber,
-    //      "potTex": potFrame.frameNumber,
-    //      "useVecPot": (guiData.useVectorPotential)? 1: 0,
-    //      "vecPotTex": vectorPotentialFrame.frameNumber}
-    // );
-    // draw();
-    // unbind();
-    vFrames[0].useProgram(stepDownProgram);
-    vFrames[0].bind();
-    vFrames[0].setFloatUniforms(
-        {dt: dt/2.0, dx: w/pixelWidth, dy: h/pixelHeight,
-         w: w, h: h, m: m, 
-         hbar: hbar, c: c}
-    );
-    vFrames[0].setIntUniforms(
-        {vTex: vFrames[1].frameNumber,
-         uTex: uFrames[1].frameNumber,
-         potTex: potFrame.frameNumber,
-         useVecPot: (guiData.useVectorPotential)? 1: 0,
-         vecPotTex: vectorPotentialFrame.frameNumber}
-    );
-    draw();
-    unbind();
-
+    sim.initWavefunc(simData, wavefuncData);
 }
-
-function initializePotential(type, potentialFrame, potentialProgram) {
-    guiData.presetPotentialSettings.a = 10000/guiData.c
-    potentialFrame.useProgram(potentialProgram);
-    potentialFrame.bind();
-    guiData.potBrightness = (type == 'Coulomb')? 0.25: 1.0;
-    if (type == 'SHO') {
-        guiData.potentialType = 1;
-        let newDataVals = {bx: 0.30, by: 0.30, 
-                              px: -10.0, py: 10.0, mouseAction: true,
-                              mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
-    } else if (type == 'Double Slit') {
-        guiData.potentialType = 2;
-        guiData.presetPotentialSettings.x1 = 0.43;
-        guiData.presetPotentialSettings.x2 = 0.57;
-        guiData.presetPotentialSettings.w = 0.02;
-        guiData.presetPotentialSettings.spacing = 0.03;
-        let newDataVals = {bx: 0.5, by: 0.20, 
-                              px: 0.0, py: 30.0, mouseAction: true, 
-                              mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
-    } else if (type == 'Single Slit') {
-        guiData.potentialType = 3;
-        guiData.presetPotentialSettings.x1 = 0.5;
-        guiData.presetPotentialSettings.w = 0.01;
-        guiData.presetPotentialSettings.spacing = 0.01;
-        let newDataVals = {bx: 0.5, by: 0.20, 
-                              px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
-    } else if (type == 'Step') {
-        guiData.potentialType = 4;
-        guiData.presetPotentialSettings.a = 5000/guiData.c
-        let newDataVals = {bx: 0.5, by: 0.20, 
-                              px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
-    } else if (type == 'Coulomb') {
-        guiData.potentialType = 7;
-        let newDataVals = {bx: 0.5, by: 0.20, 
-                              px: 0.0, py: 30.0, mouseAction: true,
-                              mouseSelect: 'New ψ(x, y)'};
-        Object.entries(newDataVals).forEach(e => guiData[e[0]] = e[1]);
-    } else {
-        guiData.potentialType = 0;
-    }
-    potentialFrame.setFloatUniforms(guiData.presetPotentialSettings);
-    potentialFrame.setIntUniforms({"potentialType": guiData.potentialType,
-                             "dissipativePotentialType": 1});
-    draw();
-    unbind();
-    guiData.isDisplayUpdate = true;
-    guiControls.mouseSelect.updateDisplay();
-    for (let e of guiControls.presetPotOptions.additions) e.updateDisplay();
-    guiData.isDisplayUpdate = false;
-}
-
-
-
-guiControls.potSelect.onChange(e => {
-    initializePotential(e, potFrame, potProgram);
-    // guiControls.newWavefuncOptions.open();
-    guiControls.drawBarrierOptions.close();
-    guiControls.probInBoxFolder.close();
-});
 
 
 function onPotentialSettingsChange() {
     if (guiData.isDisplayUpdate === false) {
-        potFrame.useProgram(potProgram);
-        potFrame.bind();
-        potFrame.setIntUniforms({'potentialType': guiData.potentialType});
-        potFrame.setFloatUniforms(guiData.presetPotentialSettings);
-        draw();
-        unbind();
+        sim.presetPotential(guiData.potentialType, 
+                            0, guiData.presetPotentialSettings);
     }
 }
 for (let e of guiControls.presetPotOptions.additions) {
@@ -281,40 +174,11 @@ function reshapePotential(mode, data) {
     else if (data.drawShape === 'gaussian') {
         drawMode = 2;
     }
-    extraFrame.useProgram(copyOverProgram);
-    extraFrame.bind();
-    extraFrame.setIntUniforms({"tex1": potFrame.frameNumber});
-    draw();
-    unbind();
-    potFrame.useProgram(reshapePotProgram);
-    potFrame.bind();
-    potFrame.setIntUniforms({"tex1": extraFrame.frameNumber, 
-                             "eraseMode": mode,
-                             "drawMode" : drawMode});
-    // console.log(data.bx, data.by);
-    potFrame.setFloatUniforms({
-        "drawWidth": data.drawSize,
-        "drawHeight": data.drawSize,
-        "bx": data.bx, "by": data.by, 
-        "v2": (mode === 0)? data.drawValue: 0.0
-    });
-    draw();
-    unbind();
+    sim.reshapePotential(drawMode, mode, data);
 }
 
 function getUnnormalizedProbDist() {
-    extraFrame.useProgram(probDensityProgram);
-    extraFrame.bind();
-    extraFrame.setIntUniforms({uTex: uFrames[0].frameNumber,
-                               vTex1: vFrames[0].frameNumber,
-                               vTex2: vFrames[1].frameNumber});
-    extraFrame.setFloatUniforms({pixelW: pixelWidth, pixelH: pixelHeight});
-    draw();
-    let probDensity = extraFrame.getTextureArray({x: 0, y: 0, 
-                                                  w: pixelWidth, 
-                                                  h: pixelHeight});
-    unbind();
-    return probDensity;
+    return sim.getUnnormalizedProbDist();
 }
 
 function measurePosition() {
@@ -346,109 +210,17 @@ guiData.measurePosition = measurePosition;
 
 
 function changeProbBoxDisplay() {
-    guiFrame.useProgram(guiRectProgram);
-    guiFrame.bind();
-    guiFrame.setFloatUniforms({
-        x0: guiData.drawRect.x, y0: guiData.drawRect.y,
-        w: guiData.drawRect.w, h: guiData.drawRect.h,
-        lineWidth: 0.003
-    });
-    draw();
-    unbind();
+    sim.probBoxDisplay(guiData);
 }
 
 function showProbCurrent() {
-    extraFrame.useProgram(currentProgram);
-    extraFrame.bind();
-    extraFrame.setIntUniforms({uTex: uFrames[0].frameNumber,
-                               vTex1: vFrames[0].frameNumber, 
-                               vTex2: vFrames[1].frameNumber});
-    extraFrame.setFloatUniforms({pixelW: pixelWidth,
-                                 pixelH: pixelHeight});
-    draw();
-    let current = extraFrame.getTextureArray({x: 0,y: 0,
-                                              w: pixelWidth,
-                                              h: pixelHeight});
-    unbind();
-    let vecs = [];
-    let dst = 32;
-    let wSpacing = pixelWidth/dst, hSpacing = pixelHeight/dst;
-    let hEnd = pixelHeight;
-    let wEnd = pixelWidth;
-    let count = 0;
-    for (let i = hSpacing; i < hEnd; i += hSpacing) {
-        for (let j = wSpacing; j < wEnd; j += wSpacing) {
-            let vy = current[4*i*pixelHeight + 4*j + 1];
-            let vx = current[4*i*pixelHeight + 4*j + 2];
-            if (vx*vx + vy*vy > 1e-9) {
-                let x = 2.0*i/pixelHeight - 1.0;
-                let y = 2.0*j/pixelWidth - 1.0;
-                let maxSize = 0.05;
-                if (vx*vx + vy*vy > maxSize*maxSize) {
-                    let norm = 1.0/Math.sqrt(vx*vx + vy*vy);
-                    vx = vx*norm*maxSize;
-                    vy = vy*norm*maxSize; 
-                }
-                vecs.push(y - vy/2.0);
-                vecs.push(x - vx/2.0);
-                vecs.push(0.0);
-                vecs.push(y + vy/2.0);
-                vecs.push(x + vx/2.0);
-                vecs.push(0.0);
-                count += 2;
-            }
-        }
-    }
-    let vertices = new Float32Array(vecs);
-    vectorFieldFrame.useProgram(onesProgram);
-    vectorFieldFrame.bind(vertices);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    drawLines(count);
-    unbind();
-
+    sim.probCurrent({});
 }
 
 function step() {
     let dt = guiData.dt;
     guiData.t += dt;
-    let w = guiData.w, h = guiData.h;
-    let hbar = guiData.hbar;
-    let m = guiData.m;
-    let c = guiData.c;
-    uFrames[1].useProgram(stepUpProgram);
-    uFrames[1].bind();
-    uFrames[1].setFloatUniforms(
-        {"dt": dt, "dx": w/pixelWidth, "dy": h/pixelHeight,
-         "w": w, "h": h, "m": m, 
-         "hbar": hbar, "c": c}
-    );
-    uFrames[1].setIntUniforms(
-        {"vTex": vFrames[0].frameNumber,
-         "uTex": uFrames[0].frameNumber,
-         "potTex": potFrame.frameNumber,
-         "useVecPot": (guiData.useVectorPotential)? 1: 0,
-         "vecPotTex": vectorPotentialFrame.frameNumber}
-    );
-    draw();
-    unbind();
-    uSwap();
-    vFrames[1].useProgram(stepDownProgram);
-    vFrames[1].bind();
-    vFrames[1].setFloatUniforms(
-        {"dt": dt, "dx": w/pixelWidth, "dy": h/pixelHeight,
-         "w": w, "h": h, "m": m, 
-         "hbar": hbar, "c": c}
-    );
-    vFrames[1].setIntUniforms(
-        {"vTex": vFrames[0].frameNumber,
-         "uTex": uFrames[0].frameNumber,
-         "potTex": potFrame.frameNumber,
-         "useVecPot": (guiData.useVectorPotential)? 1: 0,
-         "vecPotTex": vectorPotentialFrame.frameNumber}
-    );
-    draw();
-    unbind();
-    vSwap();
+    sim.step(guiData);
 }
 
 
@@ -467,47 +239,17 @@ function animation() {
             changeProbBoxDisplay();
         guiData.mouseAction = false;
     }
-    let showBox = false;
+    guiData.showBox = false;
     if (guiData.mouseSelect === 'Prob. in Box') {
-        showBox =true;
+        guiData.showBox =true;
         showProbInfo();
     }
     if (guiData.viewProbCurrent) {
         showProbCurrent();
     }
     for (let i = 0; i < guiData.stepsPerFrame; i++) step();
-    viewFrame.useProgram(viewProgram);
-    viewFrame.bind();
-    viewFrame.setIntUniforms(
-        {"uTex": uFrames[0].frameNumber,
-         // "uTex2": uFrames[1].frameNumber,
-         "vTex1": vFrames[0].frameNumber,
-         "vTex2": vFrames[1].frameNumber, 
-         "potTex": potFrame.frameNumber,
-         "guiTex": (showBox)? guiFrame.frameNumber: nullTex,
-         "wavefuncDisplayMode": (guiData.showWavefuncHeightMap)? 
-                                6: guiData.phaseMode,
-         "potentialDisplayMode": guiData.potentialDisplayMode,
-         "vecTex": (guiData.viewProbCurrent)? 
-                    vectorFieldFrame.frameNumber: nullTex}
-    );
-    viewFrame.setFloatUniforms(
-        {"constPhase": (guiData.applyPhaseShift)? 
-                        guiData.t*guiData.m*guiData.c**2: 0.0,
-         "pixelW": pixelWidth, "pixelH": pixelHeight,
-         "psiBrightness": guiData.brightness,
-         "potBrightness": guiData.potBrightness,
-         "showPsi1": (guiData.showPsi1)? 1.0: 0.0, 
-         "showPsi2": (guiData.showPsi2)? 1.0: 0.0,
-         "showPsi3": (guiData.showPsi3)? 1.0: 0.0, 
-         "showPsi4": (guiData.showPsi4)? 1.0: 0.0}
-    );
-    viewFrame.setVec3Uniforms(
-        {probColour: guiData.probColour, potColour: guiData.potColour}
-    );
+    sim.display(guiData);
     logFPS();
-    draw();
-    unbind();
     if (stats) stats.end();
     handleRecording(canvas).then(
         () => requestAnimationFrame(animation));

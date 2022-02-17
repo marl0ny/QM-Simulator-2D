@@ -40,6 +40,7 @@ let guiData = {
     measurePosition: e => {},
     drawRect: {x: 0.0, y: 0.0, w: 0.0, h: 0.0},
     probInRegion: '0',
+    showBox: false,
     viewProbCurrent: false,
     probColour: [1.0, 1.0, 1.0],
     potBrightness: 1.0,

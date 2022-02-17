@@ -123,7 +123,7 @@ function main() {
             if (guiData.dt > 0.01) guiData.dt = 0.01;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
-            numberOfFrames = 7;
+            numberOfFrames = defaultNumberOfFrames + 5;
             disableNonPowerTwo = false;
         }
         guiControls.dtSlider.updateDisplay();

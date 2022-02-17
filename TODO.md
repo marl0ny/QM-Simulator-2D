@@ -46,6 +46,8 @@ These proposed changes are only for visual effects and do not correspond to anyt
   This is not an issue when first using the other methods with the new power of two texture and switching to the Split-Op. method. This seems to now be mostly resolved.</s>
   - <s>Need to now fix that when changing to a non-square dimension the actual dimensions remain a square.</s>
   - <s>For Split-Op. Nonlinear, the potential changes when dt changes.</s>
+  - On Firefox when recording by frame sequencing some of the later batches of images
+    are not downloaded.
   - Adding a nonlinear term with additional parameters in the nonlinear entry controls and then subsequently entering a potential also with additional parameters in the edit potential entry controls causes the parameters for the nonlinear controls to be deleted.
   - The transmission and reflection for Split-Operator and the other methods are different, with Split-Operator admitting more transmittance. This is evident with the default step potential example.
  - The Split-Op. method does not work with WebGL 1. This is because when using WebGL 1 the interpolation is set to only LINEAR, which causes the rearrange shader program that handles reverse bit sorting to fail.

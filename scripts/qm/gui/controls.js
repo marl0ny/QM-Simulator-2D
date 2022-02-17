@@ -327,10 +327,14 @@ guiControls.dtSlider
     = guiControls.editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
 guiControls.laplaceSelect
      = guiControls.editUniformsFolder.add(guiData, 'laplace',
-                                          ['5 point', '9 point'],
-                                          10).name('Laplacian');
+                                          ['5 point', '9 point i', 
+                                           '9 point ii', 
+                                           '13 point', '17 point'],
+                                          ).name('Laplacian');
 guiControls.laplaceSelect.onChange(e => {
-    guiData.laplaceVal = parseInt(e.split(' ')[0]);
+    let val = parseInt(e.split(' ')[0]);
+    if (e == '9 point ii') val++;
+    guiData.laplaceVal = val;
 });
 guiControls.normalizeEachFrame = guiControls.editUniformsFolder.add(
     guiData, 'normalizeEachFrame', false

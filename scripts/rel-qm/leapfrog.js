@@ -4,21 +4,21 @@ class LeapfrogSimulationManager {
     constructor() {
         this.viewFrame = new Frame(pixelWidth, pixelHeight, 0);
         this.uFrames = [1, 2].map(e => new Frame(pixelWidth, pixelHeight, e));
-        this.uSwap = () => uFrames = [this.uFrames[1], this.uFrames[0]];
+        this.uSwap = () => this.uFrames = [this.uFrames[1], this.uFrames[0]];
         this.vFrames = [3, 4].map(e => new Frame(pixelWidth, pixelHeight, e));
-        this.vSwap = () => vFrames = [this.vFrames[1], this.vFrames[0]];
+        this.vSwap = () => this.vFrames = [this.vFrames[1], this.vFrames[0]];
         this.potFrame = new Frame(pixelWidth, pixelHeight, 5);
         this.guiFrame = new Frame(pixelWidth, pixelHeight, 6);
         this.vectorFieldFrame = new VectorFieldFrame(pixelWidth, pixelHeight, 7);
         this.vectorPotentialFrame = new Frame(pixelWidth, pixelHeight, 8);
         this.extraFrame = new Frame(pixelWidth, pixelHeight, 9);
         this.nullTex = 10;
-        var frames = [];
+        let frames = [];
         frames.push(this.viewFrame);
         this.uFrames.forEach(e => frames.push(e));
         this.vFrames.forEach(e => frames.push(e));
-        this.frames.push(this.potFrame);
-        this.frames.push(this.extraFrame);
+        frames.push(this.potFrame);
+        frames.push(this.extraFrame);
         for (let f of frames) {
             f.setTexture(canvas.width, canvas.height, {s: gl.REPEAT, t: gl.REPEAT});
             f.activateFramebuffer();
@@ -171,7 +171,7 @@ class LeapfrogSimulationManager {
         );
         draw();
         unbind();
-        uSwap();
+        this.uSwap();
         this.vFrames[1].useProgram(stepDownProgram);
         this.vFrames[1].bind();
         this.vFrames[1].setFloatUniforms(
@@ -188,9 +188,9 @@ class LeapfrogSimulationManager {
         );
         draw();
         unbind();
-        vSwap();
+        this.vSwap();
     }
-    reshapePotential(mode, data) {
+    reshapePotential(drawMode, mode, data) {
         this.extraFrame.useProgram(copyOverProgram);
         this.extraFrame.bind();
         this.extraFrame.setIntUniforms({tex1: this.potFrame.frameNumber});
@@ -204,7 +204,7 @@ class LeapfrogSimulationManager {
         // console.log(data.bx, data.by);
         this.potFrame.setFloatUniforms({
             drawWidth: data.drawSize,
-            drawSize: data.drawSize,
+            drawHeight: data.drawSize,
             bx: data.bx,  by: data.by, 
             v2: (mode === 0)? data.drawValue: 0.0
         });
@@ -230,6 +230,19 @@ class LeapfrogSimulationManager {
             potentialType: potentialType,
             dissipativePotentialType, dissipativePotentialType
         });
+        draw();
+        unbind();
+    }
+    probBoxDisplay(guiData) {
+        this.guiFrame.useProgram(guiRectProgram);
+        this.guiFrame.bind();
+        this.guiFrame.setFloatUniforms({
+            x0: guiData.drawRect.x, y0: guiData.drawRect.y,
+            w: guiData.drawRect.w, h: guiData.drawRect.h,
+            lineWidth: 0.003
+        });
+        draw();
+        unbind();
     }
     display(guiData) {
         this.viewFrame.useProgram(viewProgram);
@@ -239,7 +252,7 @@ class LeapfrogSimulationManager {
              vTex1: this.vFrames[0].frameNumber,
              vTex2: this.vFrames[1].frameNumber, 
              potTex: this.potFrame.frameNumber,
-             guiTex: (showBox)? this.guiFrame.frameNumber: this.nullTex,
+             guiTex: (guiData.showBox)? this.guiFrame.frameNumber: this.nullTex,
              wavefuncDisplayMode: (guiData.showWavefuncHeightMap)? 
                                     6: guiData.phaseMode,
              potentialDisplayMode: guiData.potentialDisplayMode,
@@ -261,5 +274,7 @@ class LeapfrogSimulationManager {
             {probColour: guiData.probColour, 
              potColour: guiData.potColour}
         );
+        draw();
+        unbind();
     }
 }

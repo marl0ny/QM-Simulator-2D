@@ -40,6 +40,17 @@ void main() {
     float pz = momenta.z;
     float p2 = momenta[3];
     float p = sqrt(momenta[3]);
+    float phi = -dt*p2/(2.0*m*hbar);
+    // complex phase = complex(cos(phi), sin(phi));
+    complex phase = complex(1.0, 0.0);
+    vec4 s;
+    if (topOrBottom == TOP) {
+        s = texture2D(uTex, fragTexCoord);
+    } else {
+        s = texture2D(vTex, fragTexCoord);
+    }
+    fragColor = vec4(mult(s.xy, phase), mult(s.zw, phase));
+    /*
     float mc = m*c;
     float omega = sqrt(mc*mc + p2);
     float den1 = p*sqrt((mc - omega)*(mc - omega) + p2);
@@ -123,6 +134,6 @@ void main() {
             matU20*phi0 + matU21*phi1 + matU22*phi2 + matU23*phi3,
             matU30*phi0 + matU31*phi1 + matU32*phi2 + matU33*phi3
         );
-    }
+    }*/
 
 }

@@ -54,6 +54,13 @@ Split-Step:
 
  ###
 
+ Laplacian Stencils:
+
+ - Wikipedia contributors. (2021, February 17)
+ [Discrete Laplacian Operator 1.5.1 Implementation via operator discretization](https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Implementation_via_operator_discretization). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+ - Fornberg, B. (1988). Generation of Finite Difference Formulas on Arbitrarily Spaced Grids. <em>Mathematics of Computation, 51(184)</em>, 699-706. [https://doi.org/10.1090/S0025-5718-1988-0935077-0 ](https://doi.org/10.1090/S0025-5718-1988-0935077-0 )
+
 Approximating the vector potential:
 
 - Feynman R., Leighton R., Sands M. (2011). [The Schrödinger Equation in a Classical Context: A Seminar on Superconductivity](https://www.feynmanlectures.caltech.edu/III_21.html). In <em>In The Feynman Lectures on Physics: The New Millennium Edition, Volume 3</em>, chapter 21. Basic Books.

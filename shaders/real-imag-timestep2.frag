@@ -55,20 +55,24 @@ vec2 div2Psi_(sampler2D texPsi, vec2 coord) {
 vec2 div2Psi(sampler2D texPsi, vec2 coord) {
     float dw = dx/w;
     float dh = dy/h;
-    vec2 u = texture2D(texPsi, coord + vec2(0.0, dh)).xy;
-    vec2 d = texture2D(texPsi, coord + vec2(0.0, -dh)).xy;
-    vec2 l = texture2D(texPsi, coord + vec2(-dw, 0.0)).xy;
-    vec2 r = texture2D(texPsi, coord + vec2(dw, 0.0)).xy;
-    vec2 c = texture2D(texPsi, coord).xy;
-    return (u + d - 2.0*c)/(dx*dx) + (l + r - 2.0*c)/(dy*dy);
-
-
+    vec2 uu = texture2D(texPsi, coord + vec2(0.0, dh)).xy;
+    vec2 u = texture2D(texPsi, coord + 0.5*vec2(0.0, dh)).xy;
+    vec2 d = texture2D(texPsi, coord + 0.5*vec2(0.0, -dh)).xy;
+    vec2 dd = texture2D(texPsi, coord + vec2(0.0, -dh)).xy;
+    vec2 ll = texture2D(texPsi, coord + vec2(-dw, 0.0)).xy;
+    vec2 l = texture2D(texPsi, coord + 0.5*vec2(-dw, 0.0)).xy;
+    vec2 r = texture2D(texPsi, coord + 0.5*vec2(dw, 0.0)).xy;
+    vec2 rr = texture2D(texPsi, coord + vec2(dw, 0.0)).xy;
+    // vec2 c = texture2D(texPsi, coord).xy;
+    return 0.5*(uu - u - d + dd)/(dy*dy) + 0.5*(ll - l - r + rr)/(dx*dx);
 }
+
+
 
 
 void main() {
     vec2 coord1 = fragTexCoord + 0.5*vec2(dx/w, dy/h);
-    vec2 coord2 = fragTexCoord - 0.5*vec2(dx/w, dy/h);
+    vec2 coord2 = fragTexCoord - 0.0*vec2(dx/w, dy/h);
     float VR = (1.0 - rScaleV)*texture2D(texV, coord2).r + 
                         rScaleV*texture2D(texV, coord2).g;
     float VI = (1.0 - rScaleV)*texture2D(texV, fragTexCoord).r + 

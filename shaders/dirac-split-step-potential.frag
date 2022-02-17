@@ -35,7 +35,7 @@ complex conj(complex z) {
 }
 
 void main() {
-    vec4 potential = sampler2D(potTex, fragTexCoord);
+    vec4 potential = texture2D(potTex, fragTexCoord);
     float reV = potential[0];
     float imV = potential[2];
     float imArg = -0.5*reV*dt/hbar;
