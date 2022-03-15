@@ -252,6 +252,12 @@ function makeImageFilename(num, total) {
     return `image_${numStr}_${time}.png`;
 }
 
+
+function save(canvas) {
+
+}
+
+
 function handleRecording(canvas) {
     if (guiData.takeScreenshot) {
         let zipSize = Math.floor(guiData.nScreenshots/15);

@@ -40,21 +40,26 @@ void main() {
     float pz = momenta.z;
     float p2 = momenta[3];
     float p = sqrt(momenta[3]);
+
+
+    /*
     float phi = -dt*p2/(2.0*m*hbar);
-    // complex phase = complex(cos(phi), sin(phi));
-    complex phase = complex(1.0, 0.0);
+    complex phase = complex(cos(phi), sin(phi));
+    // complex phase = complex(1.0, 0.0);
     vec4 s;
     if (topOrBottom == TOP) {
         s = texture2D(uTex, fragTexCoord);
     } else {
         s = texture2D(vTex, fragTexCoord);
-    }
-    fragColor = vec4(mult(s.xy, phase), mult(s.zw, phase));
-    /*
+    } 
+    fragColor = vec4(mult(s.xy, phase), mult(s.zw, phase));*/
+
+
     float mc = m*c;
     float omega = sqrt(mc*mc + p2);
     float den1 = p*sqrt((mc - omega)*(mc - omega) + p2);
     float den2 = p*sqrt((mc + omega)*(mc + omega) + p2);
+    complex re = complex(1.0, 0.0);
 
     // The matrix U for the momentum step, where U e^{E} U^{\dagger}.
     // This is found by diagonalizing the matrix involving the mass
@@ -108,32 +113,33 @@ void main() {
     complex psi2 = v.xy;
     complex psi3 = v.zw;
 
-    float cos_val = cos(0.5*omega*c*dt*hbar);
-    float sin_val = sin(0.5*omega*c*dt*hbar); 
+    float cos_val = cos(omega*c*dt/hbar);
+    float sin_val = sin(omega*c*dt/hbar); 
     complex e1 = complex(cos_val, sin_val); 
-    complex e2 = complex(cos_val, -sin_val); 
+    complex e2 = complex(cos_val, -sin_val);
 
-    complex phi0 = mult(e1, matUDag00*psi0 + mult(matUDag01, psi1)
-                        + matUDag02*psi2 + matUDag03*psi3);
-    complex phi1 = mult(e1, mult(matUDag10, psi0) + matUDag11*psi1
-                        + matUDag12*psi2 + matUDag13*psi3);
-    complex phi2 = mult(e2, matUDag20*psi0 + mult(matUDag21, psi1)
-                        + matUDag22*psi2 + matUDag23*psi3);
-    complex phi3 = mult(e2, matUDag30*psi0 + matUDag31*psi1
-                        + matUDag32*psi2 + matUDag33*psi3);
+    complex phi0 = matUDag00*psi0 + mult(matUDag01, psi1) + matUDag02*psi2 + matUDag03*psi3;
+    complex phi1 = mult(matUDag10, psi0) + matUDag11*psi1 + matUDag12*psi2 + matUDag13*psi3;
+    complex phi2 = matUDag20*psi0 + mult(matUDag21, psi1) + matUDag22*psi2 + matUDag23*psi3;
+    complex phi3 = mult(matUDag30, psi0) + matUDag31*psi1 + matUDag32*psi2 + matUDag33*psi3;
+    
+    complex e1Phi0 = mult(e1, phi0);
+    complex e1Phi1 = mult(e1, phi1);
+    complex e2Phi2 = mult(e2, phi2);
+    complex e2Phi3 = mult(e2, phi3);
+
+    psi0 = matU00*e1Phi0 + mult(matU01, e1Phi1) + matU02*e2Phi2 + mult(matU03, e2Phi3);
+    psi1 = mult(matU10, e1Phi0) + matU11*e1Phi1 + mult(matU12, e2Phi2) + matU13*e2Phi3;
+    psi2 = matU20*e1Phi0 + matU21*e1Phi1 + matU22*e2Phi2 + matU23*e2Phi3;
+    psi3 = matU30*e1Phi0 + matU31*e1Phi1 + matU32*e2Phi2 + matU33*e2Phi3;
+    
+    vec4 psi01 = vec4(mult(re, psi0), mult(re, psi1));
+    vec4 psi23 = vec4(mult(re, psi2), mult(re, psi3));
 
     if (topOrBottom == TOP) {
-        fragColor = vec4(
-            matU00*phi0 + mult(matU01, phi1)
-             + matU02*phi2 + mult(matU03, phi3),
-            mult(matU10, phi0) + matU11*phi1 + 
-            mult(matU12, phi2) + matU13*phi3
-        );
+        fragColor = psi01;
     } else if (topOrBottom == BOTTOM) {
-        fragColor = vec4(
-            matU20*phi0 + matU21*phi1 + matU22*phi2 + matU23*phi3,
-            matU30*phi0 + matU31*phi1 + matU32*phi2 + matU33*phi3
-        );
-    }*/
+        fragColor = psi23;
+    }
 
 }

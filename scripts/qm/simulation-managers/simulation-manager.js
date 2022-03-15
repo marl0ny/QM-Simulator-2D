@@ -326,4 +326,36 @@ class SimulationManager {
         draw();
         unbind();
     }
+    getWavefunctionArrays() {
+        let boxDimensions = {x: 0, y: 0, w: pixelWidth, h: pixelHeight};
+        this.swapFrames[0].bind()
+        let psi1 = this.swapFrames[0].getTextureArray(boxDimensions);
+        unbind();
+        this.swapFrames[1].bind()
+        let psi2 = this.swapFrames[1].getTextureArray(boxDimensions);
+        unbind();
+        this.swapFrames[2].bind()
+        let psi3 = this.swapFrames[2].getTextureArray(boxDimensions);
+        unbind();
+        return [psi1, psi2, psi3];
+    }
+    getPotentialArray() {
+        let boxDimensions = {x: 0, y: 0, w: pixelWidth, h: pixelHeight};
+        this.potentialFrame.bind();
+        let potential = this.potentialFrame.getTextureArray(boxDimensions);
+        unbind();
+        return potential;
+    }
+    substitutePotentialArray(potentialArray) {
+        this.storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+            gl.FLOAT, potentialArray);
+    }
+    substituteWavefunctionArrays(wavefunctionArrays) {
+        for (let i = 0; i < wavefunctionArrays.length; i++) {
+            this.swapFrames[i].substituteTextureArray(pixelWidth,
+                                                      pixelHeight, 
+                                                      gl.FLOAT,
+                                                      wavefunctionArrays[i]);
+        }
+    }
 }

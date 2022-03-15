@@ -30,6 +30,8 @@ uniform float aImag;
 #define TRIPLE_SLIT 6
 #define NEG_INV_R 7
 #define CIRCLE 8
+#define LOG_R 9
+#define CONE 10
 
 #define NO_DISSIPATION 0
 #define BOUNDARY_DISSIPATION 1
@@ -93,11 +95,21 @@ void main() {
             fragColor = vec4(val, 0.0, imagVal, 1.0);
         }
     } else if (potentialType == NEG_INV_R) {
-        float u = 2.0*(x - 0.5);        
-        float v = 2.0*(y - 0.5);
-        float oneOverR = -1.0/sqrt(u*u + v*v);
-        float val = (oneOverR < -150.0)? -150.0: oneOverR;
-        fragColor = vec4(val + 50.0, 0.0, imagVal, 1.0);
+        float u = x - 0.5;        
+        float v = y - 0.5;
+        float oneOverR = -a/sqrt(u*u + v*v);
+        /// float val = (oneOverR < -1000.0)? -1000.0: oneOverR;
+        fragColor = vec4(oneOverR + 7.0, 0.0, imagVal, 1.0);
+    } else if (potentialType == LOG_R) {
+        float u = x - 0.5;        
+        float v = y - 0.5;
+        float logR = log(sqrt(u*u + v*v));
+        /// float val = (oneOverR < -1000.0)? -1000.0: oneOverR;
+        fragColor = vec4(logR + 10.0, 0.0, imagVal, 1.0);
+    } else if (potentialType == CONE) {
+        float u = x - 0.5;        
+        float v = y - 0.5;
+        fragColor = vec4(a*sqrt(u*u + v*v), 0.0, imagVal, 1.0);
     } else if (potentialType == CIRCLE) {
         float u = x - 0.5;
         float v = y - 0.5;

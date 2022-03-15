@@ -48,7 +48,7 @@ class SplitStepSimulationManager {
         this._dt = 100.0;
         this._hbar = 1.0;
         this._c = 0.0;
-        this.initMomentumFrame();
+        // this.initMomentumFrame();
         this.initRevBitSort2LookupFrame();
     }
     setFrameDimensions(newWidth, newHeight) {
@@ -81,21 +81,22 @@ class SplitStepSimulationManager {
         }
         let arrTranspose = new Float32Array(pixelWidth*pixelHeight*4);
         let transposeHeight = pixelWidth, transposeWidth = pixelHeight;
-        transpose(arrTranspose, revBitSort2Table, pixelWidth, pixelHeight);
-        for (let offset = 0; offset < transposeWidth*transposeHeight;
-             offset += transposeWidth) {
+        transpose(arrTranspose, revBitSort2Table, pixelWidth, pixelHeight, 4);
+        for (let offset = 0; offset < transposeWidth*transposeHeight; 
+            offset+=transposeWidth) {
             bitReverse2(arrTranspose, offset, offset+transposeWidth, 4);
-        }
+        } 
         transpose(revBitSort2Table, arrTranspose, 
-                  transposeWidth, transposeHeight, 4);
+                transposeWidth, transposeHeight, 4);
         this.revBitSort2LookupFrame.substituteTextureArray(
-            pixelWidth, pixelHeight, gl.FLOAT, revBitSort2Table
-        );
+            pixelWidth, pixelHeight, gl.FLOAT, revBitSort2Table);
+        // console.log(this.revBitSort2Table);
 
     }
     fftFreq2(freqW, freqH) {
         for (let offset = 0; offset < pixelWidth*pixelHeight; 
              offset+=pixelWidth) {
+            freqW[offset] += 1e-12;
             fftFreq(freqW, offset, offset+pixelWidth);
         }
         let freqTranspose = new Float32Array(pixelWidth*pixelHeight);
@@ -104,12 +105,14 @@ class SplitStepSimulationManager {
         for (let offset = 0; offset < transposeWidth*transposeHeight; 
              offset+=transposeWidth) {
             fftFreq(freqTranspose, offset, offset+transposeWidth);
+            freqTranspose[offset] += 1e-12;
         } 
         transpose(freqH, freqTranspose, transposeWidth, transposeHeight, 1);
     }
     initMomentumFrame() {
         let width = this._w;
         let height = this._h;
+        console.log(width, height);
         let freqH = new Float32Array(pixelWidth*pixelHeight);
         let freqW = new Float32Array(pixelWidth*pixelHeight);
         let momentumArr = new Float32Array(pixelWidth*pixelHeight*4);
@@ -164,12 +167,12 @@ class SplitStepSimulationManager {
     fftIters(frames, size, isVert, isInv) {
         let prev = frames[0], next = frames[1];
         for (let blockSize = 2; blockSize <= pixelWidth; blockSize *= 2) {
-            let scale = (isInv && blockSize == size)? 1.0/size: 1.0;
+            let scale = (isInv && blockSize === size)? 1.0/size: 1.0;
             next.useProgram(fftIterProgram);
             next.bind();
             next.setIntUniforms({tex: prev.frameNumber, isVertical: isVert});
             next.setFloatUniforms({blockSize: blockSize/size,
-                                   angleSign: (isInv)? 1.0: -1.0,
+                                   angleSign: (isInv)? 1.0: -1.0, 
                                    size: size, scale: scale});
             draw();
             unbind();
@@ -194,12 +197,15 @@ class SplitStepSimulationManager {
             frames = this.fftIters(frames, pixelHeight, isVert, !isInv);
             frames2[i] = frames;
         }
+        // frames2 = [[uFrame, this.extraFrame], 
+        //           [vFrame, this.extraFrame2]];
         for (let i in [0, 1]) {
             let frames = frames2[i];
             frames[1].useProgram(expKineticProgram);
             frames[1].bind();
             frames[1].setIntUniforms({
-                uTex: frames2[0][0], vTex: frames2[1][0],
+                uTex: frames2[0][0].frameNumber, 
+                vTex: frames2[1][0].frameNumber,
                 momentumTex: this.momentumFrame.frameNumber,
                 topOrBottom: i
             });
@@ -209,23 +215,13 @@ class SplitStepSimulationManager {
             draw();
             unbind();
         }
+        // return [frames2[0][1], frames2[1][1]];
         for (let i in [0, 1]) {
             let frames = frames2[i];
-            this.revBitSort2(frames[0], frames[1], 
-                                revBitSort2LookupFrame);
             let isVert = true, isInv = true;
-            /* frames[1].useProgram(complexMultiplyProgram);
-            frames[1].bind();
-            frames[1].setIntUniforms({
-                tex1: expKineticFrame.frameNumber, 
-                tex2: frame[0].frameNumber,
-                layoutType: 2
-            });
-            draw();
-            unbind();*/
             this.revBitSort2(frames[0], frames[1], revBitSort2LookupFrame);
             frames = this.fftIters(frames, pixelWidth, !isVert, isInv);
-            frames = this.fftIters(frames, pixelWidth, isVert, isInv);
+            frames = this.fftIters(frames, pixelHeight, isVert, isInv);
             frames2[i] = frames;
         }
         return [frames2[0][0], frames2[1][0]];
@@ -260,13 +256,13 @@ class SplitStepSimulationManager {
         let vFrames = this.vFrames;
         if (this._dt !== params.dt || this._m !== params.m ||
             this._hbar !== params.hbar || this._c !== params.c) {
-            let dt, m, hbar, width, height, c;
-            ({dt, m, hbar, width, height, c} = params);
+            let dt, m, hbar, w, h, c;
+            ({dt, m, hbar, w, h, c} = params);
             this._dt = dt;
             this._hbar = hbar;
             this._m = m;
-            this._w = width;
-            this._h = height;
+            this._w = w;
+            this._h = h;
             this._c = c
             this.initMomentumFrame();
             this.makeExpPotential();
@@ -279,12 +275,13 @@ class SplitStepSimulationManager {
         // uFrames = [uFrames[1], uFrames[0]];
         // vFrames = [vFrames[1], vFrames[0]];
         let uvFrames = this.momentumStep([uFrames[0], vFrames[0]]);
+        // let uvFrames = [uFrames[0], vFrames[0]];
         uFrames[1].useProgram(copyScaleProgram);
         uFrames[1].bind();
         uFrames[1].setIntUniforms({tex1: uvFrames[0].frameNumber, 
                                    tex2: uvFrames[0].frameNumber
                                 });
-        uFrames[1].setFloatUniforms({scale1: 1.0, scale2: 1.0});
+        uFrames[1].setFloatUniforms({scale1: 1.0, scale2: 0.0});
         draw();
         unbind();
         vFrames[1].useProgram(copyScaleProgram);
@@ -292,11 +289,11 @@ class SplitStepSimulationManager {
         vFrames[1].setIntUniforms({tex1: uvFrames[1].frameNumber, 
                                    tex2: uvFrames[1].frameNumber
                                 });
-        vFrames[1].setFloatUniforms({scale1: 1.0, scale2: 1.0});
+        vFrames[1].setFloatUniforms({scale1: 1.0, scale2: 0.0});
         draw();
         unbind();
-        // this.uFrames = [uFrames[1], uFrames[0]];
-        // this.vFrames = [vFrames[1], vFrames[0]];
+        this.uFrames = [uFrames[1], uFrames[0]];
+        this.vFrames = [vFrames[1], vFrames[0]];
         // uvFrames is either [uFrames[1], vFrames[1]]
         // or [this.storeFrame, this.storeFrame2]
         /*let uFramesTmp = [uvFrames[0], uFrames[0]];
@@ -480,7 +477,7 @@ class SplitStepSimulationManager {
         this.viewFrame.setIntUniforms(
             {uTex: this.uFrames[0].frameNumber,
              vTex1: this.vFrames[0].frameNumber,
-             vTex2: this.vFrames[1].frameNumber, 
+             vTex2: this.vFrames[0].frameNumber, 
              potTex: this.potFrame.frameNumber,
              guiTex: (guiData.showBox)? this.guiFrame.frameNumber: this.nullTex,
              wavefuncDisplayMode: (guiData.showWavefuncHeightMap)? 
@@ -489,6 +486,7 @@ class SplitStepSimulationManager {
              vecTex: (guiData.viewProbCurrent)? 
                         this.vectorFieldFrame.frameNumber: this.nullTex}
         );
+        // guiData.applyPhaseShift = false;
         this.viewFrame.setFloatUniforms(
             {constPhase: (guiData.applyPhaseShift)? 
                           guiData.t*guiData.m*guiData.c**2: 0.0,

@@ -413,7 +413,7 @@ function main() {
                           (pxMax*0.75)/guiData.scaleP;
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
-        } else if (type == 'Double Slit') {
+        } else if (type === 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
                                       spacing: 0.02, a: 30.0};
             sim.presetPotential(2, guiData.dissipation, doubleSlitUniforms);
@@ -449,7 +449,7 @@ function main() {
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
 
-        } else if (type == 'Single Slit') {
+        } else if (type === 'Single Slit') {
             let singleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.5,
                                       spacing: 0.02, a: 30.0};
             sim.presetPotential(3, guiData.dissipation, 
@@ -485,7 +485,7 @@ function main() {
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
-        } else if (type == 'Step') {
+        } else if (type === 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
             sim.presetPotential(4, guiData.dissipation,
                                 stepUniforms);
@@ -511,7 +511,7 @@ function main() {
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
-        } else if (type == 'Circle'){
+        } else if (type === 'Circle'){
             let circleUniforms = {a: 20.0, spacing: 0.45};
             sim.presetPotential(8, guiData.dissipation, {});
             for (let e of Object.keys(circleUniforms)) {
@@ -537,6 +537,32 @@ function main() {
             guiData.px = 0.0;
             guiData.mouseMode = 'new ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
+        }  else if (type === 'Coulomb') {
+            let coulombUniforms = {a: 0.05};
+            sim.presetPotential(7, guiData.dissipation, {});
+            for (let e of Object.keys(coulombUniforms)) {
+                let name = 'strength';
+                let minVal = 0.0;
+                let maxVal = 0.15;
+                let slider = guiControls.presetControlsFolder.add(
+                    coulombUniforms, e,
+                    minVal,
+                    maxVal
+                ).name(name);
+                slider.onChange(val => {
+                    coulombUniforms[e] = val;
+                    sim.presetPotential(7, guiData.dissipation,
+                        coulombUniforms);
+                });
+                slider.setValue(coulombUniforms[e]);
+                guiControls.presetControlsFolder.controls.push(slider);
+            }
+            guiData.bx = canvas.width/2;
+            guiData.by = canvas.height*0.75;
+            guiData.py = pyMax/guiData.scaleP;
+            guiData.px = 0.0;
+            guiData.mouseMode = 'new ψ(x, y)';
+            guiControls.mouseMode.updateDisplay();
         } else {
             guiData.bx = canvas.width/2;
             guiData.by = canvas.height*0.75;
@@ -546,8 +572,14 @@ function main() {
                 sim.presetPotential(5, guiData.dissipation, {});
             } else if (type == 'Triple Slit') {
                 sim.presetPotential(6, guiData.dissipation, {});
-            } else {
+            } else if (type == 'Log') {
                 sim.presetPotential(9, guiData.dissipation, {});
+            } else if (type == 'Cone') {
+                sim.presetPotential(10, guiData.dissipation, {});
+            } /*else if (type == 'Coulomb') {
+                sim.presetPotential(7, guiData.dissipation, {});
+            }*/ else {
+                sim.presetPotential(11, guiData.dissipation, {});
                 guiData.bx = canvas.width/3;
                 guiData.by = canvas.height*0.75;
                 guiData.py = (0.75*pyMax)/guiData.scaleP;

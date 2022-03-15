@@ -54,6 +54,8 @@ let guiControls = {
     bgBrightness: null,
     recordVideoFolder: null,
     screenshotsFolder: null,
+    saveLoad: null,
+    save: null,
     numberOfFramesEntry: null,
     downloadScreenshotsButton: null,
     screenshotProgress: null,
@@ -117,7 +119,9 @@ guiControls.mouseMode = gui.add(guiData, 'mouseMode',
 guiControls.presetPotentialSelect = gui.add(guiData, 'presetPotential',
                                     ['ISW', 'SHO', 'Double Slit',
                                      'Single Slit', 'Step', 'Spike',
-                                     'Triple Slit', 'Circle']).name('Preset Potential');
+                                     'Triple Slit', 'Circle', 'Coulomb',
+                                     'Log', 'Cone'
+                                    ]).name('Preset Potential');
 guiControls.mouseControls = gui.addFolder('Mouse Usage Controls');
 guiControls.mouseControls.widgets = [];
 
@@ -304,6 +308,16 @@ guiControls.pauseOnFinish = guiControls.screenshotsFolder.add(
 guiControls.recordVideoFolder.add({'func': () => {
     guiData.recordVideo = true;
 }}, 'func').name('Start');
+
+
+guiControls.saveLoad = guiControls.moreControlsFolder.addFolder(
+    'Save/Load File');
+guiControls.save = guiControls.saveLoad.add({
+    'func': () => {
+
+    }
+}, 'func').name('Save');
+// guiControls.saveLoad.
 
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
