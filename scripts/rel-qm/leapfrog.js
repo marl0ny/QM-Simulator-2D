@@ -105,25 +105,46 @@ class LeapfrogSimulationManager {
         this.uFrames.forEach(e => frames.push(e));
         this.vFrames.forEach(e => frames.push(e));
         let sigma = wavefuncData.sigma;
+        let rePsi1 = guiData.initSpinor.rePsi1;
+        let imPsi1 = guiData.initSpinor.imPsi1; 
+        let rePsi2 = guiData.initSpinor.rePsi2; 
+        let imPsi2 = guiData.initSpinor.imPsi2; 
+        let rePsi3 = guiData.initSpinor.rePsi3; 
+        let imPsi3 = guiData.initSpinor.imPsi3; 
+        let rePsi4 = guiData.initSpinor.rePsi4; 
+        let imPsi4 = guiData.initSpinor.imPsi4; 
+        let init4Spinor = init4SpinorWavefunc({x: rePsi4, y: imPsi4},
+                                              {x: rePsi3, y: imPsi3},
+                                              {x: rePsi2, y: imPsi2},
+                                              {x: rePsi1, y: imPsi1},
+                                              wavefuncData);
+        let init2Spinor;
         for (let f of frames) {
             if (f.frameNumber === this.vFrames[0].frameNumber || 
-                f.frameNumber === this.vFrames[1].frameNumber) {
+                f.frameNumber === this.vFrames[1].frameNumber
+                ) {
                 f.useProgram(initWave2Program);
+                init2Spinor = init4Spinor.v;
             } else {
                 f.useProgram(initWaveProgram);
+                init2Spinor = init4Spinor.u;
             }
             f.bind();
             let t = 0.0;
+            console.log(wavefuncData.w, wavefuncData.h);
             f.setFloatUniforms(
                 {bx: wavefuncData.bx, by: wavefuncData.by, 
                 sx: sigma, sy: sigma, 
                 amp: 2.0*30.0/(sigma*512.0),
                 pixelW: pixelWidth, pixelH: pixelHeight,
-                m: wavefuncData.m, c: wavefuncData.c,
                 kx: wavefuncData.px, ky: wavefuncData.py,
-                w: wavefuncData.w, h: wavefuncData.h,
-                t: t, hbar: wavefuncData.hbar}
+                t: t, hbar: wavefuncData.hbar,
+                staggeredOffset: 0.5}
             );
+            f.setVec4Uniforms({
+                initSpinor: [init2Spinor[0].x, init2Spinor[0].y,
+                             init2Spinor[1].x, init2Spinor[1].y]
+            });
             draw();
             unbind();
         }

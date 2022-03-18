@@ -1,8 +1,10 @@
 
-
-let sim = new SplitStepSimulationManager();
-
-
+let sim;
+if (useLeapfrog) {
+    sim = new LeapfrogSimulationManager();
+} else {
+    sim = new SplitStepSimulationManager();
+}
 
 function initializePotential(type) {
     guiData.presetPotentialSettings.a = 10000/guiData.c;

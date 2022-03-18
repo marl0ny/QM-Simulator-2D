@@ -90,13 +90,12 @@ class SplitStepSimulationManager {
                 transposeWidth, transposeHeight, 4);
         this.revBitSort2LookupFrame.substituteTextureArray(
             pixelWidth, pixelHeight, gl.FLOAT, revBitSort2Table);
-        // console.log(this.revBitSort2Table);
 
     }
     fftFreq2(freqW, freqH) {
         for (let offset = 0; offset < pixelWidth*pixelHeight; 
              offset+=pixelWidth) {
-            freqW[offset] += 1e-12;
+            freqW[offset] += 1e-19;
             fftFreq(freqW, offset, offset+pixelWidth);
         }
         let freqTranspose = new Float32Array(pixelWidth*pixelHeight);
@@ -105,9 +104,10 @@ class SplitStepSimulationManager {
         for (let offset = 0; offset < transposeWidth*transposeHeight; 
              offset+=transposeWidth) {
             fftFreq(freqTranspose, offset, offset+transposeWidth);
-            freqTranspose[offset] += 1e-12;
-        } 
+            freqTranspose[offset] += 1e-19;
+        }
         transpose(freqH, freqTranspose, transposeWidth, transposeHeight, 1);
+        // flip_vert(freqH, pixelWidth, pixelHeight, 1);
     }
     initMomentumFrame() {
         let width = this._w;
@@ -131,13 +131,14 @@ class SplitStepSimulationManager {
 
             }
         }
+        // flip_vert(momentumArr, pixelWidth, pixelHeight, 4);
         this.momentumFrame.substituteTextureArray(pixelWidth, pixelHeight,
                                                   gl.FLOAT, momentumArr);
     }
     makeExpPotential() {
-        console.log({
+        /*console.log({
             dt: this._dt, m: this._m, c: this._c, hbar: this._hbar
-        });
+        });*/
         let potentialFrame = this.potFrame;
         let frames = [this.expPotentialFrameU, this.expPotentialFrameV];
         for (let expPotentialFrame of frames) {
@@ -246,14 +247,15 @@ class SplitStepSimulationManager {
             unbind();
             i++;
         }
-        // uFrames = [uFrames[1], uFrames[0]];
-        // vFrames = [vFrames[1], vFrames[0]];
-        // return [uFrames, vFrames];
+        let tmp = uFrames[0];
+        uFrames[0] = uFrames[1];
+        uFrames[1] = tmp;
+        let tmp2 = vFrames[0];
+        vFrames[0] = vFrames[1];
+        vFrames[1] = tmp2;
     }
     step(params) {
         let t = this.t;
-        let uFrames = this.uFrames;
-        let vFrames = this.vFrames;
         if (this._dt !== params.dt || this._m !== params.m ||
             this._hbar !== params.hbar || this._c !== params.c) {
             let dt, m, hbar, w, h, c;
@@ -268,46 +270,38 @@ class SplitStepSimulationManager {
             this.makeExpPotential();
 
         }
-        // this.potentialStep(uFrames, vFrames);
-        // uFrames = [uFrames[1], uFrames[0]];
-        // vFrames = [vFrames[1], vFrames[0]];
-        // uvFrames = [uFrames[1], vFrames[1]];
-        // uFrames = [uFrames[1], uFrames[0]];
-        // vFrames = [vFrames[1], vFrames[0]];
+        this.potentialStep(this.uFrames, this.vFrames);
+        let uFrames = this.uFrames;
+        let vFrames = this.vFrames;
         let uvFrames = this.momentumStep([uFrames[0], vFrames[0]]);
-        // let uvFrames = [uFrames[0], vFrames[0]];
+        let uFrame0 = uvFrames[0];
+        let vFrame0 = uvFrames[1];
         uFrames[1].useProgram(copyScaleProgram);
         uFrames[1].bind();
-        uFrames[1].setIntUniforms({tex1: uvFrames[0].frameNumber, 
-                                   tex2: uvFrames[0].frameNumber
+        uFrames[1].setIntUniforms({tex1: uFrame0.frameNumber, 
+                                   tex2: this.nullTex
                                 });
         uFrames[1].setFloatUniforms({scale1: 1.0, scale2: 0.0});
         draw();
         unbind();
         vFrames[1].useProgram(copyScaleProgram);
         vFrames[1].bind();
-        vFrames[1].setIntUniforms({tex1: uvFrames[1].frameNumber, 
-                                   tex2: uvFrames[1].frameNumber
+        vFrames[1].setIntUniforms({tex1: vFrame0.frameNumber, 
+                                   tex2: this.nullTex
                                 });
         vFrames[1].setFloatUniforms({scale1: 1.0, scale2: 0.0});
         draw();
         unbind();
         this.uFrames = [uFrames[1], uFrames[0]];
         this.vFrames = [vFrames[1], vFrames[0]];
-        // uvFrames is either [uFrames[1], vFrames[1]]
-        // or [this.storeFrame, this.storeFrame2]
-        /*let uFramesTmp = [uvFrames[0], uFrames[0]];
-        let vFramesTmp = [uvFrames[1], vFrames[0]];
-        this.potentialStep(uFramesTmp, vFramesTmp);
-        this.uFrames = [uFrames[0], uFrames[1]];
-        this.vFrames = [vFrames[0], vFrames[1]];*/
+        this.potentialStep(this.uFrames, this.vFrames);
     }
     getUnnormalizedProbDist() {
         this.extraFrame.useProgram(probDensityProgram);
         this.extraFrame.bind();
         this.extraFrame.setIntUniforms({uTex: this.uFrames[0].frameNumber,
                                         vTex1: this.vFrames[0].frameNumber,
-                                        vTex2: this.vFrames[1].frameNumber});
+                                        vTex2: this.vFrames[0].frameNumber});
         this.extraFrame.setFloatUniforms({pixelW: pixelWidth, pixelH: pixelHeight});
         draw();
         let probDensity = this.extraFrame.getTextureArray({x: 0, y: 0, 
@@ -321,7 +315,7 @@ class SplitStepSimulationManager {
         this.extraFrame.bind();
         this.extraFrame.setIntUniforms({uTex: this.uFrames[0].frameNumber,
                                         vTex1: this.vFrames[0].frameNumber, 
-                                        vTex2: this.vFrames[1].frameNumber});
+                                        vTex2: this.vFrames[0].frameNumber});
         this.extraFrame.setFloatUniforms({pixelW: pixelWidth,
                                           pixelH: pixelHeight});
         draw();
@@ -370,25 +364,45 @@ class SplitStepSimulationManager {
         this.uFrames.forEach(e => frames.push(e));
         this.vFrames.forEach(e => frames.push(e));
         let sigma = wavefuncData.sigma;
+        let rePsi1 = guiData.initSpinor.rePsi1;
+        let imPsi1 = guiData.initSpinor.imPsi1; 
+        let rePsi2 = guiData.initSpinor.rePsi2; 
+        let imPsi2 = guiData.initSpinor.imPsi2; 
+        let rePsi3 = guiData.initSpinor.rePsi3; 
+        let imPsi3 = guiData.initSpinor.imPsi3; 
+        let rePsi4 = guiData.initSpinor.rePsi4; 
+        let imPsi4 = guiData.initSpinor.imPsi4; 
+        let init4Spinor = init4SpinorWavefunc({x: rePsi4, y: imPsi4},
+                                              {x: rePsi3, y: imPsi3},
+                                              {x: rePsi2, y: imPsi2},
+                                              {x: rePsi1, y: imPsi1},
+                                              wavefuncData);
+        let init2Spinor;
         for (let f of frames) {
             if (f.frameNumber === this.vFrames[0].frameNumber || 
-                f.frameNumber === this.vFrames[1].frameNumber) {
+                f.frameNumber === this.vFrames[1].frameNumber
+                ) {
                 f.useProgram(initWave2Program);
+                init2Spinor = init4Spinor.v;
             } else {
                 f.useProgram(initWaveProgram);
+                init2Spinor = init4Spinor.u;
             }
             f.bind();
             let t = 0.0;
+            console.log(wavefuncData.w, wavefuncData.h);
             f.setFloatUniforms(
                 {bx: wavefuncData.bx, by: wavefuncData.by, 
                 sx: sigma, sy: sigma, 
                 amp: 2.0*30.0/(sigma*512.0),
                 pixelW: pixelWidth, pixelH: pixelHeight,
-                m: wavefuncData.m, c: wavefuncData.c,
                 kx: wavefuncData.px, ky: wavefuncData.py,
-                w: wavefuncData.w, h: wavefuncData.h,
                 t: t, hbar: wavefuncData.hbar}
             );
+            f.setVec4Uniforms({
+                initSpinor: [init2Spinor[0].x, init2Spinor[0].y,
+                             init2Spinor[1].x, init2Spinor[1].y]
+            });
             draw();
             unbind();
         }/*

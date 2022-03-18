@@ -32,6 +32,19 @@ function transpose(dest, src, w, h, size) {
     }
 }
 
+function flip_vert(arr, w, h, size) {
+    for (let j = 0; j < h/2; j++) {
+        for (let i = 0; i < w; i++) {
+            for (let k = 0; k < size; k++) {
+                let tmp = arr[size*(j*w + i) + k];
+                arr[size*(j*w + i) + k]
+                 = arr[size*((h - j - 1)*w + i) + k];
+                arr[size*((h - j - 1)*w + i) + k] = tmp;
+            }
+        }
+    }
+}
+
 function fftFreq(arr, start, end) {
     let n = end - start;
     if (n % 2 === 0) {

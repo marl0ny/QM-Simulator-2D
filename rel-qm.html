@@ -22,12 +22,19 @@
     <script src="./scripts/libraries/stats/stats.min.js"> </script>
     <script src="./scripts/libraries/jszip/jszip.min.js"></script>
     <script>
-    const useWebGL2IfAvailable = true;
+    const useLeapfrog = false;
+    let useWebGL2IfAvailable = true;
+    if (useLeapfrog) {
+        useWebGL2IfAvailable = false;
+    } else {
+        useWebGL2IfAvailable = true;
+    }
     let canvas;
     </script>
     <script src="./scripts/gl-wrappers.js"> </script>
     <script src="./scripts/rel-qm/init-canvas.js"> </script>
     <script src="./scripts/rel-qm/shader-programs.js"> </script>
+    <script src="./scripts/rel-qm/init-wavefunc.js"> </script>
     <script src="./scripts/rel-qm/leapfrog.js"> </script>
     <script src="./scripts/fft/fft.js"> </script>
     <script src="./scripts/rel-qm/split-step.js"> </script>

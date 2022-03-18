@@ -59,7 +59,6 @@ void main() {
     float omega = sqrt(mc*mc + p2);
     float den1 = p*sqrt((mc - omega)*(mc - omega) + p2);
     float den2 = p*sqrt((mc + omega)*(mc + omega) + p2);
-    complex re = complex(1.0, 0.0);
 
     // The matrix U for the momentum step, where U e^{E} U^{\dagger}.
     // This is found by diagonalizing the matrix involving the mass
@@ -70,7 +69,19 @@ void main() {
     // article by Bauke and Keitel:
     // https://arxiv.org/abs/1012.3911
 
-    // Define each element for U
+    /*
+    pz*(mc - omega)/den1
+    (mc - omega)*complex(px, py)/den1
+    p2/den1
+    0.0
+
+    (mc - omega)*complex(px, py)/den1
+    0.0
+    0.0
+    p2/den1
+    */
+
+    /*// Define each element for U
     float   matU00 = pz*(mc - omega)/den1;
     complex matU01 = (mc - omega)*complex(px, -py)/den1;
     float   matU02 = pz*(mc + omega)/den2;
@@ -104,7 +115,41 @@ void main() {
     complex matUDag30 = conj(matU03);
     float   matUDag31 = matU13;
     float   matUDag32 = matU23;
-    float   matUDag33 = matU33;
+    float   matUDag33 = matU33;*/
+
+    float   matUDag00 = pz*(mc - omega)/den1;
+    complex matUDag01 = complex(px, -py)*(mc - omega)/den1;
+    float   matUDag02 = p2/den1;
+    float   matUDag03 = 0.0;
+    complex matUDag10 = complex(px, py)*(mc - omega)/den1;
+    float   matUDag11 = -pz*(mc - omega)/den1;
+    float   matUDag12 = 0.0;
+    float   matUDag13 = p2/den1;
+    float   matUDag20 = pz*(mc + omega)/den2;
+    complex matUDag21 = complex(px, -py)*(mc + omega)/den2;
+    float   matUDag22 = p2/den2;
+    float   matUDag23 = 0.0;
+    complex matUDag30 = complex(px, py)*(mc + omega)/den2;
+    float   matUDag31 = -pz*(mc + omega)/den2;
+    float   matUDag32 = 0.0;
+    float   matUDag33 = p2/den2;
+
+    float   matU00 = matUDag00;
+    complex matU01 = conj(matUDag10);
+    float   matU02 = matUDag20;
+    complex matU03 = conj(matUDag30);
+    complex matU10 = conj(matUDag01);
+    float   matU11 = matUDag11;
+    complex matU12 = conj(matUDag21);
+    float   matU13 = matUDag31;
+    float   matU20 = matUDag02;
+    float   matU21 = matUDag12;
+    float   matU22 = matUDag22;
+    float   matU23 = matUDag32;
+    float   matU30 = matUDag03;
+    float   matU31 = matUDag13;
+    float   matU32 = matUDag23;
+    float   matU33 = matUDag33;
     
     vec4 u = texture2D(uTex, fragTexCoord);
     vec4 v = texture2D(vTex, fragTexCoord);
@@ -133,8 +178,8 @@ void main() {
     psi2 = matU20*e1Phi0 + matU21*e1Phi1 + matU22*e2Phi2 + matU23*e2Phi3;
     psi3 = matU30*e1Phi0 + matU31*e1Phi1 + matU32*e2Phi2 + matU33*e2Phi3;
     
-    vec4 psi01 = vec4(mult(re, psi0), mult(re, psi1));
-    vec4 psi23 = vec4(mult(re, psi2), mult(re, psi3));
+    vec4 psi01 = vec4(psi0, psi1);
+    vec4 psi23 = vec4(psi2, psi3);
 
     if (topOrBottom == TOP) {
         fragColor = psi01;

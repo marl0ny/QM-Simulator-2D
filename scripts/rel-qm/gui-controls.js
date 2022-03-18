@@ -53,6 +53,18 @@ let initPByMouse = newWavefuncOptions.add(guiData,
                                           ).name('Use kx/ky sliders');
 let pxControl = newWavefuncOptions.add(guiData, 'px', -50.0, 50.0).name('kx');
 let pyControl = newWavefuncOptions.add(guiData, 'py', -50.0, 50.0).name('ky');
+let initSpinorOptions = newWavefuncOptions.addFolder('Spinor Options');
+{
+    let components = ['Re(+E1)', 'Im(+E1)', 'Re(+E2)', 'Im(+E2)',
+                    'Re(-E1)', 'Im(-E1)', 'Re(-E2)', 'Im(-E2)'];
+    for (let i = 0; i < components.length; i++) {
+        let e = components[i];
+        let string = e.substring(0, 2).toLowerCase()
+                     + 'Psi' + Math.floor(i/2 + 1).toString();
+        initSpinorOptions.add(guiData.initSpinor, string,
+                              -1.0, 1.0).name(e).step(0.02);
+    }
+}
 let drawBarrierOptions = mouseOptions.addFolder('Draw/Erase Barrier');
 let probInBoxFolder = mouseOptions.addFolder('Probability in Box');
 let probShow = probInBoxFolder.add(guiData, 'probInRegion').name('Probability');

@@ -58,3 +58,4 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - Switching to periodic locks the resolution to 512x512; attempting to switch to 256x256 or 512x512 changes the boundary conditions to Neumann.
   - <s>The measure position button changes the norm when using a non 512x512 resolution.</s>
   - Background image does not work with non 512x512 resolution.
+  - When checking the kx/ky slider check box and then sketching a potential barrier the sketch of the potential barrier is not properly drawn.

@@ -15,6 +15,8 @@ let reshapePotShader = makeShader(gl.FRAGMENT_SHADER,
                                   reshapePotentialFragmentSource);
 let copyOverShader = makeShader(gl.FRAGMENT_SHADER, copyOverFragmentSource);
 let copyScaleShader = makeShader(gl.FRAGMENT_SHADER, copyScaleFragmentSource);
+let copyScaleFlipShader = makeShader(gl.FRAGMENT_SHADER, 
+                                     copyScaleFlipFragmentSource);
 let probDensityShader = makeShader(gl.FRAGMENT_SHADER, 
                                    diracProbDensityFragmentSource);
 let guiRectShader = makeShader(gl.FRAGMENT_SHADER, 
@@ -47,6 +49,7 @@ let viewProgram = makeProgram(vShader, viewShader);
 let reshapePotProgram = makeProgram(vShader, reshapePotShader);
 let copyOverProgram = makeProgram(vShader, copyOverShader);
 let copyScaleProgram = makeProgram(vShader, copyScaleShader);
+let copyScaleFlipProgram = makeProgram(vShader, copyScaleFlipShader);
 let probDensityProgram = makeProgram(vShader, probDensityShader);
 let guiRectProgram = makeProgram(vShader, guiRectShader);
 let currentProgram = makeProgram(vShader, currentShader);
@@ -70,6 +73,7 @@ gl.deleteShader(potShader);
 gl.deleteShader(reshapePotShader);
 gl.deleteShader(copyOverShader);
 gl.deleteShader(copyScaleShader);
+gl.deleteShader(copyScaleFlipShader);
 gl.deleteShader(probDensityShader);
 gl.deleteShader(guiRectShader);
 gl.deleteShader(currentShader);

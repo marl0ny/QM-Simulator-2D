@@ -186,6 +186,13 @@ class Frame {
             gl.uniform3fv(this.uniforms[field], uniforms[field]);
         }   
     }
+    setVec4Uniforms(uniforms) {
+        for (let field of Object.keys(uniforms)) {
+            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,
+                                                         field);
+            gl.uniform4fv(this.uniforms[field], uniforms[field]);
+        }   
+    }
     useProgram(shaderProgram) {
         this.shaderProgram = shaderProgram;
         gl.useProgram(shaderProgram);

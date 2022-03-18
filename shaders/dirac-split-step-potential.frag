@@ -38,8 +38,8 @@ void main() {
     vec4 potential = texture2D(potTex, fragTexCoord);
     float reV = potential[0];
     float imV = potential[2];
-    float imArg = -0.5*reV*dt/hbar;
-    float reArg = 0.5*imV*dt/hbar;
+    float imArg = -0.5*c*reV*dt/hbar;
+    float reArg = 0.5*c*imV*dt/hbar;
     fragColor = vec4(exp(reArg)*cos(imArg), exp(reArg)*sin(imArg), 
                      exp(reArg)*cos(imArg), exp(reArg)*sin(imArg));
     // TODO!
