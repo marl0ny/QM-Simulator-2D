@@ -53,7 +53,7 @@ let initPByMouse = newWavefuncOptions.add(guiData,
                                           ).name('Use kx/ky sliders');
 let pxControl = newWavefuncOptions.add(guiData, 'px', -50.0, 50.0).name('kx');
 let pyControl = newWavefuncOptions.add(guiData, 'py', -50.0, 50.0).name('ky');
-let initSpinorOptions = newWavefuncOptions.addFolder('Spinor Options');
+let initSpinorOptions = newWavefuncOptions.addFolder('Spinor Initialization Options');
 {
     let components = ['Re(+E1)', 'Im(+E1)', 'Re(+E2)', 'Im(+E2)',
                     'Re(-E1)', 'Im(-E1)', 'Re(-E2)', 'Im(-E2)'];
@@ -133,9 +133,9 @@ gui.add(guiData, 'm', 0.0, 2.0).name('m');
 // gui.add(guiData, 'c', 1.0, 140.0).name('c');
 // gui.add(guiData, 'measurePosition').name('Measure Position');
 let moreControls = gui.addFolder('More Controls');
-/*let vectorPotOptions = moreControls.add(guiData, 'presetVectorPotentials', 
+let vectorPotOptions = moreControls.add(guiData, 'presetVectorPotentials', 
                                         ['None', 'ay, -bx, 0']
-                                       ).name('Vector Potential');*/
+                                       ).name('Vector Potential');
 let changeGrid = moreControls.add(guiData, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
                                 ).name('Grid Dimensions');
@@ -279,22 +279,6 @@ function handleRecording(canvas) {
 }
 
 
-
-/*vectorPotOptions.onChange(e => {
-    if (e === 'None') {
-        guiData.useVectorPotential = false;
-    } else {
-        guiData.useVectorPotential = true;
-        vectorPotentialFrame.useProgram(initVectorPotentialProgram);
-        vectorPotentialFrame.bind()
-        vectorPotentialFrame.setIntUniforms({potentialType: 1});
-        vectorPotentialFrame.setFloatUniforms({cx: 50.0, cy: 50.0});
-        draw();
-        unbind();
-    }
-});*/
-
-
 function onUploadImage() {
     let im = document.getElementById("image");
     im.file = this.files[0];
@@ -336,6 +320,9 @@ guiControls.mouseSelect.onChange(e => {
     if (e === 'Prob. in Box') {
         guiControls.mouseOptions.open();
         guiControls.probInBoxFolder.open();
+    } else if (e === 'Draw Barrier' || e === 'Erase Barrier') {
+        guiData.initMomentumByPxPySliders = false;
+        guiControls.initPByMouse.updateDisplay();
     } else {
         guiData.probInRegion = '0';
         guiControls.probShow.updateDisplay();

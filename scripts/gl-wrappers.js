@@ -179,6 +179,13 @@ class Frame {
             gl.uniform1i(this.uniforms[field], uniforms[field]);
         }
     }
+    setVec2Uniforms(uniforms) {
+        for (let field of Object.keys(uniforms)) {
+            this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,
+                                                         field);
+            gl.uniform2fv(this.uniforms[field], uniforms[field]);
+        }   
+    }
     setVec3Uniforms(uniforms) {
         for (let field of Object.keys(uniforms)) {
             this.uniforms[field] = gl.getUniformLocation(this.shaderProgram,

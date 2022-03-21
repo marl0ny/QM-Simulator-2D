@@ -12,6 +12,7 @@ uniform float pixelH;
 uniform sampler2D uTex;
 uniform sampler2D vTex1;
 uniform sampler2D vTex2;
+uniform vec2 staggeredOffset;
 
 
 vec4 multiplyBySigmaX(vec4 x) {
@@ -40,7 +41,7 @@ vec4 multiplyBySigmaZ(vec4 x) {
 
 void main() {
     vec4 u = texture2D(uTex, fragTexCoord);
-    vec2 offset = 0.5*vec2(1.0/pixelW, 1.0/pixelH);
+    vec2 offset = staggeredOffset;
     vec4 v1 = texture2D(vTex1, fragTexCoord + offset);
     vec4 v2 = texture2D(vTex2, fragTexCoord + offset);
     vec4 v = (v1 + v2)/2.0;

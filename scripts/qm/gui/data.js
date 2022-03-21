@@ -67,6 +67,8 @@ let guiData = {
     imageFunc: () => {},
     imageBackgroundFunc: () => {},
     setToImageDimensions: () => {},
+    serializeWavefunc: () => {},
+    serializePotential: () => {},
     displayBGImage: false,
     bgBrightness: 1.0,
     invertImage: false,

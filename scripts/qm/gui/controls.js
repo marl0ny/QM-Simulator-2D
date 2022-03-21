@@ -55,7 +55,12 @@ let guiControls = {
     recordVideoFolder: null,
     screenshotsFolder: null,
     saveLoad: null,
-    save: null,
+    saveWavefunc: null,
+    savePotential: null,
+    loadWavefuncButton: null,
+    loadWavefunc: null,
+    loadPotentialButton: null,
+    loadPotential: null,
     numberOfFramesEntry: null,
     downloadScreenshotsButton: null,
     screenshotProgress: null,
@@ -69,6 +74,7 @@ let guiControls = {
     setTol: null,
     editUniformsFolder: null,
     dtSlider: null,
+    laplaceFolder: null,
     laplaceSelect: null,
     uploadImage: null,
     imageNameWidget: null,
@@ -312,12 +318,37 @@ guiControls.recordVideoFolder.add({'func': () => {
 
 guiControls.saveLoad = guiControls.moreControlsFolder.addFolder(
     'Save/Load File');
-guiControls.save = guiControls.saveLoad.add({
-    'func': () => {
-
-    }
-}, 'func').name('Save');
+guiControls.saveWavefunc = guiControls.saveLoad.add(guiData, 
+                                                    'serializeWavefunc'
+                                                    ).name('Save wave function');
+guiControls.savePotential = guiControls.saveLoad.add(guiData, 
+                                                     'serializePotential'
+                                                     ).name('Save potential');
 // guiControls.saveLoad.
+guiControls.saveLoad.add({display: () => {}}, 
+                         'display').name('Load wave function');
+guiControls.loadWavefuncButton
+    = guiControls.saveLoad.add({'loadWavefunc': () => {}}, 
+                         'loadWavefunc', true).name(
+                             `<div>
+                             <input id="loadWavefunc" type="file" 
+                              style="color: #efefef; 
+                              text-decoration: none; font-size: 1em;">
+                             </div>`
+                         );
+guiControls.loadWavefunc = document.getElementById('loadWavefunc');
+guiControls.saveLoad.add({display: () => {}}, 
+                         'display').name('Load potential');
+guiControls.loadPotentialButton
+    = guiControls.saveLoad.add({'loadPotential': () => {}}, 
+                         'loadPotential', true).name(
+                             `<div>
+                             <input id="loadPotential" type="file" 
+                              style="color: #efefef; 
+                              text-decoration: none; font-size: 1em;">
+                             </div>`
+                         );
+guiControls.loadPotential = document.getElementById('loadPotential');
 
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
@@ -339,7 +370,7 @@ guiControls.editUniformsFolder =
 guiControls.editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
 guiControls.dtSlider
     = guiControls.editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
-guiControls.laplaceSelect
+/*guiControls.laplaceSelect
      = guiControls.editUniformsFolder.add(guiData, 'laplace',
                                           ['5 point', '9 point i', 
                                            '9 point ii', 
@@ -349,7 +380,7 @@ guiControls.laplaceSelect.onChange(e => {
     let val = parseInt(e.split(' ')[0]);
     if (e == '9 point ii') val++;
     guiData.laplaceVal = val;
-});
+});*/
 guiControls.normalizeEachFrame = guiControls.editUniformsFolder.add(
     guiData, 'normalizeEachFrame', false
 ).name('Normalize');

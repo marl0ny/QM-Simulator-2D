@@ -58,14 +58,9 @@ class SplitStepSimulationManager {
             f.activateFramebuffer();
             unbind();
         }
-        /*let params = {
-            m: this._m, dt: this._dt, 
-            hbar: this._hbar, width: width, height: height,
-            width: this._w, height: this._h
-        };*/
         this.initRevBitSort2LookupFrame();
         this.initMomentumFrame();
-        this.expPotentialFrame();
+        this.makeExpPotential();
     }
     initRevBitSort2LookupFrame() {
         let revBitSort2Table = new Float32Array(pixelWidth*pixelHeight*4);
@@ -227,25 +222,48 @@ class SplitStepSimulationManager {
         }
         return [frames2[0][0], frames2[1][0]];
     }
-    potentialStep(uFrames, vFrames) {
-        let i = 0;
-        for (let frames of [uFrames, vFrames]) {
-            let expPotentialFrame;
-            if (i === 0) {
-                expPotentialFrame = this.expPotentialFrameU;
-            } else {
-                expPotentialFrame = this.expPotentialFrameV;
+    potentialStep(uFrames, vFrames, params) {
+        if (params.useVectorPotential === true) {
+            let i = 0;
+            for (let frames of [uFrames, vFrames]) {
+                frames[1].useProgram(expPotentialProgram);
+                frames[1].bind();
+                frames[1].setIntUniforms({
+                    uTex: uFrames[0].frameNumber, 
+                    vTex: vFrames[0].frameNumber, 
+                    potTex: this.potFrame.frameNumber,
+                    useVecPot: 1,
+                    vecPotTex: this.nullTex, // this.vectorPotentialFrame.frameNumber,
+                    topOrBottom: i,
+                });
+                frames[1].setFloatUniforms({
+                    dt: params.dt, m: params.m,
+                    c: params.c, hbar: params.hbar
+                });
+                draw();
+                unbind();
+                i++;
             }
-            frames[1].useProgram(complexMultiplyProgram);
-            frames[1].bind();
-            frames[1].setIntUniforms({
-                tex1: frames[0].frameNumber, 
-                tex2: expPotentialFrame.frameNumber, 
-                layoutType: 2,
-            });
-            draw();
-            unbind();
-            i++;
+        } else {
+            let i = 0;
+            for (let frames of [uFrames, vFrames]) {
+                let expPotentialFrame;
+                if (i === 0) {
+                    expPotentialFrame = this.expPotentialFrameU;
+                } else {
+                    expPotentialFrame = this.expPotentialFrameV;
+                }
+                frames[1].useProgram(complexMultiplyProgram);
+                frames[1].bind();
+                frames[1].setIntUniforms({
+                    tex1: frames[0].frameNumber, 
+                    tex2: expPotentialFrame.frameNumber, 
+                    layoutType: 2,
+                });
+                draw();
+                unbind();
+                i++;
+            }
         }
         let tmp = uFrames[0];
         uFrames[0] = uFrames[1];
@@ -270,7 +288,7 @@ class SplitStepSimulationManager {
             this.makeExpPotential();
 
         }
-        this.potentialStep(this.uFrames, this.vFrames);
+        this.potentialStep(this.uFrames, this.vFrames, params);
         let uFrames = this.uFrames;
         let vFrames = this.vFrames;
         let uvFrames = this.momentumStep([uFrames[0], vFrames[0]]);
@@ -294,7 +312,7 @@ class SplitStepSimulationManager {
         unbind();
         this.uFrames = [uFrames[1], uFrames[0]];
         this.vFrames = [vFrames[1], vFrames[0]];
-        this.potentialStep(this.uFrames, this.vFrames);
+        this.potentialStep(this.uFrames, this.vFrames, params);
     }
     getUnnormalizedProbDist() {
         this.extraFrame.useProgram(probDensityProgram);
@@ -405,28 +423,7 @@ class SplitStepSimulationManager {
             });
             draw();
             unbind();
-        }/*
-        let dt = simData.dt;
-        let w = simData.w, h = simData.h;
-        let hbar = simData.hbar;
-        let m = simData.m;
-        let c = simData.c;
-        this.vFrames[0].useProgram(stepDownProgram);
-        this.vFrames[0].bind();
-        this.vFrames[0].setFloatUniforms(
-            {dt: dt/2.0, dx: w/pixelWidth, dy: h/pixelHeight,
-             w: w, h: h, m: m, 
-             hbar: hbar, c: c}
-        );
-        this.vFrames[0].setIntUniforms(
-            {vTex: this.vFrames[1].frameNumber,
-             uTex: this.uFrames[1].frameNumber,
-             potTex: this.potFrame.frameNumber,
-             useVecPot: (simData.useVectorPotential)? 1: 0,
-             vecPotTex: this.vectorPotentialFrame.frameNumber}
-        );
-        draw();
-        unbind();*/
+        }
     }
     reshapePotential(drawMode, mode, data) {
         this.extraFrame.useProgram(copyOverProgram);
@@ -473,6 +470,14 @@ class SplitStepSimulationManager {
         draw();
         unbind();
         this.makeExpPotential();
+    }
+    presetVectorPotential() {
+        this.vectorPotentialFrame.useProgram(initVectorPotentialProgram);
+        this.vectorPotentialFrame.bind()
+        this.vectorPotentialFrame.setIntUniforms({potentialType: 1});
+        this.vectorPotentialFrame.setFloatUniforms({cx: 50.0, cy: 50.0});
+        draw();
+        unbind();
     }
     probBoxDisplay(guiData) {
         this.guiFrame.useProgram(guiRectProgram);

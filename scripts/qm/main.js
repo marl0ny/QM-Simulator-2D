@@ -15,9 +15,12 @@ function main() {
 
     initializePotential('SHO');
 
+    addLaplacianControls(['5 point', '9 point']);
+
     let methodGridSizes;
     let boundaryTypes = [];
     guiControls.methodControl.onChange(e => {
+        removeLaplacianControls();
         removeNonlinearControls();
         removeIterationControls();
         removeNonlinearNonlocalControls();
@@ -30,6 +33,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
+            addLaplacianControls(['5 point', '9 point']);
         } if (e === 'Leapfrog 2') {
             SimManager = Leapfrog2SimulationManager;
             guiControls.dtSlider.max(0.01);
@@ -38,6 +42,9 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
+            addLaplacianControls(['5 point', '9 point i', 
+                                  '9 point ii', 
+                                  '13 point', '17 point']);
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationManager;
             guiControls.dtSlider.max(0.025);
@@ -46,6 +53,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
+            addLaplacianControls(['5 point', '9 point']);
             addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
@@ -54,6 +62,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
+            addLaplacianControls(['5 point', '9 point']);
             addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
@@ -83,6 +92,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 2;
             disableNonPowerTwo = false;
+            addLaplacianControls(['5 point', '9 point']);
             addIterationsControls();
             /* addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
@@ -97,6 +107,9 @@ function main() {
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
             addNonlocalControls = true;
+            addLaplacianControls(['5 point', '9 point i', 
+                                  '9 point ii', 
+                                  '13 point', '17 point']);
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);
@@ -113,6 +126,7 @@ function main() {
             if (guiData.dt > 0.1) guiData.dt = 0.1;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
+            // addLaplacianControls();
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncSplitOperator(sim);
@@ -125,6 +139,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 5;
             disableNonPowerTwo = false;
+            // addLaplacianControls();
         }
         guiControls.dtSlider.updateDisplay();
 
@@ -650,6 +665,30 @@ function main() {
                               px: px, py: py};
         sim.initWavefunc(params, wavefuncParams);
     }
+
+    guiData.serializeWavefunc = () => serializeWavefunc(sim);
+
+    function onLoadWavefunc() {
+        let file = this.files[0];
+        // TODO: Handle loading of arrays for methods
+        // that only have power of two dimensions.
+        if (disableNonPowerTwo) return;
+        loadWavefuncToSim(sim, file, setFrameDimensions);
+    }
+    guiControls.loadWavefunc.addEventListener(
+        "change", onLoadWavefunc, false);
+
+    guiData.serializePotential = () => serializePotential(sim);
+
+    function onLoadPotential() {
+        let file = this.files[0];
+        // TODO: Handle loading of arrays for methods
+        // that only have power of two dimensions.
+        if (disableNonPowerTwo) return;
+        loadPotentialToSim(sim, file, setFrameDimensions);
+    }
+    guiControls.loadPotential.addEventListener(
+        "change", onLoadPotential, false);
 
     function timeStepWave() {
         let dt = guiData.dt;

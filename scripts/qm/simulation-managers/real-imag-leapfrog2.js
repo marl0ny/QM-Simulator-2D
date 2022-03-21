@@ -11,6 +11,9 @@ class Leapfrog2SimulationManager extends SimulationManager {
         let width, height;
         ({dx, dy, dt, m, hbar, laplaceVal, 
           width, height, rScaleV} = params);
+        /* if (Math.random() < 0.05) {
+          console.log(laplaceVal);
+        }*/
         swapFrames[t-1].useProgram(realImagTimeStepProgram);
         swapFrames[t-1].bind();
         swapFrames[t-1].setFloatUniforms({dx: dx, dy: dy, dt: dt, 

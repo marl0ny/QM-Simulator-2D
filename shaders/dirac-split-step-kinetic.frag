@@ -40,21 +40,6 @@ void main() {
     float pz = momenta.z;
     float p2 = momenta[3];
     float p = sqrt(momenta[3]);
-
-
-    /*
-    float phi = -dt*p2/(2.0*m*hbar);
-    complex phase = complex(cos(phi), sin(phi));
-    // complex phase = complex(1.0, 0.0);
-    vec4 s;
-    if (topOrBottom == TOP) {
-        s = texture2D(uTex, fragTexCoord);
-    } else {
-        s = texture2D(vTex, fragTexCoord);
-    } 
-    fragColor = vec4(mult(s.xy, phase), mult(s.zw, phase));*/
-
-
     float mc = m*c;
     float omega = sqrt(mc*mc + p2);
     float den1 = p*sqrt((mc - omega)*(mc - omega) + p2);
@@ -68,54 +53,6 @@ void main() {
     // This is following what is similarly done in II.3 of this
     // article by Bauke and Keitel:
     // https://arxiv.org/abs/1012.3911
-
-    /*
-    pz*(mc - omega)/den1
-    (mc - omega)*complex(px, py)/den1
-    p2/den1
-    0.0
-
-    (mc - omega)*complex(px, py)/den1
-    0.0
-    0.0
-    p2/den1
-    */
-
-    /*// Define each element for U
-    float   matU00 = pz*(mc - omega)/den1;
-    complex matU01 = (mc - omega)*complex(px, -py)/den1;
-    float   matU02 = pz*(mc + omega)/den2;
-    complex matU03 = (mc + omega)*complex(px, -py)/den2;
-    complex matU10 = (mc - omega)*complex(px, py)/den1;
-    float   matU11 = -pz*(mc - omega)/den1;
-    complex matU12 = (mc + omega)*complex(px, py)/den2;
-    float   matU13 = -pz*(mc + omega)/den2;
-    float   matU20 = p2/den1;
-    float   matU21 = 0.0;
-    float   matU22 = p2/den2;
-    float   matU23 = 0.0;
-    float   matU30 = 0.0;
-    float   matU31 = p2/den1;
-    float   matU32 = 0.0;
-    float   matU33 = p2/den2;
-
-    // U^{\dagger}
-    float   matUDag00 = matU00;
-    complex matUDag01 = conj(matU10);
-    float   matUDag02 = matU20;
-    float   matUDag03 = matU30;
-    complex matUDag10 = conj(matU01);
-    float   matUDag11 = matU11;
-    float   matUDag12 = matU21;
-    float   matUDag13 = matU31;
-    float   matUDag20 = matU02;
-    complex matUDag21 = conj(matU12);
-    float   matUDag22 = matU22;
-    float   matUDag23 = matU32;
-    complex matUDag30 = conj(matU03);
-    float   matUDag31 = matU13;
-    float   matUDag32 = matU23;
-    float   matUDag33 = matU33;*/
 
     float   matUDag00 = pz*(mc - omega)/den1;
     complex matUDag01 = complex(px, -py)*(mc - omega)/den1;

@@ -59,6 +59,9 @@ class LeapfrogSimulationManager {
                                         vTex2: this.vFrames[1].frameNumber});
         this.extraFrame.setFloatUniforms({pixelW: pixelWidth,
                                           pixelH: pixelHeight});
+        this.extraFrame.setVec2Uniforms({
+            staggeredOffset: [0.5/pixelWidth, 0.5/pixelHeight]
+        });
         draw();
         let current = this.extraFrame.getTextureArray({x: 0,y: 0,
                                                       w: pixelWidth,
@@ -251,6 +254,14 @@ class LeapfrogSimulationManager {
             potentialType: potentialType,
             dissipativePotentialType, dissipativePotentialType
         });
+        draw();
+        unbind();
+    }
+    presetVectorPotential() {
+        this.vectorPotentialFrame.useProgram(initVectorPotentialProgram);
+        this.vectorPotentialFrame.bind()
+        this.vectorPotentialFrame.setIntUniforms({potentialType: 1});
+        this.vectorPotentialFrame.setFloatUniforms({cx: 50.0, cy: 50.0});
         draw();
         unbind();
     }

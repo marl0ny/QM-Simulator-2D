@@ -337,7 +337,10 @@ class SimulationManager {
         this.swapFrames[2].bind()
         let psi3 = this.swapFrames[2].getTextureArray(boxDimensions);
         unbind();
-        return [psi1, psi2, psi3];
+        this.swapFrames[3].bind()
+        let psi4 = this.swapFrames[3].getTextureArray(boxDimensions);
+        unbind();
+        return [psi1, psi2, psi3, psi4];
     }
     getPotentialArray() {
         let boxDimensions = {x: 0, y: 0, w: pixelWidth, h: pixelHeight};
@@ -347,7 +350,7 @@ class SimulationManager {
         return potential;
     }
     substitutePotentialArray(potentialArray) {
-        this.storeFrame.substituteTextureArray(pixelWidth, pixelHeight, 
+        this.potentialFrame.substituteTextureArray(pixelWidth, pixelHeight, 
             gl.FLOAT, potentialArray);
     }
     substituteWavefunctionArrays(wavefunctionArrays) {

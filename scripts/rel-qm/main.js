@@ -40,6 +40,7 @@ function initializePotential(type) {
                        mouseSelect: 'New ψ(x, y)'};
     } else if (type == 'Coulomb') {
         guiData.potentialType = 7;
+        guiData.presetPotentialSettings.a = 0.5;
         newDataVals = {bx: 0.5, by: 0.20, 
                        px: 0.0, py: 30.0, mouseAction: true,
                        mouseSelect: 'New ψ(x, y)'};
@@ -95,6 +96,15 @@ changeGrid.onChange(
         document.getElementById('image-canvas').height = h;
     }
 );
+
+vectorPotOptions.onChange(e => {
+    if (e === 'None') {
+        guiData.useVectorPotential = false;
+    } else {
+        guiData.useVectorPotential = true;
+        sim.presetVectorPotential();     
+    }
+});
 
 
 guiData.imageFunc = function () {
