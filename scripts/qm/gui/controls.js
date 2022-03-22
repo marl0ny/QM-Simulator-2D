@@ -57,10 +57,8 @@ let guiControls = {
     saveLoad: null,
     saveWavefunc: null,
     savePotential: null,
-    loadWavefuncButton: null,
-    loadWavefunc: null,
-    loadPotentialButton: null,
-    loadPotential: null,
+    loadBinaryDataButton: null,
+    loadBinaryData: null,
     numberOfFramesEntry: null,
     downloadScreenshotsButton: null,
     screenshotProgress: null,
@@ -326,29 +324,17 @@ guiControls.savePotential = guiControls.saveLoad.add(guiData,
                                                      ).name('Save potential');
 // guiControls.saveLoad.
 guiControls.saveLoad.add({display: () => {}}, 
-                         'display').name('Load wave function');
-guiControls.loadWavefuncButton
-    = guiControls.saveLoad.add({'loadWavefunc': () => {}}, 
-                         'loadWavefunc', true).name(
+                         'display').name('Open Save:');
+guiControls.loadBinaryDataButton
+    = guiControls.saveLoad.add({'loadBinaryData': () => {}}, 
+                         'loadBinaryData', true).name(
                              `<div>
-                             <input id="loadWavefunc" type="file" 
+                             <input id="loadBinaryData" type="file" 
                               style="color: #efefef; 
                               text-decoration: none; font-size: 1em;">
                              </div>`
                          );
-guiControls.loadWavefunc = document.getElementById('loadWavefunc');
-guiControls.saveLoad.add({display: () => {}}, 
-                         'display').name('Load potential');
-guiControls.loadPotentialButton
-    = guiControls.saveLoad.add({'loadPotential': () => {}}, 
-                         'loadPotential', true).name(
-                             `<div>
-                             <input id="loadPotential" type="file" 
-                              style="color: #efefef; 
-                              text-decoration: none; font-size: 1em;">
-                             </div>`
-                         );
-guiControls.loadPotential = document.getElementById('loadPotential');
+guiControls.loadBinaryData = document.getElementById('loadBinaryData');
 
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');

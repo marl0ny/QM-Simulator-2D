@@ -67,58 +67,35 @@ void main() {
         float vx = vecPot.x, vy = vecPot.y, vz = vecPot.z;
         float v2 = vx*vx + vy*vy + vz*vz;
         float v = sqrt(v2);
-        complex d = complex(0.0, -1.0)*dt*c/hbar;
+
+        complex a, b;
+        complex d = complex(0.0, 1.0)*dt*c/hbar;
         complex expV00 = complexCosh(d*v);
         complex expV01 = ZERO;
         complex expV02 = mult(vz*d, frac(complexSinh(d*v), d*v));
-        complex expV03 = 0.5*mult(d,
-                                  complex(-vx, vy)
-                                   + mult(complex(vx -vy),
-                                          mult(complexExp(2.0*d*v), 
-                                               frac(complexExp(-d*v), d*v))));
-
+        a = complex(-vx, vy) + mult(complex(vx, -vy), complexExp(2.0*d*v));
+        b = complexExp(-d*v);
+        complex expV03 = 0.5*mult(a, b)/v;
         complex expV10 = ZERO;
         complex expV11 = complexCosh(d*v);
-        complex expV12 = 0.5*mult(d,
-                                   complex(-vx, -vy)
-                                   + mult(complex(vx, vy),
-                                          mult(complexExp(2.0*d*v), 
-                                               frac(complexExp(-d*v), d*v))));
+        a = complex(-vx, -vy) + mult(complex(vx, vy), complexExp(2.0*d*v));
+        b = complexExp(-d*v);
+        complex expV12 = 0.5*mult(a, b)/v;
         complex expV13 = mult(-vz*d, frac(complexSinh(d*v), d*v));
         complex expV20 = mult(vz*d, frac(complexSinh(d*v), d*v2));
-        complex expV21 = 0.5*mult(d*v, 
-                                  complex(-vx, vy)
-                                   + mult(complex(vx, -vy), 
-                                  mult(complexExp(2.0*d*v), 
-                                       frac(complexExp(-d*v), d*v2))));
+        a = complex(-vx, vy) + mult(complex(vx, -vy), complexExp(2.0*d*v));
+        b = complexExp(-d*v);
+        complex expV21 = 0.5*mult(a, b)/v;
         complex expV22 = complexCosh(d*v);
         complex expV23 = ZERO;
-        complex expV30 = 0.5*mult(d*v, 
-                                  complex(-vx, -vy)
-                                   + mult(complex(vx, vy), 
-                                  mult(complexExp(2.0*d*v), 
-                                       frac(complexExp(-d*v), d*v2))));
+        a = complex(-vx, -vy) + mult(complex(vx, vy), complexExp(2.0*d*v));
+        b = complexExp(-d*v);
+        complex expV30 = 0.5*mult(a, b)/v;
         complex expV31 = -vz*mult(d*v, frac(complexSinh(d*v), d*v2));
         complex expV32 = ZERO;
         complex expV33 = complexCosh(d*v);
 
         complex expV = complexExp(complex(reArg, imArg));
-        expV00 = mult(expV00, expV);
-        expV01 = mult(expV01, expV);
-        expV02 = mult(expV02, expV);
-        expV03 = mult(expV03, expV);
-        expV10 = mult(expV10, expV);
-        expV11 = mult(expV11, expV);
-        expV12 = mult(expV12, expV);
-        expV13 = mult(expV13, expV);
-        expV20 = mult(expV20, expV);
-        expV21 = mult(expV21, expV);
-        expV22 = mult(expV22, expV); 
-        expV23 = mult(expV23, expV);
-        expV30 = mult(expV30, expV);
-        expV31 = mult(expV31, expV);
-        expV32 = mult(expV32, expV);
-        expV33 = mult(expV33, expV);
 
         vec4 upperSpinor = texture2D(uTex, fragTexCoord);
         vec4 lowerSpinor = texture2D(vTex, fragTexCoord);
@@ -136,9 +113,9 @@ void main() {
                       + mult(expV32, r2) + mult(expV33, r3);
 
         if (topOrBottom == TOP) {
-            fragColor = vec4(s0, s1);
+            fragColor = vec4(mult(s0, expV), mult(s1, expV));
         } else {
-            fragColor = vec4(s2, s3);
+            fragColor = vec4(mult(s2, expV), mult(s3, expV));
         }
     }
 }

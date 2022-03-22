@@ -668,27 +668,17 @@ function main() {
 
     guiData.serializeWavefunc = () => serializeWavefunc(sim);
 
-    function onLoadWavefunc() {
-        let file = this.files[0];
-        // TODO: Handle loading of arrays for methods
-        // that only have power of two dimensions.
-        if (disableNonPowerTwo) return;
-        loadWavefuncToSim(sim, file, setFrameDimensions);
-    }
-    guiControls.loadWavefunc.addEventListener(
-        "change", onLoadWavefunc, false);
-
     guiData.serializePotential = () => serializePotential(sim);
 
-    function onLoadPotential() {
+    function onLoadBinaryData() {
         let file = this.files[0];
         // TODO: Handle loading of arrays for methods
         // that only have power of two dimensions.
         if (disableNonPowerTwo) return;
-        loadPotentialToSim(sim, file, setFrameDimensions);
+        loadBinaryDataToSim(sim, file, setFrameDimensions);
     }
-    guiControls.loadPotential.addEventListener(
-        "change", onLoadPotential, false);
+    guiControls.loadBinaryData.addEventListener(
+        "change", onLoadBinaryData, false);
 
     function timeStepWave() {
         let dt = guiData.dt;

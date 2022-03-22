@@ -233,12 +233,14 @@ class SplitStepSimulationManager {
                     vTex: vFrames[0].frameNumber, 
                     potTex: this.potFrame.frameNumber,
                     useVecPot: 1,
-                    vecPotTex: this.nullTex, // this.vectorPotentialFrame.frameNumber,
+                    vecPotTex: this.vectorPotentialFrame.frameNumber,
                     topOrBottom: i,
                 });
+                // console.log(params.dt, params.m, params.c, params.hbar);
                 frames[1].setFloatUniforms({
-                    dt: params.dt, m: params.m,
-                    c: params.c, hbar: params.hbar
+                    dt: this._dt, m: this._m, c: this._c, hbar: this._hbar
+                    // dt: params.dt, m: params.m,
+                    // c: params.c, hbar: params.hbar
                 });
                 draw();
                 unbind();
