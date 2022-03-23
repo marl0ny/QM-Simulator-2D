@@ -343,6 +343,7 @@ function main() {
         }
         sim.setFrameDimensions(pixelWidth, pixelHeight);
         initializePotential(guiData.presetPotential);
+        return sim;
     }
     guiControls.gridSelect.onChange(e => {
         xyDims = e.split('x');
@@ -670,12 +671,18 @@ function main() {
 
     guiData.serializePotential = () => serializePotential(sim);
 
+    guiData.serializePotentialAndWavefunction = () => {
+        serializePotentialAndWavefunction(sim);
+    }
+
     function onLoadBinaryData() {
         let file = this.files[0];
         // TODO: Handle loading of arrays for methods
         // that only have power of two dimensions.
         if (disableNonPowerTwo) return;
-        loadBinaryDataToSim(sim, file, setFrameDimensions);
+        let sims = [sim];
+        loadBinaryDataToSim({sims: sims, file: file,
+                             setFrameDimensions: setFrameDimensions});
     }
     guiControls.loadBinaryData.addEventListener(
         "change", onLoadBinaryData, false);
@@ -691,7 +698,8 @@ function main() {
                   m: guiData.m, hbar: 1.0, 
                   laplaceVal: guiData.laplaceVal, rScaleV: guiData.rScaleV,
                   width: width, height: height, 
-                  iterations: guiData.iterations, tolerance: guiData.tolerance,
+                  iterations: guiData.iterations, 
+                  tolerance: guiData.tolerance,
                   assessConvergence: guiData.assessConvergence};
         sim.step(params);
         guiData.rScaleV = 0.0;

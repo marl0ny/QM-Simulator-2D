@@ -601,10 +601,36 @@ function serializePotentialAndWavefunction(sim) {
         if (i < headerTxt.length) 
             headerView.setUint8(i, headerTxt[i].charCodeAt(0), endian);
     }
+    let sizeofFloat = 4;
+    let wh = pixelWidth*pixelHeight;
+    let buf = new ArrayBuffer((1 + 2*n)*sizeofFloat*wh);
+    let view = new DataView(buf);
+    for (let i = 0; i < wh; i++) {
+        view.setFloat32(i*sizeofFloat, potential[4*i], endian);
+    }
+    for (let k = 0; k < n; k++) {
+        for (let i = 0; i < wh; i++) {
+            let re = wavefuncArrays[k][4*i];
+            let im = wavefuncArrays[k][4*i + 1];
+            view.setFloat32(sizeofFloat*(2*i + 2*k*wh + wh),
+                            re, endian);
+            view.setFloat32(sizeofFloat*(1 + 2*i + 2*k*wh + wh),
+                            im, endian);                
+        }
+    }
+    let blob = new Blob([headerBuf, buf], {type: "octet/stream"});
+    let url = URL.createObjectURL(blob);
+    aTag.href = url;
+    aTag.download = `wavefunc_potential_${time}.dat`;
+    aTag.click();
 }
 
 
-function loadBinaryDataToSim(sim, file, setFrameDimensions) {
+function loadBinaryDataToSim(params) {
+    let sim = params.sims[0];
+    let file = params.file;
+    let setFrameDimensions = params.setFrameDimensions;
+    // let guiData = params.guiData;
     const reader = new FileReader();
     let endian = isSmallEndian();
     reader.onload = e => {
@@ -622,10 +648,12 @@ function loadBinaryDataToSim(sim, file, setFrameDimensions) {
             let n = parseInt(headerStringSplit[0].slice(8))
             let w = parseInt(headerStringSplit[1]);
             let h = parseInt(headerStringSplit[2]);
+            let useTimeout = false;
             if (w !== pixelWidth || h !== pixelHeight) {
-                setFrameDimensions(w, h);
+                sim = setFrameDimensions(w, h);
                 guiData.changeDimensions = `${w}x${h}`;
                 guiControls.gridSelect.updateDisplay();
+                useTimeout = true;
             }
             let arrays = [];
             let sizeofFloat = 4;
@@ -646,14 +674,20 @@ function loadBinaryDataToSim(sim, file, setFrameDimensions) {
                 }
                 arrays.push(arr);
             }
-            sim.substituteWavefunctionArrays(arrays);
+            if (useTimeout) {
+                Promise.resolve().then(setTimeout(() => {
+                    sim.substituteWavefunctionArrays(arrays);
+                }, 500));
+            } else {
+                sim.substituteWavefunctionArrays(arrays);
+            }
         } else if (headerString.includes('potential')) {
             let w = parseInt(
                 headerStringSplit[0].slice(9));
             let h = parseInt(
                     headerStringSplit[1]);
             if (w !== pixelWidth || h !== pixelHeight) {
-                setFrameDimensions(w, h);
+                sim = setFrameDimensions(w, h);
                 guiData.changeDimensions = `${w}x${h}`;
                 guiControls.gridSelect.updateDisplay();
             }
@@ -667,8 +701,55 @@ function loadBinaryDataToSim(sim, file, setFrameDimensions) {
                 arr[4*i + 3] = 1.0;
             }
             sim.substitutePotentialArray(arr);
+        } else if (headerString.includes('PsiAndV')) {
+            let n = parseInt(headerStringSplit[0].slice(7))
+            let w = parseInt(headerStringSplit[1]);
+            let h = parseInt(headerStringSplit[2]);
+            let useTimeout = false;
+            if (w !== pixelWidth || h !== pixelHeight) {
+                sim = setFrameDimensions(w, h);
+                guiData.changeDimensions = `${w}x${h}`;
+                guiControls.gridSelect.updateDisplay();
+                useTimeout = true;
+            }
+            let sizeofFloat = 4;
+            let wh = pixelWidth*pixelHeight;
+            let potArr = new Float32Array(4*pixelHeight*pixelWidth);
+            for (let i = 0; i < wh; i++) {
+                potArr[4*i] = view.getFloat32(
+                    headerLength + i*sizeofFloat, endian);
+                potArr[4*i + 1] = 0.0;
+                potArr[4*i + 2] = 0.0;
+                potArr[4*i + 3] = 1.0;
+            }
+            sim.substitutePotentialArray(potArr);
+            let arrays = [];
+            for (k = 0; k < n; k++) {
+                let arr = new Float32Array(4*wh);
+                for (let i = 0; i < w*h; i++) {
+                    let re = view.getFloat32(headerLength + sizeofFloat*wh
+                                            + sizeofFloat*(2*(k*wh + i)),
+                                            endian);
+                    let im = view.getFloat32(headerLength + sizeofFloat*wh
+                                            + sizeofFloat*(2*(k*wh + i) + 1),
+                                            endian);
+                    arr[4*i] = re;
+                    arr[4*i + 1] = im;
+                    arr[4*i + 2] = 0.0;
+                    arr[4*i + 3] = 1.0;
+                }
+                arrays.push(arr);
+            }
+            if (useTimeout) {
+                Promise.resolve().then(setTimeout(() => {
+                    sim.substituteWavefunctionArrays(arrays);
+                }, 500));
+            } else {
+                sim.substituteWavefunctionArrays(arrays);
+            }
         }
 
     }
+    // console.log(sim);
     reader.readAsArrayBuffer(file);
 }

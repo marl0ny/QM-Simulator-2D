@@ -55,8 +55,11 @@ let guiControls = {
     recordVideoFolder: null,
     screenshotsFolder: null,
     saveLoad: null,
+    save: null,
+    load: null,
     saveWavefunc: null,
     savePotential: null,
+    saveWavefuncPotential: null,
     loadBinaryDataButton: null,
     loadBinaryData: null,
     numberOfFramesEntry: null,
@@ -315,25 +318,29 @@ guiControls.recordVideoFolder.add({'func': () => {
 
 
 guiControls.saveLoad = guiControls.moreControlsFolder.addFolder(
-    'Save/Load File');
-guiControls.saveWavefunc = guiControls.saveLoad.add(guiData, 
-                                                    'serializeWavefunc'
-                                                    ).name('Save wave function');
-guiControls.savePotential = guiControls.saveLoad.add(guiData, 
-                                                     'serializePotential'
-                                                     ).name('Save potential');
-// guiControls.saveLoad.
-guiControls.saveLoad.add({display: () => {}}, 
-                         'display').name('Open Save:');
+    'Save/Load Data');
+guiControls.save = guiControls.saveLoad.addFolder('Save');
+guiControls.saveWavefunc = guiControls.save.add(guiData, 
+                                                'serializeWavefunc'
+                                                ).name('wavefunction');
+guiControls.savePotential = guiControls.save.add(guiData, 
+                                                'serializePotential'
+                                                ).name('potential');
+guiControls.saveWavefuncPotential = 
+    guiControls.save.add(guiData, 'serializePotentialAndWavefunction'
+                         ).name('both');
+guiControls.load = guiControls.saveLoad.addFolder('Load');
+guiControls.load.add({display: () => {}}, 
+                         'display').name('Load:');
 guiControls.loadBinaryDataButton
-    = guiControls.saveLoad.add({'loadBinaryData': () => {}}, 
-                         'loadBinaryData', true).name(
+    = guiControls.load.add({'loadBinaryData': () => {}}, 
+                            'loadBinaryData', true).name(
                              `<div>
                              <input id="loadBinaryData" type="file" 
                               style="color: #efefef; 
                               text-decoration: none; font-size: 1em;">
                              </div>`
-                         );
+                            );
 guiControls.loadBinaryData = document.getElementById('loadBinaryData');
 
 guiControls.intMethod

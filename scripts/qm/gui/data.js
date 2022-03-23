@@ -69,6 +69,7 @@ let guiData = {
     setToImageDimensions: () => {},
     serializeWavefunc: () => {},
     serializePotential: () => {},
+    serializePotentialAndWavefunction: () => {},
     displayBGImage: false,
     bgBrightness: 1.0,
     invertImage: false,
