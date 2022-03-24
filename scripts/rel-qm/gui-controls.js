@@ -23,7 +23,9 @@ let speedSelect
     = gui.add(guiData , 'stepsPerFrame', 0, 20).name('speed').step(1);
 let potSelect = gui.add(guiData, 'presetPotentials', 
                         ['Free (Periodic)', 'SHO', 'Double Slit',
-                         'Single Slit', 'Step', 'Coulomb']
+                         'Single Slit', 'Step', 
+                         // 'Coulomb'
+                        ]
                         ).name('Preset Potential');
 let mouseSelect = gui.add(guiData, 'mouseSelect', ['New ψ(x, y)', 
                                                     'Draw Barrier', 
@@ -133,9 +135,9 @@ gui.add(guiData, 'm', 0.0, 2.0).name('m');
 // gui.add(guiData, 'c', 1.0, 140.0).name('c');
 // gui.add(guiData, 'measurePosition').name('Measure Position');
 let moreControls = gui.addFolder('More Controls');
-let vectorPotOptions = moreControls.add(guiData, 'presetVectorPotentials', 
+/*let vectorPotOptions = moreControls.add(guiData, 'presetVectorPotentials', 
                                         ['None', 'ay, -bx, 0']
-                                       ).name('Vector Potential');
+                                       ).name('Vector Potential');*/
 let changeGrid = moreControls.add(guiData, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
                                 ).name('Grid Dimensions');

@@ -97,14 +97,14 @@ changeGrid.onChange(
     }
 );
 
-vectorPotOptions.onChange(e => {
+/*vectorPotOptions.onChange(e => {
     if (e === 'None') {
         guiData.useVectorPotential = false;
     } else {
         guiData.useVectorPotential = true;
         sim.presetVectorPotential();     
     }
-});
+});*/
 
 
 guiData.imageFunc = function () {

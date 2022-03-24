@@ -61,4 +61,3 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - When checking the kx/ky slider check box and then sketching a potential barrier the sketch of the potential barrier is not properly drawn.
   - When using Split Step for the Dirac simulation sometimes increasing the mass slider causes the simulation to become unstable and blow up.
 
-For merging with the main branch remove the 13 and 17 point stencil Laplacians, some of the integration methods, and some of the preset potential options. Remove the Nonlocal Int. controls from Leapfrog Nonlinear.

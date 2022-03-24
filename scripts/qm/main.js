@@ -44,7 +44,8 @@ function main() {
             disableNonPowerTwo = false;
             addLaplacianControls(['5 point', '9 point i', 
                                   '9 point ii', 
-                                  '13 point', '17 point']);
+                                  //'13 point', '17 point'
+                                  ]);
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationManager;
             guiControls.dtSlider.max(0.025);
@@ -106,10 +107,11 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
-            addNonlocalControls = true;
+            // addNonlocalControls = true;
             addLaplacianControls(['5 point', '9 point i', 
                                   '9 point ii', 
-                                  '13 point', '17 point']);
+                                  // '13 point', '17 point'
+                                 ]);
             addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncLeapfrog(sim);

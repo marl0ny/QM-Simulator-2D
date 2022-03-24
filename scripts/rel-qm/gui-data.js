@@ -3,8 +3,9 @@ let guiData = {
     w: 2.0, h: 2.0,
     bx: 0.5, by: 0.5, px: 0.0, py: 40.0,
     initMomentumByPxPySliders: false,
-    dt: 0.000028,
-    // dt: 0.001,
+    // dt: 0.000028,
+    // dt: 0.00001,
+    dt: START_DT,
     sigma: 0.05859375,
     // The fundamental constants used are expressed
     // in terms of [Hartree atomic units]
@@ -19,7 +20,7 @@ let guiData = {
     useVectorPotential: false,
     presetVectorPotentials: 'None',
     potentialType: 7,
-    stepsPerFrame: 1,
+    stepsPerFrame: START_SPEED,
     brightness: 1.0,
     initSpinor: {
         rePsi1: 1.0, imPsi1: 0.0,

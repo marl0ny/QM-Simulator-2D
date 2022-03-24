@@ -127,7 +127,7 @@ guiControls.presetPotentialSelect = gui.add(guiData, 'presetPotential',
                                     ['ISW', 'SHO', 'Double Slit',
                                      'Single Slit', 'Step', 'Spike',
                                      'Triple Slit', 'Circle', 'Coulomb',
-                                     'Log', 'Cone'
+                                     // 'Log', 'Cone'
                                     ]).name('Preset Potential');
 guiControls.mouseControls = gui.addFolder('Mouse Usage Controls');
 guiControls.mouseControls.widgets = [];
@@ -336,12 +336,14 @@ guiControls.loadBinaryDataButton
     = guiControls.load.add({'loadBinaryData': () => {}}, 
                             'loadBinaryData', true).name(
                              `<div>
-                             <input id="loadBinaryData" type="file" 
+                             <input id="loadBinaryData" type="file"
+                              accept=".dat"
                               style="color: #efefef; 
                               text-decoration: none; font-size: 1em;">
                              </div>`
                             );
 guiControls.loadBinaryData = document.getElementById('loadBinaryData');
+guiControls.saveLoad.hide();
 
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
@@ -349,7 +351,7 @@ guiControls.methodControl = guiControls.intMethod.add(guiData, 'method',
                                   ['Leapfrog', 'Leapfrog 2', 
                                    // 'Leapfrog 3',
                                    'CN w/ Jacobi', 
-                                   'CNJ w/ B-Field',
+                                   // 'CNJ w/ B-Field',
                                    // 'Split-Op. (CPU FFT)', 
                                    'Split-Op. (GPU FFT)',
                                    'Time Split CN-J',
