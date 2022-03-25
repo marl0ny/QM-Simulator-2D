@@ -27,8 +27,9 @@ function main() {
         let addNonlocalControls = false;
         if (e === 'Leapfrog') {
             SimManager = LeapfrogSimulationManager;
-            guiControls.dtSlider.max(0.01);
-            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            guiData.dtMax = 0.01;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
@@ -36,8 +37,9 @@ function main() {
             addLaplacianControls(['5 point', '9 point']);
         } if (e === 'Leapfrog 2') {
             SimManager = Leapfrog2SimulationManager;
-            guiControls.dtSlider.max(0.01);
-            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            guiData.dtMax = 0.01;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
@@ -48,8 +50,9 @@ function main() {
                                   ]);
         } else if (e === 'CN w/ Jacobi') {
             SimManager = CrankNicolsonSimulationManager;
-            guiControls.dtSlider.max(0.025);
-            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            guiData.dtMax = 0.025;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
@@ -58,8 +61,9 @@ function main() {
             addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
-            guiControls.dtSlider.max(0.025);
-            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            guiData.dtMax = 0.025;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
@@ -67,28 +71,31 @@ function main() {
             addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
-            guiControls.dtSlider.max(0.1);
-            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            guiData.dtMax = 0.1;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = true;
         } else if (e === 'Split-Op. (GPU FFT)') {
             SimManager = SplitStepGPUSimulationManager;
-            guiControls.dtSlider.max(0.1);
+            guiData.dtMax = 0.1;
+            guiControls.dtSlider.max(guiData.dtMax);
             boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             guiControls.dtSlider.setValue(0.03);
             guiControls.dtSlider.updateDisplay();
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
-            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
         } else if (e === 'Time Split CN-J') {
             SimManager = TimeSplitWithCNJNonlinearSimulationManager;
-            guiControls.dtSlider.max(0.025);
-            if (guiData.dt > 0.025) guiData.dt = 0.025;
+            guiData.dtMax = 0.025;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 2;
@@ -101,8 +108,9 @@ function main() {
             });*/
         } else if (e === 'Leapfrog Nonlinear') {
             SimManager = LeapfrogNonlinearSimulationManager;
-            guiControls.dtSlider.max(0.01);
-            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            guiData.dtMax = 0.01;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 3;
@@ -118,14 +126,15 @@ function main() {
             });
         } else if (e === 'Split-Op. Nonlinear') {
             SimManager = SplitStepNonlinearManager;
-            guiControls.dtSlider.max(0.1);
+            guiData.dtMax = 0.1;
+            guiControls.dtSlider.max(guiData.dtMax);
             boundaryTypes = ['Periodic'];
             methodGridSizes = ['256x256', '512x512', '1024x1024'];
             guiControls.dtSlider.setValue(0.03);
             guiControls.dtSlider.updateDisplay();
             guiControls.iter.setValue(2);
             guiControls.iter.updateDisplay();
-            if (guiData.dt > 0.1) guiData.dt = 0.1;
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = true;
             // addLaplacianControls();
@@ -134,9 +143,10 @@ function main() {
                 textEditNonlinearFuncSplitOperator(sim);
             });
         } else if (e === 'Leapfrog 3') {
+            guiData.dtMax = 0.01;
             SimManager = Leapfrog3SimulationManager;
-            guiControls.dtSlider.max(0.01);
-            if (guiData.dt > 0.01) guiData.dt = 0.01;
+            guiControls.dtSlider.max(guiData.dtMax);
+            if (guiData.dt > guiData.dtMax) guiData.dt = guiData.dtMax;
             boundaryTypes = ['Dirichlet', 'Neumann', 'Periodic'];
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 5;

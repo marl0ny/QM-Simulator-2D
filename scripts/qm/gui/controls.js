@@ -74,6 +74,7 @@ let guiControls = {
     assessConvergence: null,
     setTol: null,
     editUniformsFolder: null,
+    massSlider: null,
     dtSlider: null,
     laplaceFolder: null,
     laplaceSelect: null,
@@ -330,8 +331,6 @@ guiControls.saveWavefuncPotential =
     guiControls.save.add(guiData, 'serializePotentialAndWavefunction'
                          ).name('both');
 guiControls.load = guiControls.saveLoad.addFolder('Load');
-guiControls.load.add({display: () => {}}, 
-                         'display').name('Load:');
 guiControls.loadBinaryDataButton
     = guiControls.load.add({'loadBinaryData': () => {}}, 
                             'loadBinaryData', true).name(
@@ -343,7 +342,7 @@ guiControls.loadBinaryDataButton
                              </div>`
                             );
 guiControls.loadBinaryData = document.getElementById('loadBinaryData');
-guiControls.saveLoad.hide();
+// guiControls.saveLoad.hide();
 
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
@@ -362,7 +361,8 @@ guiControls.methodControl = guiControls.intMethod.add(guiData, 'method',
 
 guiControls.editUniformsFolder = 
     guiControls.moreControlsFolder.addFolder('Edit Other Values');
-guiControls.editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
+guiControls.massSlider
+     = guiControls.editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
 guiControls.dtSlider
     = guiControls.editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
 /*guiControls.laplaceSelect

@@ -51,6 +51,7 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - Adding a nonlinear term with additional parameters in the nonlinear entry controls and then subsequently entering a potential also with additional parameters in the edit potential entry controls causes the parameters for the nonlinear controls to be deleted.
   - The transmission and reflection for Split-Operator and the other methods are different, with Split-Operator admitting more transmittance. This is evident with the default step potential example.
  - The Split-Op. method does not work with WebGL 1. This is because when using WebGL 1 the interpolation is set to only LINEAR, which causes the rearrange shader program that handles reverse bit sorting to fail.
+ - For the Coulomb potential when using one of the non-square dimensions the simulation appears to be unconditionally unstable regardless of the time step.
   - For the Dirac simulation, setting the interpolation to NEAREST causes the simulation to be instable, since with this setting the spinors are no longer accessed in a staggered fashion. Add parameters to the gl creation functions that set the interpolation instead of controlling it in the functions themselves.
   - Also for the Dirac simulation, the conserved probability density and current may not be calculated properly given the staggered grid. This may be the reason for the 'checkerboard' numerical artifacts that sometimes appear.
   - The Dirac simulation doesn't seem to be symmetric under time reversal, as can be seen when switching from a positive to a negative time step.
@@ -60,4 +61,5 @@ These proposed changes are only for visual effects and do not correspond to anyt
   - Background image does not work with non 512x512 resolution.
   - When checking the kx/ky slider check box and then sketching a potential barrier the sketch of the potential barrier is not properly drawn.
   - When using Split Step for the Dirac simulation sometimes increasing the mass slider causes the simulation to become unstable and blow up.
+  
 

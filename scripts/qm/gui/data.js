@@ -49,6 +49,7 @@ let guiData = {
     measure: false,
     measurePosition: () => {},
     dt: 0.01,
+    dtMax: 0.01,
     m: 1.0,
     laplace: '5 point',
     laplaceVal: 5,
