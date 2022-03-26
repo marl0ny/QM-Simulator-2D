@@ -27,6 +27,13 @@ let guiData = {
         rePsi3: 0.0, imPsi3: 0.0,
         rePsi4: 0.0, imPsi4: 0.0,
     },
+    initSpinorEnergySolutions: {
+        rePosE1: 0.0, imPosE1: 0.0,
+        rePosE2: 0.0, imPosE2: 0.0,
+        reNegE1: 0.0, imNegE1: 0.0,
+        reNegE2: 0.0, imNegE2: 0.0
+    },
+    useInitSpinorByEnergySolutions: false,
     applyPhaseShift: true,
     showFPS: false, timeMilliseconds: 0,
     showPsi1: true, showPsi2: true, showPsi3: true, showPsi4: true,

@@ -41,12 +41,14 @@ void main () {
     float v = ((y - by)/(sy*sqrt2));
     float re = amp*exp(- u*u - v*v)*cos(2.0*pi*(kx*x + ky*y));
     float im = amp*exp(- u*u - v*v)*sin(2.0*pi*(kx*x + ky*y));
-    if ((kx == 0.0 && ky == 0.0) 
+    fragColor = vec4(mult(initSpinor.xy, complex(re, im)), 
+                     mult(initSpinor.zw, complex(re, im)));
+    /* if ((kx == 0.0 && ky == 0.0) 
         // || m == 0.0
         ) {
         fragColor = vec4(re, im, 0.0, 0.0);
     } else {
         fragColor = vec4(mult(initSpinor.xy, complex(re, im)), 
                          mult(initSpinor.zw, complex(re, im)));
-    }
+    }*/
 }

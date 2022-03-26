@@ -1,20 +1,18 @@
 
 
-
-
-function init4SpinorWavefunc(a0, a1, a2, a3, params) {
-    let normalize = function(values) {
-        sum = 0.0;
-        for (let e of values) {
-            sum += e.x*e.x + e.y*e.y;
-        }
-        let normFact = 1.0/Math.sqrt(sum);
-        for (let i = 0; i < values.length; i++) {
-            values[i].x *= normFact;
-            values[i].y *= normFact;
-        }
-
+let normalize = function(values) {
+    sum = 0.0;
+    for (let e of values) {
+        sum += e.x*e.x + e.y*e.y;
     }
+    let normFact = 1.0/Math.sqrt(sum);
+    for (let i = 0; i < values.length; i++) {
+        values[i].x *= normFact;
+        values[i].y *= normFact;
+    }
+}
+
+function init4SpinorWavefunc(a0, a1, a2, a3, isDag, params) {
     normalize([a0, a1, a2, a3]);
     let add = function(addList) {
         let xSum = 0.0;
@@ -26,6 +24,9 @@ function init4SpinorWavefunc(a0, a1, a2, a3, params) {
         }
         return {x: xSum, y: ySum};
     };
+    let conj = function(z) {
+        return {x: z.x, y: -z.y};
+    }
     let mc = params.m*params.c;
     let px = 2.0*Math.PI*params.px/params.w;
     let py = 2.0*Math.PI*params.py/params.h;
@@ -55,9 +56,17 @@ function init4SpinorWavefunc(a0, a1, a2, a3, params) {
     let e31 = {x: 0.0, y: 0.0};
     let e32 = {x: 0.0, y: 0.0};
     let e33 = {x: p2/den2, y: 0.0};
-    let u0 = add([[a0, e00], [a1, e10], [a2, e20], [a3, e30]]);
-    let u1 = add([[a0, e01], [a1, e11], [a2, e21], [a3, e31]]);
-    let v0 = add([[a0, e02], [a1, e12], [a2, e22], [a3, e32]]);
-    let v1 = add([[a0, e03], [a1, e13], [a2, e23], [a3, e33]]);
+    let u0, u1, v0, v1;
+    if (isDag) {
+        u0 = add([[a0, e00], [a1, conj(e01)], [a2, e02], [a3, e03]]);
+        u1 = add([[a0, conj(e10)], [a1, e11], [a2, e12], [a3, e13]]);
+        v0 = add([[a0, e20], [a1, conj(e21)], [a2, e22], [a3, e23]]);
+        v1 = add([[a0, conj(e30)], [a1, e31], [a2, e32], [a3, e33]]);
+    } else {
+        u0 = add([[a0, e00], [a1, e10], [a2, e20], [a3, e30]]);
+        u1 = add([[a0, e01], [a1, e11], [a2, e21], [a3, e31]]);
+        v0 = add([[a0, e02], [a1, e12], [a2, e22], [a3, e32]]);
+        v1 = add([[a0, e03], [a1, e13], [a2, e23], [a3, e33]]);
+    }
     return {u: [u0, u1], v: [v0, v1]};
 }

@@ -384,19 +384,39 @@ class SplitStepSimulationManager {
         this.uFrames.forEach(e => frames.push(e));
         this.vFrames.forEach(e => frames.push(e));
         let sigma = wavefuncData.sigma;
-        let rePsi1 = guiData.initSpinor.rePsi1;
-        let imPsi1 = guiData.initSpinor.imPsi1; 
-        let rePsi2 = guiData.initSpinor.rePsi2; 
-        let imPsi2 = guiData.initSpinor.imPsi2; 
-        let rePsi3 = guiData.initSpinor.rePsi3; 
-        let imPsi3 = guiData.initSpinor.imPsi3; 
-        let rePsi4 = guiData.initSpinor.rePsi4; 
-        let imPsi4 = guiData.initSpinor.imPsi4; 
-        let init4Spinor = init4SpinorWavefunc({x: rePsi4, y: imPsi4},
-                                              {x: rePsi3, y: imPsi3},
-                                              {x: rePsi2, y: imPsi2},
-                                              {x: rePsi1, y: imPsi1},
-                                              wavefuncData);
+        let rePsi1 = wavefuncData.initSpinor.rePsi1;
+        let imPsi1 = wavefuncData.initSpinor.imPsi1; 
+        let rePsi2 = wavefuncData.initSpinor.rePsi2; 
+        let imPsi2 = wavefuncData.initSpinor.imPsi2; 
+        let rePsi3 = wavefuncData.initSpinor.rePsi3; 
+        let imPsi3 = wavefuncData.initSpinor.imPsi3; 
+        let rePsi4 = wavefuncData.initSpinor.rePsi4; 
+        let imPsi4 = wavefuncData.initSpinor.imPsi4;
+        let rePosE1 = wavefuncData.initSpinorEnergySolutions.rePosE1;
+        let imPosE1 = wavefuncData.initSpinorEnergySolutions.imPosE1;
+        let rePosE2 = wavefuncData.initSpinorEnergySolutions.rePosE2;
+        let imPosE2 = wavefuncData.initSpinorEnergySolutions.imPosE2;
+        let reNegE1 = wavefuncData.initSpinorEnergySolutions.reNegE1;
+        let imNegE1 = wavefuncData.initSpinorEnergySolutions.imNegE1;
+        let reNegE2 = wavefuncData.initSpinorEnergySolutions.reNegE2;
+        let imNegE2 = wavefuncData.initSpinorEnergySolutions.imNegE2;
+        let u1, u2, v1, v2;
+        let init4Spinor;
+        if (!wavefuncData.useInitSpinorByEnergySolutions) {
+            v2 = {x: rePsi4, y: imPsi4};
+            v1 = {x: rePsi3, y: imPsi3};
+            u2 = {x: rePsi2, y: imPsi2};
+            u1 = {x: rePsi1, y: imPsi1};
+            normalize([u1, u2, v1, v2]);
+            init4Spinor = {u: [u1, u2], v: [v1, v2]};
+        } else {
+            v2 = {x: reNegE2, y: imNegE2};
+            v1 = {x: reNegE1, y: imNegE1};
+            u2 = {x: rePosE2, y: imPosE2};
+            u1 = {x: rePosE1, y: imPosE1};
+            init4Spinor = init4SpinorWavefunc(v2, v1, u2, u1,
+                                              false, wavefuncData); 
+        }
         let init2Spinor;
         for (let f of frames) {
             if (f.frameNumber === this.vFrames[0].frameNumber || 

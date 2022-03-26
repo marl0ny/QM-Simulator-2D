@@ -54,17 +54,102 @@ let initPByMouse = newWavefuncOptions.add(guiData,
 let pxControl = newWavefuncOptions.add(guiData, 'px', -50.0, 50.0).name('kx');
 let pyControl = newWavefuncOptions.add(guiData, 'py', -50.0, 50.0).name('ky');
 let initSpinorOptions = newWavefuncOptions.addFolder('Spinor Initialization Options');
+let initSpinorByComponent = initSpinorOptions.addFolder('By Component');
+let initSpinorByEnergySolutions = initSpinorOptions.addFolder('By +/- Energy Solutions');
+let userChangedCompoenentSliders = true;
+let userChangedEnergyComponentSliders = true;
 {
+    let components = {
+        rePsi1: 'Re(ψ1)', imPsi1: 'Im(ψ1)',
+        rePsi2: 'Re(ψ2)', imPsi2: 'Im(ψ2)',
+        rePsi3: 'Re(ψ3)', imPsi3: 'Im(ψ3)',
+        rePsi4: 'Re(ψ4)', imPsi4: 'Im(ψ4)',
+    }
+    let energyComponents = {
+        rePosE1: 'Re(+E1)', imPosE1: 'Im(+E1)', 
+        rePosE2: 'Re(+E2)', imPosE2: 'Im(+E2)',
+        reNegE1: 'Re(-E1)', imNegE1: 'Im(-E1)',
+        reNegE2: 'Re(-E2)', imNegE2: 'Im(-E2)'
+    };
+    let componentsSliders = [];
+    let energyComponentsSliders = [];
+    for (let k of Object.keys(components)) {
+        let s = initSpinorByComponent.add(guiData.initSpinor, 
+                                          k, -1.0, 1.0).name(components[k]).step(0.01);
+        componentsSliders.push(s);
+    }
+    for (let k of Object.keys(energyComponents)) {
+        let s = initSpinorByEnergySolutions.add(guiData.initSpinorEnergySolutions,
+                                                k, -1.0, 1.0
+                                               ).name(energyComponents[k]).step(0.01);
+        energyComponentsSliders.push(s);
+    }
+    for (let s of componentsSliders) {
+        s.onChange(() => {
+            guiData.useInitSpinorByEnergySolutions = false;
+            let a1 = {x: guiData.initSpinor.rePsi1, 
+                      y: guiData.initSpinor.imPsi1};
+            let a2 = {x: guiData.initSpinor.rePsi2, 
+                        y: guiData.initSpinor.imPsi2};
+            let a3 = {x: guiData.initSpinor.rePsi3, 
+                        y: guiData.initSpinor.imPsi3};
+            let a4 = {x: guiData.initSpinor.rePsi4,
+                        y: guiData.initSpinor.imPsi4};
+            let spinor = init4SpinorWavefunc(a1, a2, a3, a4, false, guiData);
+            guiData.initSpinorEnergySolutions.rePosE1 = spinor.u[0].x;
+            guiData.initSpinorEnergySolutions.imPosE1 = spinor.u[0].y;
+            guiData.initSpinorEnergySolutions.rePosE2 = spinor.u[1].x;
+            guiData.initSpinorEnergySolutions.imPosE2 = spinor.u[1].y;
+            guiData.initSpinorEnergySolutions.reNegE1 = spinor.v[0].x;
+            guiData.initSpinorEnergySolutions.imNegE1 = spinor.v[0].y;
+            guiData.initSpinorEnergySolutions.reNegE2 = spinor.v[1].x;
+            guiData.initSpinorEnergySolutions.imNegE2 = spinor.v[1].y;
+            for (let t of energyComponentsSliders) {
+                t.updateDisplay();
+            }
+        });
+    }
+    for (let s of energyComponentsSliders) {
+        s.onChange(() => {
+            guiData.useInitSpinorByEnergySolutions = true;
+            let a1 = {x: guiData.initSpinorEnergySolutions.rePosE1, 
+                      y: guiData.initSpinorEnergySolutions.imPosE1};
+            let a2 = {x: guiData.initSpinorEnergySolutions.rePosE2, 
+                      y: guiData.initSpinorEnergySolutions.imPosE2};
+            let a3 = {x: guiData.initSpinorEnergySolutions.reNegE1, 
+                      y: guiData.initSpinorEnergySolutions.imNegE1};
+            let a4 = {x: guiData.initSpinorEnergySolutions.reNegE2,
+                      y: guiData.initSpinorEnergySolutions.imNegE2};
+            let spinor = init4SpinorWavefunc(a4, a3, a2, a1, true, guiData);
+            guiData.initSpinor.rePsi1 = spinor.u[0].x;
+            guiData.initSpinor.imPsi1 = spinor.u[0].y;
+            guiData.initSpinor.rePsi2 = spinor.u[1].x;
+            guiData.initSpinor.imPsi2 = spinor.u[1].y;
+            guiData.initSpinor.rePsi3 = spinor.v[0].x;
+            guiData.initSpinor.imPsi3 = spinor.v[0].y;
+            guiData.initSpinor.rePsi4 = spinor.v[1].x;
+            guiData.initSpinor.imPsi4 = spinor.v[1].y;
+            // userChangedCompoenentSliders = false;
+            for (let t of componentsSliders) {
+                t.updateDisplay();
+            }
+            // userChangedCompoenentSliders = true;
+
+        });
+    }
+}
+/*{
     let components = ['Re(+E1)', 'Im(+E1)', 'Re(+E2)', 'Im(+E2)',
                     'Re(-E1)', 'Im(-E1)', 'Re(-E2)', 'Im(-E2)'];
     for (let i = 0; i < components.length; i++) {
         let e = components[i];
         let string = e.substring(0, 2).toLowerCase()
                      + 'Psi' + Math.floor(i/2 + 1).toString();
-        initSpinorOptions.add(guiData.initSpinor, string,
+        let a = initSpinorOptions.add(guiData.initSpinor, string,
                               -1.0, 1.0).name(e).step(0.02);
+        a.hidden = true;
     }
-}
+}*/
 let drawBarrierOptions = mouseOptions.addFolder('Draw/Erase Barrier');
 let probInBoxFolder = mouseOptions.addFolder('Probability in Box');
 let probShow = probInBoxFolder.add(guiData, 'probInRegion').name('Probability');
