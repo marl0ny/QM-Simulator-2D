@@ -420,3 +420,55 @@ function createNonlinearExpPotentialShader(expr, uniforms) {
     }
     return shaderID;
 }
+
+
+function createVectorPotentialShader(exprX, exprY, uniforms) {
+    let splitTemplateShader = [`
+    precision highp float;
+    #if __VERSION__ == 300
+    #define texture2D texture
+    in vec2 fragTexCoord;
+    out vec4 fragColor;
+    #else
+    #define fragColor gl_FragColor
+    varying highp vec2 fragTexCoord;
+    #endif
+    const float pi = 3.141592653589793;
+    `, // 0
+    '// UNIFORMS HERE', // 1
+    `void main() {
+        float x = fragTexCoord.x;
+        float y = fragTexCoord.y;
+    `, // 2
+    '    float xValue = ', // 3
+    '    float yValue = ', // 4
+    `    fragColor = vec4(xValue, yValue, 0.0, 1.0);
+    }
+    `
+    ]
+    splitTemplateShader[3] = splitTemplateShader[3] + exprX + ';';
+    splitTemplateShader[4] = splitTemplateShader[4] + exprY + ';';
+    for (let uniform of uniforms) {
+        splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
+    }
+    // splitTemplateShader[1] += ';';
+    let templateShaderText = '';
+    for (let s of splitTemplateShader) {
+        templateShaderText += s + '\n';
+    }
+    console.log(templateShaderText);
+    if (context === "webgl2")
+        templateShaderText = "#version 300 es\n" + templateShaderText;
+    let shaderID = gl.createShader(gl.FRAGMENT_SHADER);
+    if (shaderID === 0) {
+        return null;
+    }
+    gl.shaderSource(shaderID, templateShaderText);
+    gl.compileShader(shaderID);
+    if (!gl.getShaderParameter(shaderID, gl.COMPILE_STATUS)) {
+        gl.deleteShader(shaderID);
+        return null;
+    }
+    return shaderID;
+    
+}

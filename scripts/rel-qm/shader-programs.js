@@ -63,7 +63,7 @@ let expKineticProgram = makeProgram(vShader, splitStepKineticShader);
 let expPotentialProgram = makeProgram(vShader, splitStepPotentialShader);
 let rearrangeProgram = makeProgram(vShader, rearrangeShader);
 
-gl.deleteShader(vShader);
+// gl.deleteShader(vShader);
 gl.deleteShader(initWaveShader);
 gl.deleteShader(initWave2Shader);
 gl.deleteShader(stepUpShader);

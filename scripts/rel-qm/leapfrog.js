@@ -285,6 +285,13 @@ class LeapfrogSimulationManager {
         draw();
         unbind();
     }
+    textVectorPotential(program, uniforms) {
+        this.vectorPotentialFrame.useProgram(program);
+        this.vectorPotentialFrame.bind();
+        this.vectorPotentialFrame.setFloatUniforms(uniforms);
+        draw();
+        unbind();
+    }
     probBoxDisplay(guiData) {
         this.guiFrame.useProgram(guiRectProgram);
         this.guiFrame.bind();

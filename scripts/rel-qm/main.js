@@ -189,6 +189,12 @@ function reshapePotential(mode, data) {
     sim.reshapePotential(drawMode, mode, data);
 }
 
+let shader = createVectorPotentialShader('x', 'y', []);
+if (shader === null) {
+    console.log('shader is null');
+}
+let program = makeProgram(vShader, shader);
+
 function getUnnormalizedProbDist() {
     return sim.getUnnormalizedProbDist();
 }

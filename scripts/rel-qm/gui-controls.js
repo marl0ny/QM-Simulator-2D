@@ -56,8 +56,55 @@ let pyControl = newWavefuncOptions.add(guiData, 'py', -50.0, 50.0).name('ky');
 let initSpinorOptions = newWavefuncOptions.addFolder('Spinor Initialization Options');
 let initSpinorByComponent = initSpinorOptions.addFolder('By Component');
 let initSpinorByEnergySolutions = initSpinorOptions.addFolder('By +/- Energy Solutions');
-let userChangedCompoenentSliders = true;
-let userChangedEnergyComponentSliders = true;
+let componentsSliders = [];
+let energyComponentsSliders = [];
+
+let pxPyControlsOnChange = function() {
+    if (!guiData.useInitSpinorByEnergySolutions) {
+        let a1 = {x: guiData.initSpinor.rePsi1, 
+            y: guiData.initSpinor.imPsi1};
+        let a2 = {x: guiData.initSpinor.rePsi2, 
+                    y: guiData.initSpinor.imPsi2};
+        let a3 = {x: guiData.initSpinor.rePsi3, 
+                    y: guiData.initSpinor.imPsi3};
+        let a4 = {x: guiData.initSpinor.rePsi4,
+                    y: guiData.initSpinor.imPsi4};
+        let spinor = init4SpinorWavefunc(a1, a2, a3, a4, true, guiData);
+        guiData.initSpinorEnergySolutions.rePosE1 = spinor.v[1].x;
+        guiData.initSpinorEnergySolutions.imPosE1 = spinor.v[1].y;
+        guiData.initSpinorEnergySolutions.rePosE2 = spinor.v[0].x;
+        guiData.initSpinorEnergySolutions.imPosE2 = spinor.v[0].y;
+        guiData.initSpinorEnergySolutions.reNegE1 = spinor.u[1].x;
+        guiData.initSpinorEnergySolutions.imNegE1 = spinor.u[1].y;
+        guiData.initSpinorEnergySolutions.reNegE2 = spinor.u[0].x;
+        guiData.initSpinorEnergySolutions.imNegE2 = spinor.u[0].y;
+        for (let t of energyComponentsSliders) {
+            t.updateDisplay();
+        }
+    } else {
+        let a1 = {x: guiData.initSpinorEnergySolutions.rePosE1, 
+                    y: guiData.initSpinorEnergySolutions.imPosE1};
+        let a2 = {x: guiData.initSpinorEnergySolutions.rePosE2, 
+                    y: guiData.initSpinorEnergySolutions.imPosE2};
+        let a3 = {x: guiData.initSpinorEnergySolutions.reNegE1, 
+                    y: guiData.initSpinorEnergySolutions.imNegE1};
+        let a4 = {x: guiData.initSpinorEnergySolutions.reNegE2,
+                    y: guiData.initSpinorEnergySolutions.imNegE2};
+        let spinor = init4SpinorWavefunc(a4, a3, a2, a1, false, guiData);
+        guiData.initSpinor.rePsi1 = spinor.u[0].x;
+        guiData.initSpinor.imPsi1 = spinor.u[0].y;
+        guiData.initSpinor.rePsi2 = spinor.u[1].x;
+        guiData.initSpinor.imPsi2 = spinor.u[1].y;
+        guiData.initSpinor.rePsi3 = spinor.v[0].x;
+        guiData.initSpinor.imPsi3 = spinor.v[0].y;
+        guiData.initSpinor.rePsi4 = spinor.v[1].x;
+        guiData.initSpinor.imPsi4 = spinor.v[1].y;
+        for (let t of componentsSliders) {
+            t.updateDisplay();
+        }
+    }
+}
+
 {
     let components = {
         rePsi1: 'Re(ψ1)', imPsi1: 'Im(ψ1)',
@@ -71,8 +118,6 @@ let userChangedEnergyComponentSliders = true;
         reNegE1: 'Re(-E1)', imNegE1: 'Im(-E1)',
         reNegE2: 'Re(-E2)', imNegE2: 'Im(-E2)'
     };
-    let componentsSliders = [];
-    let energyComponentsSliders = [];
     for (let k of Object.keys(components)) {
         let s = initSpinorByComponent.add(guiData.initSpinor, 
                                           k, -1.0, 1.0).name(components[k]).step(0.01);
@@ -87,57 +132,23 @@ let userChangedEnergyComponentSliders = true;
     for (let s of componentsSliders) {
         s.onChange(() => {
             guiData.useInitSpinorByEnergySolutions = false;
-            let a1 = {x: guiData.initSpinor.rePsi1, 
-                      y: guiData.initSpinor.imPsi1};
-            let a2 = {x: guiData.initSpinor.rePsi2, 
-                        y: guiData.initSpinor.imPsi2};
-            let a3 = {x: guiData.initSpinor.rePsi3, 
-                        y: guiData.initSpinor.imPsi3};
-            let a4 = {x: guiData.initSpinor.rePsi4,
-                        y: guiData.initSpinor.imPsi4};
-            let spinor = init4SpinorWavefunc(a1, a2, a3, a4, false, guiData);
-            guiData.initSpinorEnergySolutions.rePosE1 = spinor.u[0].x;
-            guiData.initSpinorEnergySolutions.imPosE1 = spinor.u[0].y;
-            guiData.initSpinorEnergySolutions.rePosE2 = spinor.u[1].x;
-            guiData.initSpinorEnergySolutions.imPosE2 = spinor.u[1].y;
-            guiData.initSpinorEnergySolutions.reNegE1 = spinor.v[0].x;
-            guiData.initSpinorEnergySolutions.imNegE1 = spinor.v[0].y;
-            guiData.initSpinorEnergySolutions.reNegE2 = spinor.v[1].x;
-            guiData.initSpinorEnergySolutions.imNegE2 = spinor.v[1].y;
-            for (let t of energyComponentsSliders) {
-                t.updateDisplay();
-            }
+            pxPyControlsOnChange();
         });
     }
     for (let s of energyComponentsSliders) {
         s.onChange(() => {
             guiData.useInitSpinorByEnergySolutions = true;
-            let a1 = {x: guiData.initSpinorEnergySolutions.rePosE1, 
-                      y: guiData.initSpinorEnergySolutions.imPosE1};
-            let a2 = {x: guiData.initSpinorEnergySolutions.rePosE2, 
-                      y: guiData.initSpinorEnergySolutions.imPosE2};
-            let a3 = {x: guiData.initSpinorEnergySolutions.reNegE1, 
-                      y: guiData.initSpinorEnergySolutions.imNegE1};
-            let a4 = {x: guiData.initSpinorEnergySolutions.reNegE2,
-                      y: guiData.initSpinorEnergySolutions.imNegE2};
-            let spinor = init4SpinorWavefunc(a4, a3, a2, a1, true, guiData);
-            guiData.initSpinor.rePsi1 = spinor.u[0].x;
-            guiData.initSpinor.imPsi1 = spinor.u[0].y;
-            guiData.initSpinor.rePsi2 = spinor.u[1].x;
-            guiData.initSpinor.imPsi2 = spinor.u[1].y;
-            guiData.initSpinor.rePsi3 = spinor.v[0].x;
-            guiData.initSpinor.imPsi3 = spinor.v[0].y;
-            guiData.initSpinor.rePsi4 = spinor.v[1].x;
-            guiData.initSpinor.imPsi4 = spinor.v[1].y;
-            // userChangedCompoenentSliders = false;
-            for (let t of componentsSliders) {
-                t.updateDisplay();
-            }
-            // userChangedCompoenentSliders = true;
-
+            pxPyControlsOnChange();
         });
     }
 }
+
+pxControl.onChange(e => {
+    pxPyControlsOnChange();
+});
+pyControl.onChange(e => {
+    pxPyControlsOnChange();
+});
 /*{
     let components = ['Re(+E1)', 'Im(+E1)', 'Re(+E2)', 'Im(+E2)',
                     'Re(-E1)', 'Im(-E1)', 'Re(-E2)', 'Im(-E2)'];
@@ -221,6 +232,138 @@ let moreControls = gui.addFolder('More Controls');
 let vectorPotOptions = moreControls.add(guiData, 'presetVectorPotentials', 
                                         ['None', 'ay, -bx, 0']
                                        ).name('Vector Potential');
+let textEditVectorPotFolder = moreControls.addFolder('Text Edit Vector Potential');
+let xVecPotEntry = textEditVectorPotFolder.add(
+    guiData, 'enterVectorPotentialX').name('Ax');
+let yVecPotEntry = textEditVectorPotFolder.add(
+    guiData, 'enterVectorPotentialY').name('Ay');
+let textEditVectorPotVariablesFolder
+     = textEditVectorPotFolder.addFolder('Edit Variables');
+let textEditVectorPotVariablesControls = [];
+
+function textEditVectorPotententialFunc() {
+    guiData.useVectorPotential = true;
+    let strExprX = guiData.enterVectorPotentialX;
+    let strExprY = guiData.enterVectorPotentialY;
+    if (strExprX.includes('^') || strExprX.includes('**')) {
+        strExprX = powerOpsToCallables(strExprX, false);
+    }
+    if (strExprY.includes('^') || strExprY.includes('**')) {
+        strExprY = powerOpsToCallables(strExprY, false);
+    }
+    let exprX = replaceIntsToFloats(strExprX);
+    let exprY = replaceIntsToFloats(strExprY);
+    if (exprX === guiData.enterVectorPotentialXExpr && 
+        exprY === guiData.enterVectorPotentialYExpr) {
+        return;
+    }
+    for (let e of textEditVectorPotVariablesControls) {
+        e.remove();
+    }
+    textEditVectorPotVariablesControls = [];
+    guiData.enterVectorPotentialXExpr = exprX;
+    guiData.enterVectorPotentialYExpr = exprY;
+    let uniformsX = getVariables(exprX);
+    let uniformsY = getVariables(exprY);
+    let uniforms = new Set();
+    for (let u of [uniformsX, uniformsY]) {
+        for (let v of u.values()) {
+            if (v !== 'x' && v !== 'y') {
+                console.log(v);
+                uniforms.add(v);
+            }
+        }
+    }
+    let shader = createVectorPotentialShader(exprX, exprY, uniforms);
+    if (shader === null) return;
+    let program = makeProgram(vShader, shader);
+    console.log('');
+    console.log(exprX);
+    console.log(exprY);
+    console.log(uniforms);
+    console.log(program);
+    let f = (uniforms) => {
+        sim.textVectorPotential(program, uniforms);
+    }
+    let newUniformVals = {};
+    for (let u of uniforms) {
+        newUniformVals[u] = 1.0;
+    }
+    for (let e of uniforms) {
+        let slider = textEditVectorPotFolder.add(newUniformVals, e, 0.0, 10.0);
+        slider.onChange(val => {
+            newUniformVals[e] = val;
+            f(newUniformVals);   
+        });
+        textEditVectorPotVariablesControls.push(slider);
+    }
+}
+
+xVecPotEntry.onChange(() => textEditVectorPotententialFunc());
+yVecPotEntry.onChange(() => textEditVectorPotententialFunc());
+
+/*
+function textEditPotentialFunc() {
+        if (guiControls.textEditSubFolder.closed) {
+            guiControls.textEditSubFolder.open();
+        }
+        let expr = guiData.enterPotential;
+        if (expr.includes('^') || expr.includes('**')) {
+            expr = powerOpsToCallables(expr, false);
+        }
+        expr = replaceIntsToFloats(expr);
+        if (expr === guiData.enterPotentialExpr) return;
+        guiData.enterPotentialExpr = expr;
+        for (let e of guiControls.textEditSubFolder.controls) {
+            console.log(e);
+            e.remove();
+        }
+        guiControls.textEditSubFolder.controls = [];
+        guiData.enterPotentialExpr = expr;
+        let uniforms = getVariables(expr);
+        uniforms.delete('x');
+        uniforms.delete('y');
+        let shader = createPotentialShader(expr, uniforms);
+        if (shader === null) {
+            return;
+        }
+        let program = makeProgram(vShader, shader);
+
+        let f = (uniforms) => {
+            xyScales = {};
+            if (guiData.useTextureCoordinates) {
+                xyScales = {xScale: 1.0, yScale: 1.0};
+            } else {
+                xyScales = {xScale: width, yScale: height};
+            }
+            for (let e of Object.keys(xyScales)) {
+                uniforms[e] = xyScales[e];
+            }
+            sim.textPotential(program, uniforms);
+            guiData.potChanged = true;
+            guiData.rScaleV = 0.5;
+        };
+        let newUniformVals = {};
+        for (let u of uniforms) {
+            newUniformVals[u] = 1.0;
+        }
+        f(newUniformVals);
+        for (let e of uniforms) {
+            let slider = guiControls.textEditSubFolder.add(
+                newUniformVals, e,
+                0.0, 10.0
+            );
+            slider.onChange(val => {
+                newUniformVals[e] = val;
+                f(newUniformVals);
+            });
+            guiControls.textEditSubFolder.controls.push(slider);
+        }
+    }
+
+*/
+
+
 let changeGrid = moreControls.add(guiData, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
                                 ).name('Grid Dimensions');
@@ -388,12 +531,17 @@ let guiControls = {
     initPByMouse:  initPByMouse,
     pxControl: pxControl,
     pyControl: pyControl,
+    componentSliders: componentsSliders,
+    energyComponentsSliders: energyComponentsSliders,
     drawBarrierOptions: drawBarrierOptions,
     viewOptions: viewOptions,
     probInBoxFolder: probInBoxFolder,
     probShow: probShow,
     potViewOptions: potViewOptions,
     moreControls: moreControls,
+    textEditVectorPotFolder: textEditVectorPotFolder,
+    xVecPotEntry: xVecPotEntry,
+    yVecPotEntry: yVecPotEntry,
     dtControl: dtControl,
     changeGrid: changeGrid,
     imageOptions: imageOptions,
@@ -502,6 +650,7 @@ let mousePos = function(ev, mode) {
 canvas.addEventListener("mouseup", ev => {
     guiControls.pxControl.updateDisplay();
     guiControls.pyControl.updateDisplay();
+    pxPyControlsOnChange();
     mousePos(ev, 'up');
     guiData.mouseCount = 0;
     mouseUse = false;
