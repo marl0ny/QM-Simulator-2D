@@ -14,6 +14,7 @@ Also provided is a (work in progress) [simulation of a 2D relativistic quantum p
 - [jszip](https://stuk.github.io/jszip/) by [Stuart Knightley](https://github.com/Stuk), [David Duponchel](https://github.com/dduponchel), Franz Buchinger, António Afonso
 
 # References
+
  - Gould, H., Tobochnik J., Christian W. (2007). Quantum Systems.
  In <em>An Introduction to Computer Simulation Methods</em>, 
 chapter 16. Pearson Addison-Wesley.
@@ -38,11 +39,24 @@ Split-Step:
 
  - Bauke, H., Keitel, C. (2011). Accelerating the Fourier split operator method via graphics processing units. <em>Computer Physics Communications, 182(12)</em>, 2454-2463. [https://doi.org/10.1016/j.cpc.2011.07.003](https://doi.org/10.1016/j.cpc.2011.07.003)
 
+ Spin, Vector Potential, and Magnetic Fields
+
+- Shankar, R. (1994). Spin. In <em>Principles of Quantum Mechanics</em>, chapter 14. Springer.
+
+ Pauli Equation:
+
+ - Wikipedia contributors. (2022, August 5). [Pauli equation](https://en.wikipedia.org/wiki/Pauli_equation). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+ - Shankar, R. (1994). The Dirac Equation. In <em>Principles of Quantum Mechanics</em>, chapter 20. Springer.
+
+
  Dirac Equation:
 
  - Wikipedia contributors. (2021, June 16). [Dirac equation](https://en.wikipedia.org/wiki/Dirac_equation). In <em>Wikipedia, The Free Encyclopedia</em>.
 
  - Wikipedia contributors. (2021, August 5). [Dirac spinor](https://en.wikipedia.org/wiki/Dirac_spinor). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+ - Shankar, R. (1994). The Dirac Equation. In <em>Principles of Quantum Mechanics<em>, chapter 20. Springer.
 
  - Hammer, R., Pötz W. (2014). Staggered grid leap-frog scheme for the (2 + 1)D Dirac equation. <em>Computer Physics Communications, 185(1)</em>, 40-53. [https://doi.org/10.1016/j.cpc.2013.08.013](https://doi.org/10.1016/j.cpc.2013.08.013)
 

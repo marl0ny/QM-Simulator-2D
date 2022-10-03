@@ -33,7 +33,7 @@ let mouseSelect = gui.add(guiData, 'mouseSelect', ['New ψ(x, y)',
 let presetPotOptions = gui.addFolder('Preset Potential Options');
 let additions = [];
 additions.push(presetPotOptions.add(guiData.presetPotentialSettings, 
-                                    'a', 0.0, 11000/guiData.c));
+    'a', 0.0, 100000/guiData.c));
 additions.push(presetPotOptions.add(guiData.presetPotentialSettings, 
                                     'y0', 0.25, 0.75));
 additions.push(presetPotOptions.add(guiData.presetPotentialSettings, 
@@ -302,68 +302,6 @@ function textEditVectorPotententialFunc() {
 xVecPotEntry.onChange(() => textEditVectorPotententialFunc());
 yVecPotEntry.onChange(() => textEditVectorPotententialFunc());
 
-/*
-function textEditPotentialFunc() {
-        if (guiControls.textEditSubFolder.closed) {
-            guiControls.textEditSubFolder.open();
-        }
-        let expr = guiData.enterPotential;
-        if (expr.includes('^') || expr.includes('**')) {
-            expr = powerOpsToCallables(expr, false);
-        }
-        expr = replaceIntsToFloats(expr);
-        if (expr === guiData.enterPotentialExpr) return;
-        guiData.enterPotentialExpr = expr;
-        for (let e of guiControls.textEditSubFolder.controls) {
-            console.log(e);
-            e.remove();
-        }
-        guiControls.textEditSubFolder.controls = [];
-        guiData.enterPotentialExpr = expr;
-        let uniforms = getVariables(expr);
-        uniforms.delete('x');
-        uniforms.delete('y');
-        let shader = createPotentialShader(expr, uniforms);
-        if (shader === null) {
-            return;
-        }
-        let program = makeProgram(vShader, shader);
-
-        let f = (uniforms) => {
-            xyScales = {};
-            if (guiData.useTextureCoordinates) {
-                xyScales = {xScale: 1.0, yScale: 1.0};
-            } else {
-                xyScales = {xScale: width, yScale: height};
-            }
-            for (let e of Object.keys(xyScales)) {
-                uniforms[e] = xyScales[e];
-            }
-            sim.textPotential(program, uniforms);
-            guiData.potChanged = true;
-            guiData.rScaleV = 0.5;
-        };
-        let newUniformVals = {};
-        for (let u of uniforms) {
-            newUniformVals[u] = 1.0;
-        }
-        f(newUniformVals);
-        for (let e of uniforms) {
-            let slider = guiControls.textEditSubFolder.add(
-                newUniformVals, e,
-                0.0, 10.0
-            );
-            slider.onChange(val => {
-                newUniformVals[e] = val;
-                f(newUniformVals);
-            });
-            guiControls.textEditSubFolder.controls.push(slider);
-        }
-    }
-
-*/
-
-
 let changeGrid = moreControls.add(guiData, 'gridDimensions', 
                                   ['256x256', '512x512', '1024x1024']
                                 ).name('Grid Dimensions');
@@ -542,6 +480,7 @@ let guiControls = {
     textEditVectorPotFolder: textEditVectorPotFolder,
     xVecPotEntry: xVecPotEntry,
     yVecPotEntry: yVecPotEntry,
+    textEditVectorPotVariablesControls: textEditVectorPotVariablesControls,
     dtControl: dtControl,
     changeGrid: changeGrid,
     imageOptions: imageOptions,

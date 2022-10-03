@@ -446,8 +446,8 @@ function createVectorPotentialShader(exprX, exprY, uniforms) {
     }
     `
     ]
-    splitTemplateShader[3] = splitTemplateShader[3] + exprX + ';';
-    splitTemplateShader[4] = splitTemplateShader[4] + exprY + ';';
+    splitTemplateShader[3] = splitTemplateShader[3] + exprX + ' + 1.0e-7;';
+    splitTemplateShader[4] = splitTemplateShader[4] + exprY + ' + 1.0e-7;';
     for (let uniform of uniforms) {
         splitTemplateShader[1] += '\n' + `uniform float ${uniform};`;
     }
