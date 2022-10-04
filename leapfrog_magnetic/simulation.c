@@ -295,7 +295,8 @@ void timestep(const struct SimParams *params,
 
         // With px
         bind_quad(quads->gradx_wavefunc_p, programs->complex_multiply);
-        set_vec4_uniform("a", 0.0, 1.0/params->hbar, 0.0, 1.0/params->hbar);
+        set_vec4_uniform("a", 0.0, 1.0/params->hbar,
+                              0.0, 1.0/params->hbar);
         set_sampler2D_uniform("tex1", quads->px);
         set_sampler2D_uniform("tex2", quads->wavefunc_p);
         draw_unbind();
@@ -307,7 +308,8 @@ void timestep(const struct SimParams *params,
 
         // With py
         bind_quad(quads->grady_wavefunc_p, programs->complex_multiply);
-        set_vec4_uniform("a", 0.0, 1.0/params->hbar, 0.0, 1.0/params->hbar);
+        set_vec4_uniform("a", 0.0, 1.0/params->hbar,
+                              0.0, 1.0/params->hbar);
         set_sampler2D_uniform("tex1", quads->py);
         set_sampler2D_uniform("tex2", quads->wavefunc_p);
         draw_unbind();

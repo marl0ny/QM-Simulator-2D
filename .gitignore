@@ -2,3 +2,12 @@
 *~
 /__pycache__
 !.gitignore
+*.swp
+/imgui
+/*/imgui
+*.o
+~*
+.DS_Store
+*.zip
+*.txt
+program

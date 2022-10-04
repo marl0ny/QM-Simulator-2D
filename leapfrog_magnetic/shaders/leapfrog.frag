@@ -142,14 +142,16 @@ void main() {
                                        + bz*sigmaZ(psi1));
     }
     if (useFTForMomentumTerms) {
+        // 1/(2m)(p - qA/c)^2 = p^2/(2m) - q/(mc) Ap + q^2A^2/(2m c^2)
+        //  = p^2/(2m) + q/(mc) i hbar A (d/dr) + q^2A^2/(2m c^2)
         complex2 p2Psi1 = texture(p2wavefuncTex, UV);
         gradXPsi1 = texture(gradXWavefuncTex, UV);
         gradYPsi1 = texture(gradYWavefuncTex, UV);
         float ax = potential.x;
         float ay = potential.y;
         complex2 k1 = p2Psi1/(2.0*m);
-        complex2 k2 = hbar*q*(multiply(IMAG_UNIT, ax*gradXPsi1)
-                                + multiply(IMAG_UNIT, ay*gradYPsi1))/(m*c);
+        complex2 k2 = -q*(multiply(-IMAG_UNIT*hbar, ax*gradXPsi1)
+                          + multiply(-IMAG_UNIT*hbar, ay*gradYPsi1))/(m*c);
         hPsi1 = k1 + k2 + spinInt + potentialPsi1;
     } else {
         // complex2 laplacianPsi1 = laplacian2ndOrder4Point(wavefuncTex1);
@@ -158,8 +160,8 @@ void main() {
         gradXPsi1 = centredXDerivative4thOrder(wavefuncTex1);
         gradYPsi1 = centredYDerivative4thOrder(wavefuncTex1);
         float ax = potential.x, ay = potential.y;
-        complex2 k2 = hbar*q*(multiply(IMAG_UNIT, ax*gradXPsi1)
-                               + multiply(IMAG_UNIT, ay*gradYPsi1))/(m*c);
+        complex2 k2 = -q*(multiply(-IMAG_UNIT*hbar, ax*gradXPsi1)
+                          + multiply(-IMAG_UNIT*hbar, ay*gradYPsi1))/(m*c);
         hPsi1 = k1 + k2 + spinInt + potentialPsi1;
     }
     complex2 nonlinear = complex2(0.0, 0.0, 0.0, 0.0);

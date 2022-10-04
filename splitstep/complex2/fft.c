@@ -90,7 +90,7 @@ void _fft(int is_inverse, struct Complex2* z, int n) {
     }
     #endif
     int block_total;
-    float sign = (is_inverse)? 1.0: -1.0;
+    float sign = (is_inverse)? -1.0: 1.0;
     for (int block_size = 2; block_size <= n; block_size *= 2) {
         block_total = n/block_size;
         for (int j = 0; j < n; j += block_size) {
