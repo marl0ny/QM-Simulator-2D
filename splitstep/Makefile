@@ -25,11 +25,13 @@ LIBS = -ldl -L/opt/homebrew/lib -lglfw\
        -framework Cocoa -framework Carbon
 else
 INCLUDE =  -I${PWD} -I${PWD}/gl_wrappers -I${PWD}/complex2 \
-           -I${IMGUI_DIR} -I${IMGUI_DIR}/backends -fopenmp
+           -I${IMGUI_DIR} -I${IMGUI_DIR}/backends
 LIBS = -ldl -lm -lGL -lGLEW -lglfw -fopenmp=libiomp5
 endif
 
 TARGET = ${PWD}/program
+
+WEB_TARGET = main.js
 
 C_SOURCES = ${PWD}/gl_wrappers/gl_wrappers.c ${PWD}/complex2/fft.c \
             ${PWD}/complex2/stencils.c ${PWD}/fft_gl.c ${PWD}/summation_gl.c \
@@ -45,6 +47,10 @@ all: ${TARGET}
 
 ${TARGET}: ${OBJECTS} ${IMGUI_OBJECTS}
 	${CPP_COMPILE} ${FLAGS} -o $@ $^ ${LIBS}
+
+${WEB_TARGET}: ${C_SOURCES} ${CPP_SOURCES} ${IMGUI_SOURCES}
+	emcc -o $@ $^ ${INCLUDE} -v -s WASM=1 -s USE_GLFW=3 -s FULL_ES3=1 \
+    -s TOTAL_MEMORY=100MB --embed-file shaders
 
 ${IMGUI_SOURCES}:
 	wget "https://github.com/ocornut/imgui/archive/refs/heads/master.zip"
@@ -63,5 +69,5 @@ clean:
 	rm -f ${OBJECTS} ${TARGET}
 
 clean_all:
-	rm -rf *.o *.zip ${TARGET} ${IMGUI_DIR} *.zip
+	rm -rf *.o *.zip *.wasm *.js ${TARGET} ${IMGUI_DIR} *.zip
 

@@ -6,6 +6,11 @@
 #include "fft_gl.h"
 #include "simulation.h"
 #include "summation_gl.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+// #include <emscirpten/html5.h>
+#endif
+#include <functional>
 
 
 struct Click {
@@ -54,6 +59,14 @@ struct Programs programs;
 struct Frames quads;
 struct Bufs bufs;
 
+#ifdef __EMSCRIPTEN__
+std::function <void ()> loop;
+void main_loop();
+void main_loop() {
+    loop();
+}
+#endif
+
 int main() {
 
     int width = START_WIDTH, height = START_HEIGHT;
@@ -84,10 +97,10 @@ int main() {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int a = rand(), b = rand();
-            rand_arr[i*width + j].ind[0] = a;
-            rand_arr[i*width + j].ind[1] = b;
-            rand_arr[i*width + j].ind[2] = a;
-            rand_arr[i*width + j].ind[3] = b;
+            rand_arr[i*width + j].ind[0] = 1000.0*(float)a;
+            rand_arr[i*width + j].ind[1] = 1000.0*(float)b;
+            rand_arr[i*width + j].ind[2] = 1000.0*(float)a;
+            rand_arr[i*width + j].ind[3] = 1000.0*(float)b;
         }
     }
     substitute_array(quads.wavefunc_p, START_WIDTH, START_HEIGHT,
@@ -96,10 +109,18 @@ int main() {
     frame_id res = ift(&sim_params, &programs, &quads, quads.wavefunc_p);
     bind_quad(quads.wavefunc[0], programs.scale);
     set_sampler2D_uniform("tex", res);
-    set_float_uniform("scale", 10000.0);
+    set_float_uniform("scale", 1.0);
     draw_unbind();
+     normalize_then_scale(&sim_params, &programs, &quads,
+                                 sqrt(sim_params.init_wavepacket.total_density)
+                                 );
 
-    for (int k = 0; !glfwWindowShouldClose(window); k++) {
+
+    int k = 0;
+    #ifndef __EMSCRIPTEN__
+    auto
+    #endif
+    loop = [&] {
 
         glViewport(0, 0, width, height);
 
@@ -230,7 +251,18 @@ int main() {
         glfwPollEvents();
         click_update(&left_click, window);
         glfwSwapBuffers(window);
+        #ifdef __EMSCRIPTEN__
+        k++;
+        #endif
+    };
+
+    #ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(main_loop, 0, true);
+    #else
+    for (k = 0; !glfwWindowShouldClose(window); k++) {
+        loop();
     }
+    #endif
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

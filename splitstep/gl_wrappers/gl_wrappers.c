@@ -7,7 +7,7 @@
 #define quad_attribute_position "position"
 
 static const char VERTEX_SHADER_SOURCE[] = ""
-    "#version 330 core\n"
+    "#VERSION_NUMBER_PLACEHOLDER\n"
     "\n"
     "precision highp float;\n"
     "\n"
@@ -79,7 +79,42 @@ GLFWwindow *init_window(int width, int height) {
 
 void compile_shader(GLuint shader_ref, const char *shader_source) {
     char buf[512];
-    glShaderSource(shader_ref, 1, &shader_source, NULL);
+    const char version_number_placeholder[] = "#VERSION_NUMBER_PLACEHOLDER";
+    int m = 0;
+    for (; m < sizeof(version_number_placeholder)-1; m++) {
+        if (!shader_source[m] ||
+            shader_source[m] != version_number_placeholder[m]) {
+            fprintf(stderr, "Shader invalid.");
+        }
+    }
+    for ( ; shader_source[m] != '\n'; m++) {
+        if (!shader_source[m] || shader_source[m] != ' ') {
+            fprintf(stderr, "Shader invalid");
+            return;
+        }
+    }
+    int size = 0;
+    for (int i = 0; shader_source[i]; i++, size++);
+    #ifndef __EMSCRIPTEN__
+    const char version_number[] = "#version 330 core\n";
+    #else
+    const char version_number[] = "#version 300 es  \n";
+    #endif
+    char *mod_source = (char *)calloc(1 + size, sizeof(char));
+    if (mod_source == NULL) {
+        perror("Unable to allocate resources for shader initialization.");
+        return;
+    }
+    int i = 0, k = 0;
+    for (; shader_source[i] != '\n'; i++) {
+        if (i < sizeof(version_number) - 1) {
+            mod_source[k++] = version_number[i];
+        }
+    }
+    for (; (mod_source[k] = shader_source[i]); i++, k++);
+    const char *tmp = (const char *)mod_source;
+    glShaderSource(shader_ref, 1, &tmp, NULL);
+    free(mod_source);
     glCompileShader(shader_ref);
     GLint status;
     glGetShaderiv(shader_ref, GL_COMPILE_STATUS, &status);

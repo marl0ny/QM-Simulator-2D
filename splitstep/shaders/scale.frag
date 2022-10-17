@@ -1,4 +1,4 @@
-#version 330 core
+#VERSION_NUMBER_PLACEHOLDER
 
 precision highp float;
 

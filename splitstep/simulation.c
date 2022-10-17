@@ -250,6 +250,7 @@ frame_id ift(const struct SimParams *params,
     return ifft_iter(programs->fft_iter, tmp1, tmp2, params->texel_height, 1);
 }
 
+
 void timestep(const struct SimParams *params,
               const struct Programs *programs, const struct Frames *quads) {
     struct Complex2 dt;

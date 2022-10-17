@@ -1,4 +1,4 @@
-#version 330 core
+#VERSION_NUMBER_PLACEHOLDER
 
 precision highp float;
 
@@ -43,7 +43,8 @@ void main() {
     float potential = texture2D(potentialTex, UV).w;
     // float nonlinearAmp = 8.0;
     // float nonlinearAmp = 16.0;
-    float nonlinearAmp = 32.0;
+    float nonlinearAmp = 20.0;
+    // float nonlinearAmp = 32.0;
     complex2 psi = texture2D(wavefuncTex, UV);
     complex2 iDt = multiply(IMAG_UNIT, dt);
     complex2 u = complex2(multiply(conj(psi), psi)[0], 0.0,
@@ -51,8 +52,7 @@ void main() {
     complex2 nonlinearTerm = complex2(0.0, 0.0, 0.0, 0.0);
     nonlinearTerm += nonlinearAmp*u;
     // nonlinearTerm += 0.5/(u + 0.25);
-    fragColor = multiply(psi, complex2Exp(-(0.5*iDt/hbar)*potential)
-                            + complex2Exp(-multiply(0.5*iDt/hbar, 
-                                                    nonlinearTerm))
-                           );
+    fragColor = multiply(psi, 
+                         complex2Exp(-(0.5*iDt/hbar)*potential
+				     -multiply(0.5*iDt/hbar, nonlinearTerm)));				      
 }
