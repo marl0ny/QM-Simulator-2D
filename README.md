@@ -56,7 +56,7 @@ Split-Step:
 
  - Wikipedia contributors. (2021, August 5). [Dirac spinor](https://en.wikipedia.org/wiki/Dirac_spinor). In <em>Wikipedia, The Free Encyclopedia</em>.
 
- - Shankar, R. (1994). The Dirac Equation. In <em>Principles of Quantum Mechanics<em>, chapter 20. Springer.
+ - Shankar, R. (1994). The Dirac Equation. In <em>Principles of Quantum Mechanics</em>, chapter 20. Springer.
 
  - Hammer, R., Pötz W. (2014). Staggered grid leap-frog scheme for the (2 + 1)D Dirac equation. <em>Computer Physics Communications, 185(1)</em>, 40-53. [https://doi.org/10.1016/j.cpc.2013.08.013](https://doi.org/10.1016/j.cpc.2013.08.013)
 
@@ -89,6 +89,12 @@ In <em>[Numerical Recipes in Fortran 77](https://websites.pmc.ucsc.edu/~fnimmo/e
 - Wikipedia contributors. (2021, October 8). [Cooley–Tukey FFT algorithm](https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm). In <em>Wikipedia, The Free Encyclopedia</em>.
 
 - Weisstein, E. (2021). [Fast Fourier Transform](https://mathworld.wolfram.com/FastFourierTransform.html). In <em>Wolfram MathWorld</em>.
+
+BiCGSTAB Algorithm
+
+- Wikipedia contributors. (2022, June 2). [Biconjugate gradient stabilized method](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method). In <em>Wikipedia, The Free Encyclopedia</em>.
+
+- Gutknecht, M. (1993). Variants of BICGSTAB for Matrices with Complex Spectrum. <em>SIAM Journal on Scientific Computing, 14(5)</em>. 1020-1033. [https://doi.org/10.1137/0914062](https://doi.org/10.1137/0914062) 
 
 Hartree Atomic Units:
 
