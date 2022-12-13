@@ -12,6 +12,10 @@ void reverse_bit_sort(int rearrange_program,
                       frame_id lookup_table,
                       frame_id initial, frame_id dest);
 
+void rev_bit_sort2(int rev_bit_sort2_program,
+                   frame_id initial, frame_id dest,
+                   int width, int height);
+
 void make_reverse_bit_sort_table(frame_id texture_table, int size);
 
 frame_id fft_iter(int fft_iter_program,

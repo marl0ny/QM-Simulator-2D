@@ -17,6 +17,17 @@ void reverse_bit_sort(int rearrange_program,
     draw_unbind();
 }
 
+void rev_bit_sort2(int rev_bit_sort2_program,
+                   frame_id initial, frame_id dest,
+                   int width, int height) {
+    bind_quad(dest, rev_bit_sort2_program);
+    set_sampler2D_uniform("tex", initial);
+    set_int_uniform("width", width);
+    set_int_uniform("height", height);
+    // print_user_defined_uniforms();
+    draw_unbind();
+}
+
 void make_reverse_bit_sort_table(frame_id texture_table, int size) {
     struct Vec4 *table = (struct Vec4 *)malloc(size*size*sizeof(struct Vec4));
     for (int i = 0; i < size; i++) {

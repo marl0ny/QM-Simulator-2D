@@ -49,7 +49,7 @@ void click_update(struct Click *click, GLFWwindow *window) {
 
 struct ViewParams {
     // float wavefunction_brightness = 4.0;
-    float wavefunction_brightness = 100.0;
+    float wavefunction_brightness = (START_WIDTH >= 512)? 400.0: 100.0;
     float potential_brightness = 10.0;
     float first_press_x, first_press_y;
 } view_params;
@@ -124,10 +124,12 @@ int main() {
 
         glViewport(0, 0, width, height);
 
-        timestep(&sim_params, &programs, &quads);
-        frame_id tmp = quads.wavefunc[0];
-        quads.wavefunc[0] = quads.wavefunc[1];
-        quads.wavefunc[1] = tmp;
+        for (auto &_: {0, 1, 2, 3}) {
+            timestep(&sim_params, &programs, &quads);
+            frame_id tmp = quads.wavefunc[0];
+            quads.wavefunc[0] = quads.wavefunc[1];
+            quads.wavefunc[1] = tmp;
+        }
         if (sim_params.normalize_after_each_step) {
             normalize_then_scale(&sim_params, &programs, &quads,
                                  sqrt(sim_params.init_wavepacket.total_density)

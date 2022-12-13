@@ -316,8 +316,7 @@ int new_quad(const struct TextureParams *texture_params) {
         fprintf(stderr, ERR_FRAME_ACTIVE);
         return -1;
     }
-    int quad_id = total_frames;
-    total_frames += 1;
+    int quad_id = total_frames++;   
     if (total_frames == 1 && texture_params != NULL) {
         fprintf(stdout, "Params ignored for first frame.\n");
     }

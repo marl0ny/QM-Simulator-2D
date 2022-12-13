@@ -38,6 +38,8 @@ let splitStepPotentialShader = makeShader(gl.FRAGMENT_SHADER,
     diracSplitStepPotentialFragmentSource);
 let rearrangeShader = makeShader(gl.FRAGMENT_SHADER,
                                  rearrangeFragmentSource);
+let revBitSort2Shader = makeShader(gl.FRAGMENT_SHADER,
+                                   revBitSort2FragmentSource);
 
 
 let initWaveProgram = makeProgram(vShader, initWaveShader);
@@ -62,6 +64,7 @@ let fftIterProgram = makeProgram(vShader, fftIterShader);
 let expKineticProgram = makeProgram(vShader, splitStepKineticShader);
 let expPotentialProgram = makeProgram(vShader, splitStepPotentialShader);
 let rearrangeProgram = makeProgram(vShader, rearrangeShader);
+let revBitSort2Program = makeProgram(vShader, revBitSort2Shader);
 
 // gl.deleteShader(vShader);
 gl.deleteShader(initWaveShader);
@@ -85,4 +88,5 @@ gl.deleteShader(fftIterShader);
 gl.deleteShader(splitStepKineticShader);
 gl.deleteShader(splitStepPotentialShader);
 gl.deleteShader(rearrangeShader);
+gl.deleteShader(revBitSort2Shader);
 

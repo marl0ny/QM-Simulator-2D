@@ -66,6 +66,8 @@ void init_programs(struct Programs *programs) {
         = make_program("./shaders/preset-magnetic-field.frag");
     programs->curl = make_program("./shaders/curl.frag");
     programs->fft_iter = make_program("./shaders/fft-iter.frag");
+    programs->rev_bit_sort2
+        = make_program("./shaders/rev-bit-sort2.frag");
     programs->rearrange = make_program("./shaders/rearrange.frag");
     programs->fftshift = make_program("./shaders/fftshift.frag");
     programs->dual_view = make_program("./shaders/dual-view.frag");
@@ -220,8 +222,10 @@ void swap3(frame_id *f1, frame_id *f2, frame_id *f3) {
 frame_id ft(const struct SimParams *params,
             const struct Programs *programs,
             const struct Frames *quads, frame_id initial) {
-    reverse_bit_sort(programs->rearrange, quads->bit_sort_table,
-                     initial, quads->fft_iter2[0]);
+    rev_bit_sort2(programs->rev_bit_sort2, initial, quads->fft_iter2[0],
+                  params->texel_width, params->texel_height);
+    // reverse_bit_sort(programs->rearrange, quads->bit_sort_table,
+    //                  initial, quads->fft_iter2[0]);
     frame_id res1 = fft_iter(programs->fft_iter,
                              quads->fft_iter2[0], quads->fft_iter2[1],
                              params->texel_height, 0);
@@ -236,9 +240,11 @@ frame_id ft(const struct SimParams *params,
 frame_id ift(const struct SimParams *params,
             const struct Programs *programs,
             const struct Frames *quads, frame_id initial) {
+    rev_bit_sort2(programs->rev_bit_sort2, initial, quads->fft_iter2[0],
+                  params->texel_width, params->texel_height);
     // TODO: there is a bug if the initial frame is one of fft_iter frames
-    reverse_bit_sort(programs->rearrange, quads->bit_sort_table,
-                     initial, quads->fft_iter2[0]);
+    // reverse_bit_sort(programs->rearrange, quads->bit_sort_table,
+    //                  initial, quads->fft_iter2[0]);
     frame_id res1 = ifft_iter(programs->fft_iter,
                               quads->fft_iter2[0], quads->fft_iter2[1],
                               params->texel_height, 0);

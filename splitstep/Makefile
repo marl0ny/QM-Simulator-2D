@@ -1,7 +1,7 @@
 
 SHELL = /bin/bash
-# FLAGS = -O2 -Wall
-FLAGS = -O0 -Wall -g
+FLAGS = -O2 -Wall
+# FLAGS = -O0 -Wall -g
 C_COMPILE = /usr/bin/clang
 CPP_COMPILE = /usr/bin/clang++ -std=c++17
 LINKER = /usr/bin/ld

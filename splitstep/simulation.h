@@ -49,7 +49,7 @@ struct Programs {
     GLuint preset_potential;
     GLuint preset_magnetic_field;
     GLuint curl;
-    GLuint fft_iter, rearrange, fftshift;
+    GLuint fft_iter, rearrange, rev_bit_sort2, fftshift;
     GLuint dual_view;
     GLuint view;
 };

@@ -151,14 +151,22 @@ class SplitStepSimulationManager {
             unbind();
         }
     }
-    revBitSort2(dest, src, revBitSortFrame) {
-        dest.useProgram(rearrangeProgram);
+    revBitSort2(dest, src, revBitSortFrame=null) {
+        dest.useProgram(revBitSort2Program);
         dest.bind();
-        dest.setFloatUniforms({width: pixelWidth, height: pixelHeight});
-        dest.setIntUniforms({tex: src.frameNumber, 
-                             lookupTex: revBitSortFrame.frameNumber});
+        dest.setIntUniforms({width: pixelWidth, height: pixelHeight,
+                             tex: src.frameNumber});
         draw();
         unbind();
+        if (revBitSortFrame !== null) {
+            dest.useProgram(rearrangeProgram);
+            dest.bind();
+            dest.setFloatUniforms({width: pixelWidth, height: pixelHeight});
+            dest.setIntUniforms({tex: src.frameNumber, 
+                                lookupTex: revBitSortFrame.frameNumber});
+            draw();
+            unbind();
+        }
     }
     fftIters(frames, size, isVert, isInv) {
         let prev = frames[0], next = frames[1];
@@ -187,8 +195,7 @@ class SplitStepSimulationManager {
         let isVert = true, isInv = true;
         for (let i in [0, 1]) {
             let frames = frames2[i];
-            this.revBitSort2(frames[0], frames[1], 
-                             revBitSort2LookupFrame);
+            this.revBitSort2(frames[0], frames[1]);
             frames = this.fftIters(frames, pixelWidth, !isVert, !isInv);
             frames = this.fftIters(frames, pixelHeight, isVert, !isInv);
             frames2[i] = frames;
@@ -215,7 +222,7 @@ class SplitStepSimulationManager {
         for (let i in [0, 1]) {
             let frames = frames2[i];
             let isVert = true, isInv = true;
-            this.revBitSort2(frames[0], frames[1], revBitSort2LookupFrame);
+            this.revBitSort2(frames[0], frames[1]);
             frames = this.fftIters(frames, pixelWidth, !isVert, isInv);
             frames = this.fftIters(frames, pixelHeight, isVert, isInv);
             frames2[i] = frames;
