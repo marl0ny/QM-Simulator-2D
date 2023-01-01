@@ -8,6 +8,7 @@ struct Programs {
     GLuint scale;
     GLuint leapfrog;
     GLuint new_wavepacket;
+    GLuint preset_potential;
     GLuint surface_vert;
     GLuint view;
 };
@@ -17,6 +18,7 @@ struct SimParams {
     int steps_per_frame;
     int is_initial_step;
     int texel_width, texel_height;
+    int view_width, view_height;
     float dt;
     float m, hbar, c, q;
     float width, height, dx, dy;
@@ -28,6 +30,10 @@ struct SimParams {
         struct Vec3 spin_direction;
         struct Complex2 spin;
     } new_wavepacket;
+    struct DVec4 rotation_quaternion;
+    float scale_z;
+    float scale;
+    struct Vec3 translate;
 };
 
 struct Frames {

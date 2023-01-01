@@ -33,6 +33,7 @@ struct Frame {
     GLuint vbo;
     GLuint ebo;
     GLuint fbo;
+    GLuint rbo;
     GLuint texture;
     // int vertex_count;
     // int element_count;
@@ -415,6 +416,7 @@ int new_frame(const struct TextureParams *texture_params,
     GLuint *vbo_ptr = &s_current_frame->vbo;
     GLuint *ebo_ptr = &s_current_frame->ebo;
     GLuint *fbo_ptr = &s_current_frame->fbo;
+    GLuint *rbo_ptr = &s_current_frame->rbo;
     GLuint *texture_ptr = &s_current_frame->texture;
     glGenVertexArrays(1, vao_ptr);
     glBindVertexArray(*vao_ptr);
@@ -431,6 +433,13 @@ int new_frame(const struct TextureParams *texture_params,
         glBindFramebuffer(GL_FRAMEBUFFER, *fbo_ptr);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, *texture_ptr, 0);
+        glGenRenderbuffers(1, rbo_ptr);
+        glBindRenderbuffer(GL_RENDERBUFFER, *rbo_ptr);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                              texture_params->width, texture_params->height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                  GL_RENDERBUFFER, *rbo_ptr);
+
     }
     unbind();
     return frame_id;
@@ -472,7 +481,9 @@ void bind_frame(int frame2d_id, GLuint program) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_current_frame->ebo);
     if (s_current_frame_id != 0) {
         glBindFramebuffer(GL_FRAMEBUFFER, s_current_frame->fbo);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glClear(GL_COLOR_BUFFER_BIT);
+        glBindRenderbuffer(GL_RENDERBUFFER, s_current_frame->rbo);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 }
 

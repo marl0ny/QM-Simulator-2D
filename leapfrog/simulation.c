@@ -8,6 +8,9 @@ static int s_sizeof_vertices = 0;
 static int s_sizeof_elements = 0;
 static float t = 0.0;
 
+// static int sim_width;
+// static int sim_height;
+
 
 void init_sim_params(struct SimParams *params) {
     int width = 256;
@@ -17,6 +20,15 @@ void init_sim_params(struct SimParams *params) {
     params->is_initial_step = 1;
     params->texel_width = 256;
     params->texel_height = 256;
+    #ifdef __APPLE__
+    int pixel_width = 5*width;
+    int pixel_height = 5*height;
+    #else
+    int pixel_width = 3*width;
+    int pixel_height = 3*height;
+    #endif
+    params->view_width = pixel_width;
+    params->view_height = pixel_height;
     params->dt = 0.005;
     params->m = 1.0;
     params->hbar = 1.0;
@@ -30,7 +42,7 @@ void init_sim_params(struct SimParams *params) {
     params->new_wavepacket.sigma_x = 0.05;
     params->new_wavepacket.sigma_y = 0.05;
     params->new_wavepacket.u0 = 0.5;
-    params->new_wavepacket.v0 = 0.5;
+    params->new_wavepacket.v0 = 0.2;
     params->new_wavepacket.nx = 0.0;
     params->new_wavepacket.ny = 20.0;
     params->new_wavepacket.spin.c2[0] = 1.0;
@@ -38,6 +50,12 @@ void init_sim_params(struct SimParams *params) {
     params->new_wavepacket.spin_direction.x = 0.0;
     params->new_wavepacket.spin_direction.y = 0.0;
     params->new_wavepacket.spin_direction.z = 0.0;
+    params->rotation_quaternion.x = 0.0;
+    params->rotation_quaternion.y = 0.0;
+    params->rotation_quaternion.z = 0.0;
+    params->rotation_quaternion.w = 1.0;
+    params->scale_z = 0.05;
+    params->scale = 1.0;
 }
 
 void init_programs(struct Programs *programs) {
@@ -50,18 +68,15 @@ void init_programs(struct Programs *programs) {
     programs->surface_vert
         = make_program("./shaders/surface-vert.vert", "./shaders/copy.frag");
     programs->view = make_quad_program("./shaders/view.frag");
+    programs->preset_potential
+         = make_quad_program("./shaders/preset-potential.frag");
 }
 
 void init_frames(struct Frames *frames, const struct SimParams *params) {
     int width = params->texel_width;
     int height = params->texel_height;
-    #ifdef __APPLE__
-    int pixel_width = 4*width;
-    int pixel_height = 4*height;
-    #else
-    int pixel_width = 2*width;
-    int pixel_height = 2*height;
-    #endif
+    int pixel_width = params->view_width;
+    int pixel_height = params->view_height;
     struct TextureParams tex_params = {
         .type=GL_FLOAT, .width=pixel_width, .height=pixel_height,
         .generate_mipmap=1, .wrap_s=GL_REPEAT, .wrap_t=GL_REPEAT,
@@ -114,8 +129,10 @@ void init_frames(struct Frames *frames, const struct SimParams *params) {
         elements[elem_index++] = (j + 1)*surface_width + i;
         if (i == 0) {
             if (inc == -1) {
-                inc = 1;
+                inc = 0;
                 j++;
+            } else if (inc == 0) {
+                inc = 1;
             }
         } else if (i == surface_width - 2) {
             if (inc == 1) {
@@ -203,14 +220,25 @@ void timestep(const struct SimParams *params,
         {.name="position", .size=4, .type=GL_FLOAT, .normalized=GL_FALSE,
          .stride=4*sizeof(float), .offset=0},
     };
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     bind_frame(quads->view.secondary[0], programs->surface_vert);
     set_vertex_attributes(vertex_params, 1);
     set_sampler2D_uniform("tex", quads->view.secondary[1]);
     set_sampler2D_uniform("tex2", quads->sim.wavefunc[0]);
-    float c_phi = (float)cos(t + 3.14159/2.0);
-    float s_phi = (float)sin(t + 3.14159/2.0);
+    // float c_phi = (float)cos(t + 3.14159/2.0);
+    // float s_phi = (float)sin(t + 3.14159/2.0);
+    set_float_uniform("scaleZ", params->scale_z);
+    set_float_uniform("scale", params->scale);
     set_vec4_uniform("rotationQuaternion",
-                    s_phi, 0.0, 0.0, c_phi);
+                     params->rotation_quaternion.x,
+                     params->rotation_quaternion.y,
+                     params->rotation_quaternion.z,
+                     params->rotation_quaternion.w);
+    set_vec3_uniform("translate",
+                     params->translate.x, 
+                     params->translate.y, params->translate.z);
     glDrawElements(GL_TRIANGLES, s_sizeof_elements, GL_UNSIGNED_INT, 0);
     unbind();
+    glDisable(GL_DEPTH_TEST);
 }

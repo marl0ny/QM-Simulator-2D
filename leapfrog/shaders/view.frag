@@ -110,6 +110,7 @@ void main() {
         case DENSITY_PHASE1:
             fragColor = vec4(wavefuncBrightness1*wavefuncColour1
                                 + potentialBrightness/50.0, 1.0);
+                                // + vec4(0.1, 0.1, 0.1, 0.0);
             break;
         case DENSITY_PHASE2:
             fragColor = vec4(wavefuncBrightness2*wavefuncColour2
