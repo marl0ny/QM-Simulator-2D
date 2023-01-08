@@ -44,7 +44,7 @@ void init_sim_params(struct SimParams *params) {
     params->new_wavepacket.u0 = 0.5;
     params->new_wavepacket.v0 = 0.2;
     params->new_wavepacket.nx = 0.0;
-    params->new_wavepacket.ny = 20.0;
+    params->new_wavepacket.ny = 30.0;
     params->new_wavepacket.spin.c2[0] = 1.0;
     params->new_wavepacket.spin.c2[1] = 0.0;
     params->new_wavepacket.spin_direction.x = 0.0;
@@ -72,47 +72,13 @@ void init_programs(struct Programs *programs) {
          = make_quad_program("./shaders/preset-potential.frag");
 }
 
-void init_frames(struct Frames *frames, const struct SimParams *params) {
-    int width = params->texel_width;
-    int height = params->texel_height;
-    int pixel_width = params->view_width;
-    int pixel_height = params->view_height;
-    struct TextureParams tex_params = {
-        .type=GL_FLOAT, .width=pixel_width, .height=pixel_height,
-        .generate_mipmap=1, .wrap_s=GL_REPEAT, .wrap_t=GL_REPEAT,
-        .min_filter=GL_LINEAR, .mag_filter=GL_LINEAR,
-    };
-    frames->view.main = new_quad(&tex_params);
-    tex_params.width = width;
-    tex_params.height = height;
-    for (int i = 1; i < 3; i++) {
-        frames->view.secondary[i] = new_quad(&tex_params);
-    }
-
-    // Surface plot view
-    int surface_width = 64;
-    int surface_height = 64;
-    int sizeof_vertices = 4*sizeof(float)*(surface_width)*(surface_height);
-    s_sizeof_vertices = sizeof_vertices;
-    struct Vec4 *vertices = malloc(sizeof_vertices);
-    if (vertices == NULL) {
-        perror("malloc");
-        return;
-    }
-    for (int i = 0; i < surface_width; i++) {
-        for (int j = 0; j < surface_height; j++) {
-            vertices[j*surface_width + i].x = (float)i/(float)surface_width;
-            vertices[j*surface_width + i].y = (float)j/(float)surface_height;
-            vertices[j*surface_width + i].z = 0.0;
-            vertices[j*surface_width + i].a = 1.0;
-        }
-    }
-    int sizeof_elements = sizeof(int)*6*(surface_width-1)*(surface_height-1);
-    s_sizeof_elements = sizeof_elements;
-    int *elements = malloc(sizeof_elements);
+static int *new_surface_elements(int *ptr_sizeof_elements,
+                                 int surface_width, int surface_height) {
+    *ptr_sizeof_elements = sizeof(int)*6*(surface_width-1)*(surface_height-1);
+    int *elements = malloc(*ptr_sizeof_elements);
     if (elements == NULL) {
         perror("malloc");
-        return;
+        return NULL;
     }
     int inc = 1;
     int j = 0;
@@ -144,11 +110,66 @@ void init_frames(struct Frames *frames, const struct SimParams *params) {
         }
         // printf("%d\n", i);
     }
+    return elements;
+}
+
+void init_frames(struct Frames *frames, const struct SimParams *params) {
+    int width = params->texel_width;
+    int height = params->texel_height;
+    int pixel_width = params->view_width;
+    int pixel_height = params->view_height;
+    struct TextureParams tex_params = {
+        .type=GL_FLOAT, .width=pixel_width, .height=pixel_height,
+        .generate_mipmap=1, .wrap_s=GL_CLAMP_TO_EDGE, .wrap_t=GL_CLAMP_TO_EDGE,
+        .min_filter=GL_LINEAR, .mag_filter=GL_LINEAR,
+    };
+    frames->view.main = new_quad(&tex_params);
+    tex_params.width = width;
+    tex_params.height = height;
+    tex_params.type=GL_UNSIGNED_BYTE;
+    for (int i = 1; i < 3; i++) {
+        frames->view.secondary[i] = new_quad(&tex_params);
+    }
+    tex_params.type = GL_FLOAT;
+
+    // Surface plot view
+    int surface_width = 128;
+    int surface_height = 128;
+    int sizeof_vertices = 4*sizeof(float)*(surface_width)*(surface_height);
+    s_sizeof_vertices = sizeof_vertices;
+    struct Vec4 *vertices = malloc(sizeof_vertices);
+    if (vertices == NULL) {
+        perror("malloc");
+        return;
+    }
+    for (int i = 0; i < surface_width; i++) {
+        for (int j = 0; j < surface_height; j++) {
+            vertices[j*surface_width + i].x = (float)i/(float)surface_width;
+            vertices[j*surface_width + i].y = (float)j/(float)surface_height;
+            vertices[j*surface_width + i].z = 0.0;
+            vertices[j*surface_width + i].a = 1.0;
+        }
+    }
+    int sizeof_elements = 0;
+    int *elements = new_surface_elements(&sizeof_elements,
+                                         surface_width, surface_height);
+    if (elements == NULL) {
+        perror("malloc");
+        return;
+    }
+    s_sizeof_elements = sizeof_elements;
+
+    tex_params.width = params->view_width;
+    tex_params.height = params->view_height;
+    tex_params.type = GL_UNSIGNED_BYTE;
     frames->view.secondary[0] = new_frame(&tex_params, (float *)vertices,
                                           sizeof_vertices, elements,
                                           sizeof_elements);
 
     // Rest of the simulation frames
+    tex_params.width = params->texel_width;
+    tex_params.height = params->texel_height;
+    tex_params.type = GL_FLOAT;
     frame_id *sim_frames = (frame_id *)&frames->sim;
     for (int i = 0; i < 6; i++) {
         sim_frames[i] = new_quad(&tex_params);
@@ -220,6 +241,7 @@ void timestep(const struct SimParams *params,
         {.name="position", .size=4, .type=GL_FLOAT, .normalized=GL_FALSE,
          .stride=4*sizeof(float), .offset=0},
     };
+    glViewport(0, 0, params->view_width, params->view_height);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     bind_frame(quads->view.secondary[0], programs->surface_vert);
@@ -236,9 +258,10 @@ void timestep(const struct SimParams *params,
                      params->rotation_quaternion.z,
                      params->rotation_quaternion.w);
     set_vec3_uniform("translate",
-                     params->translate.x, 
+                     params->translate.x,
                      params->translate.y, params->translate.z);
     glDrawElements(GL_TRIANGLES, s_sizeof_elements, GL_UNSIGNED_INT, 0);
     unbind();
     glDisable(GL_DEPTH_TEST);
+    glViewport(0, 0, params->texel_width, params->texel_height);
 }

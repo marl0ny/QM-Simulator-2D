@@ -424,10 +424,12 @@ int new_frame(const struct TextureParams *texture_params,
     glBindBuffer(GL_ARRAY_BUFFER, *vbo_ptr);
     glBufferData(GL_ARRAY_BUFFER, sizeof_vertices,
                  vertices, GL_STATIC_DRAW);
-    glGenBuffers(1, ebo_ptr);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_ptr);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof_elements,
-                 elements, GL_STATIC_DRAW);
+    if (ebo_ptr != NULL) {
+        glGenBuffers(1, ebo_ptr);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_ptr);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof_elements,
+                     elements, GL_STATIC_DRAW);
+    }
     if (s_current_frame_id != 0) {
         glGenFramebuffers(1, fbo_ptr);
         glBindFramebuffer(GL_FRAMEBUFFER, *fbo_ptr);

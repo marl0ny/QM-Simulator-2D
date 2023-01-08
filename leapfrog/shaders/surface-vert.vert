@@ -51,7 +51,9 @@ void main() {
     UV = position.xy;
     vec4 psi = texture2D(tex2, UV);
     float absPsi2 = (psi.x*psi.x + psi.y*psi.y)/5.0;
-    vec4 tPosition = scale*(position - vec4(0.5, 0.5, scaleZ*absPsi2, 0.0));
+    float absPsi = sqrt(absPsi2);
+    vec4 tPosition = scale*(position - vec4(0.5, 0.5,
+                                            min(scaleZ*absPsi, 0.5), 0.0));
     gl_Position = project(rotate(tPosition, rotationQuaternion)
                      + vec4(translate, 0.0));
 }

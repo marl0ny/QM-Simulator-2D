@@ -28,6 +28,7 @@ uniform int which;
 #define AX_IS_Y2 4
 #define AX_IS_Y2_AY_IS_NEG_X2 5
 #define DOUBLE_SLIT 6
+#define CIRCLE 7
 
 float getSquaredTerm(float ax, float ay, float az) {
     return q*q*hbar/(2.0*m*c*c)*(ax*ax + ay*ay + az*az);
@@ -70,6 +71,11 @@ void main() {
                 (UV[0] < 0.55 + e && UV[0] > 0.55 - e)) {
                 potential = vec4(0.0, 0.0, 0.0, 0.0);
             }
+            break;
+        case CIRCLE:
+            float r = sqrt(u*u + v*v);
+            potential = vec4(0.0, 0.0, 0.0,
+                             xAmplitude*0.5*(tanh(10.0*(r - 0.45)) + 1.0));
             break;
         default:
             potential = vec4(0.0, 0.0, 0.0, 0.0);

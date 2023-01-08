@@ -108,11 +108,7 @@ void render(const struct RenderParams *render_params) {
 
     }
 
-    if (render_params->user_zoom == 1) {
-        s_sim_params.scale *= 1.01;
-    } else if (render_params->user_zoom == -1) {
-        s_sim_params.scale *= 0.99;
-    }
+    s_sim_params.scale = render_params->user_zoom;
 
     if (render_params->user_surface_enlarge == 1) {
         s_sim_params.scale_z *= 1.01;

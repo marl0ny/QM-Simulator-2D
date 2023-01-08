@@ -38,6 +38,11 @@ void click_update(struct Click *click, GLFWwindow *window) {
     }
 }
 
+static double s_scroll = 1.0;
+void scroll_callback(GLFWwindow *window, double x, double y) {
+    s_scroll += (2.0*y)/25.0;
+}
+
 
 int main() {
     #ifdef __APPLE__
@@ -50,6 +55,7 @@ int main() {
     GLFWwindow *window = init_window(pixel_width, pixel_height);
     init();
     struct RenderParams render_params = {};
+    glfwSetScrollCallback(window, scroll_callback);
     for (int k = 0; !glfwWindowShouldClose(window); k++) {
         if (left_click.pressed) {
             render_params.user_use = 1;
@@ -64,13 +70,7 @@ int main() {
         glfwPollEvents();
         click_update(&left_click, window);
 
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            render_params.user_zoom = 1;
-        else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-            render_params.user_zoom = -1;
-        else
-            render_params.user_zoom = 0;
-        
+        render_params.user_zoom = s_scroll;
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
             render_params.user_surface_enlarge = 1;
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
@@ -79,8 +79,8 @@ int main() {
             render_params.user_surface_enlarge = 0;
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ||
-            glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || 
-            glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || 
+            glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ||
             glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
                 render_params.user_direction_y = -1;
@@ -94,7 +94,6 @@ int main() {
             render_params.user_direction_x = 0;
             render_params.user_direction_y = 0;
         }
-        
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);
