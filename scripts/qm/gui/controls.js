@@ -290,6 +290,9 @@ guiControls.numberOfFramesEntry
     = guiControls.screenshotsFolder.add(guiData,
                                         'nScreenshots'
                                         ).name('Number of frames');
+guiControls.userDefinedImageName = guiControls.screenshotsFolder.add(
+    guiData, 'userDefinedImageName'
+).name('Prefix');
 guiControls.downloadScreenshotsButton = 
     guiControls.screenshotsFolder.add(
         {download: () => {
@@ -365,17 +368,6 @@ guiControls.massSlider
      = guiControls.editUniformsFolder.add(guiData, 'm', 0.75, 10.0);
 guiControls.dtSlider
     = guiControls.editUniformsFolder.add(guiData, 'dt', -0.01, 0.013);
-/*guiControls.laplaceSelect
-     = guiControls.editUniformsFolder.add(guiData, 'laplace',
-                                          ['5 point', '9 point i', 
-                                           '9 point ii', 
-                                           '13 point', '17 point'],
-                                          ).name('Laplacian');
-guiControls.laplaceSelect.onChange(e => {
-    let val = parseInt(e.split(' ')[0]);
-    if (e == '9 point ii') val++;
-    guiData.laplaceVal = val;
-});*/
 guiControls.normalizeEachFrame = guiControls.editUniformsFolder.add(
     guiData, 'normalizeEachFrame', false
 ).name('Normalize');

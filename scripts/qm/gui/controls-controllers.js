@@ -242,14 +242,15 @@ function onUploadImage() {
 }
 guiControls.uploadImage.addEventListener("change", onUploadImage, false);
 
-function makeImageFilename(num, total) {
-    let time = Date.now();
+function makeImageFilename(userDefinedImageName, num, total) {
+    // let time = Date.now();
     let numStr = `${num + 1}`, totalStr = `${total}`;
     let numZeros = totalStr.length - numStr.length;
     for (let i = 0; i < numZeros; i++) {
         numStr = '0' + numStr;
     }
-    return `image_${numStr}_${time}.png`;
+    console.log(userDefinedImageName);
+    return `${userDefinedImageName}${numStr}.png`;
 }
 
 
@@ -258,7 +259,8 @@ function handleRecording(canvas) {
         let zipSize = Math.floor(guiData.nScreenshots/15);
         if (zipSize <= 50) zipSize = 50;
         guiData.screenshots.push(canvas.toDataURL('image/png', 1));
-        let name = makeImageFilename(guiData.screenshotCount, 
+        let name = makeImageFilename(guiData.userDefinedImageName,
+                                     guiData.screenshotCount, 
                                      guiData.nScreenshots);
         guiData.screenshotNames.push(name);
         guiData.screenshotCount++;
@@ -388,7 +390,7 @@ function addLaplacianControls(options) {
                                      options).name('Stencil');
     guiControls.laplaceSelect.onChange(e => {
         let val = parseInt(e.split(' ')[0]);
-        if (e == '9 point ii') val++;
+        if (e == '9 pt. 4th or.') val++;
         guiData.laplaceVal = val;
     });
     guiControls.laplaceSelect.setValue(options[0]);

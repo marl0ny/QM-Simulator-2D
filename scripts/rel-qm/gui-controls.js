@@ -155,6 +155,7 @@ let imageNameDisplay = imageOptions.add(guiData, 'imageName').name('File: ');
 let screenshotsOptions = moreControls.addFolder('Take Screenshots');
 let numberOfFramesEntry = screenshotsOptions.add(
     guiData, 'nScreenshots').name('Number of Screenshots');
+screenshotsOptions.add(guiData, 'userDefinedImageName').name('Prefix');
 downloadScreenshotsButton = screenshotsOptions.add(
     {download: () => {
         guiData.takeScreenshot = true;
@@ -233,14 +234,14 @@ function downloadScreenshotsZip(screenshots, screenshotNames) {
 }
 
 
-function makeImageFilename(num, total) {
-    let time = Date.now();
+function makeImageFilename(userDefinedImageName, num, total) {
+    // let time = Date.now();
     let numStr = `${num + 1}`, totalStr = `${total}`;
     let numZeros = totalStr.length - numStr.length;
     for (let i = 0; i < numZeros; i++) {
         numStr = '0' + numStr;
     }
-    return `image_${numStr}_${time}.png`;
+    return `${userDefinedImageName}${numStr}.png`;
 }
 
 function handleRecording(canvas) {
@@ -248,7 +249,9 @@ function handleRecording(canvas) {
         let zipSize = Math.floor(guiData.nScreenshots/15);
         if (zipSize <= 50) zipSize = 50;
         guiData.screenshots.push(canvas.toDataURL("image/png", 1));
-        let name = makeImageFilename(guiData.screenshotCount, guiData.nScreenshots);
+        let name = makeImageFilename(guiData.userDefinedImageName,
+                                     guiData.screenshotCount,
+                                     guiData.nScreenshots);
         guiData.screenshotNames.push(name);
         guiData.screenshotCount++;
         screenshotProgress.setValue(

@@ -15,7 +15,7 @@ function main() {
 
     initializePotential('SHO');
 
-    addLaplacianControls(['5 point', '9 point']);
+    addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
 
     let methodGridSizes;
     let boundaryTypes = [];
@@ -34,7 +34,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
-            addLaplacianControls(['5 point', '9 point']);
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
         } if (e === 'Leapfrog 2') {
             SimManager = Leapfrog2SimulationManager;
             guiData.dtMax = 0.01;
@@ -44,8 +44,8 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
-            addLaplacianControls(['5 point', '9 point i', 
-                                  '9 point ii', 
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.', 
+                                  '9 pt. 4th or.', 
                                   //'13 point', '17 point'
                                   ]);
         } else if (e === 'CN w/ Jacobi') {
@@ -57,7 +57,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
-            addLaplacianControls(['5 point', '9 point']);
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
             addIterationsControls();
        } else if (e === 'CNJ w/ B-Field') {
             SimManager = CrankNicolsonWithAFieldSimulationManager;
@@ -67,7 +67,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 1;
             disableNonPowerTwo = false;
-            addLaplacianControls(['5 point', '9 point']);
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
             addIterationsControls();
         } else if (e === 'Split-Op. (CPU FFT)') {
             SimManager = SplitStepSimulationManager;
@@ -100,7 +100,7 @@ function main() {
             methodGridSizes = gridSizes;
             numberOfFrames = defaultNumberOfFrames + 2;
             disableNonPowerTwo = false;
-            addLaplacianControls(['5 point', '9 point']);
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
             addIterationsControls();
             /* addNonlinearControls();
             guiControls.textEditNonlinearEntry.onChange(() => {
@@ -116,8 +116,8 @@ function main() {
             numberOfFrames = defaultNumberOfFrames + 3;
             disableNonPowerTwo = false;
             // addNonlocalControls = true;
-            addLaplacianControls(['5 point', '9 point i', 
-                                  '9 point ii', 
+            addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.', 
+                                  '9 pt. 4th or.', 
                                   // '13 point', '17 point'
                                  ]);
             addNonlinearControls();

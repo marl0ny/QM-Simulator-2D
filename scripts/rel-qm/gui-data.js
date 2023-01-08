@@ -59,6 +59,7 @@ let guiData = {
     screenshotNames: [],
     screenshotCount: 0,
     nScreenshots: 1,
+    userDefinedImageName: 'image_',
     takeScreenshot: false,
     setStartSpeed: false,
     startSpeed: 1,

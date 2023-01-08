@@ -77,6 +77,7 @@ let guiData = {
     takeScreenshot: false,
     setStartSpeed: false,
     startSpeed: 2,
+    userDefinedImageName: 'image_',
     pauseOnFinish: false,
     recordVideo: false,
     mediaRecorder: null,
