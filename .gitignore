@@ -5,6 +5,8 @@
 *.swp
 /imgui
 /*/imgui
+/*/*/imgui
+/*/*/*/imgui
 *.o
 ~*
 .DS_Store
