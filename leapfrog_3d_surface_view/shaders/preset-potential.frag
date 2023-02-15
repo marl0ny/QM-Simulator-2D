@@ -40,7 +40,7 @@ void main() {
     float x = u*width; // is there any off by ones ?
     float y = v*height;
     float ax, ay, phi;
-    vec4 potential;
+    vec4 potential = vec4(0.0, 0.0, 0.0, 0.0);
     switch(which) {
         case LINEAR:
             potential = vec4(0.0, 0.0, 0.0, xAmplitude*u + yAmplitude*v);
