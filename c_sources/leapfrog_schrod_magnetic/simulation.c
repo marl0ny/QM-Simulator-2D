@@ -55,7 +55,7 @@ void init_potential_psi(SimFrames *frames, SimPrograms *programs,
         set_float_uniform("amplitude", 5.0);
         set_float_uniform("sigma", 0.05);
         set_vec2_uniform("r0", 0.5, 0.25);
-        set_ivec2_uniform("wavenumber", 0, 0);
+        set_ivec2_uniform("wavenumber", -10, 0);
         draw_unbind_quad();
     }
 }

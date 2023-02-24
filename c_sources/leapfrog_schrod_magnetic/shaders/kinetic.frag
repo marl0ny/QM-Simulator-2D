@@ -67,12 +67,66 @@ float computePhaseArgX(vec2 r0In, vec2 r1In) {
     return computePhaseArg(r0In, r1In).x;
 }
 
+float computePhaseArgX(vec2 r0In, vec2 r1In, vec2 r2In) {
+    vec2 r0 = r0In + offsetA;
+    vec2 r1 = r1In + offsetA;
+    vec2 r2 = r2In + offsetA;
+    float a0x = texture2D(tex, r0).x;
+    float a1x = texture2D(tex, r1).x;
+    float a2x = texture2D(tex, r2).x;
+    return dx*(a0x + a1x + a2x);
+}
+
+float computePhaseArgX(vec2 r0In, vec2 r1In, vec2 r2In, vec2 r3In) {
+    vec2 r0 = r0In + offsetA;
+    vec2 r1 = r1In + offsetA;
+    vec2 r2 = r2In + offsetA;
+    vec2 r3 = r3In + offsetA;
+    float a0x = texture2D(tex, r0).x;
+    float a1x = texture2D(tex, r1).x;
+    float a2x = texture2D(tex, r2).x;
+    float a3x = texture2D(tex, r3).x;
+    return dx*(a0x + a1x + a2x + a3x);
+}
+
 float computePhaseArgY(vec2 r0In, vec2 r1In) {
     return computePhaseArg(r0In, r1In).y;
 }
 
+float computePhaseArgY(vec2 r0In, vec2 r1In, vec2 r2In) {
+    vec2 r0 = r0In + offsetA;
+    vec2 r1 = r1In + offsetA;
+    vec2 r2 = r2In + offsetA;
+    float a0y = texture2D(tex, r0).y;
+    float a1y = texture2D(tex, r1).y;
+    float a2y = texture2D(tex, r2).y;
+    return dy*(a0y + a1y + a2y);
+}
+
+float computePhaseArgY(vec2 r0In, vec2 r1In, vec2 r2In, vec2 r3In) {
+    vec2 r0 = r0In + offsetA;
+    vec2 r1 = r1In + offsetA;
+    vec2 r2 = r2In + offsetA;
+    vec2 r3 = r3In + offsetA;
+    float a0y = texture2D(tex, r0).y;
+    float a1y = texture2D(tex, r1).y;
+    float a2y = texture2D(tex, r2).y;
+    float a3y = texture2D(tex, r3).y;
+    return dy*(a0y + a1y + a2y + a3y);
+}
+
 complex getXTranslationPhase(vec2 x0, vec2 x1) {
     float arg = computePhaseArgX(x0, x1);
+    return complex(cos(arg), sin(arg));
+}
+
+complex getXTranslationPhase(vec2 x0, vec2 x1, vec2 x2) {
+    float arg = computePhaseArgX(x0, x1, x2);
+    return complex(cos(arg), sin(arg));
+}
+
+complex getXTranslationPhase(vec2 x0, vec2 x1, vec2 x2, vec2 x3) {
+    float arg = computePhaseArgX(x0, x1, x2, x3);
     return complex(cos(arg), sin(arg));
 }
 
@@ -81,21 +135,15 @@ complex getYTranslationPhase(vec2 y0, vec2 y1) {
     return complex(cos(arg), sin(arg));
 }
 
-/* vec2 computePhaseArg2ndOrder(vec2 rightIn, vec2 upIn,
-                             vec2 leftIn, vec2 downIn) {
-    vec2 centre = UV + offsetA;
-    vec2 right = rightIn + offsetA;
-    vec2 up = upIn + offsetA;
-    vec2 left = leftIn + offsetA;
-    vec2 down = downIn + offsetA;
-    vec2 aLeft = texture2D(tex, left).xy;
-    vec2 aRight = texture2D(tex, right).xy;
-    vec2 aUp = texture2D(tex, up).xy;
-    vec2 aDown = texture2D(tex, down).xy;
-    float thetaX = dx*(aRight.x + aLeft.x)/2.0;
-    float thetaY = dy*(aUp.y + aDown.y)/2.0;
-    return vec2(thetaX, thetaY);
-}*/
+complex getYTranslationPhase(vec2 y0, vec2 y1, vec2 y2) {
+    float arg = computePhaseArgY(y0, y1, y2);
+    return complex(cos(arg), sin(arg));
+}
+
+complex getYTranslationPhase(vec2 y0, vec2 y1, vec2 y2, vec2 y3) {
+    float arg = computePhaseArgY(y0, y1, y2, y3);
+    return complex(cos(arg), sin(arg));
+}
 
 complex xKinetic2ndOrder(sampler2D tex) {
     complex psiC = texture2D(tex, UV).zw;
@@ -106,20 +154,23 @@ complex xKinetic2ndOrder(sampler2D tex) {
     return (mul(psiL, phaseL) - 2.0*psiC + mul(psiR, phaseR))/(dx*dx);
 }
 
-/* complex xKinetic4thOrder(sampler2D tex) {
+complex xKinetic4thOrder(sampler2D tex) {
     complex psiL2 = texture2D(tex, UV - 2.0*vec2(dx/w, 0.0)).zw;
     complex psiL1 = texture2D(tex, UV - vec2(dx/w, 0.0)).zw;
     complex psiC0 = texture2D(tex, UV).zw;
     complex psiR1 = texture2D(tex, UV + vec2(dx/w, 0.0)).zw;
     complex psiR2 = texture2D(tex, UV + 2.0*vec2(dx/w, 0.0)).zw;
-    complex phaseR2 = phaseAdjust2;
-    complex phaseR1 = phaseAdjust1;
-    complex phaseL1 = conj(phaseR1);
-    complex phaseL2 = conj(phaseR2);
+    complex phaseR2 = getXTranslationPhase(UV, 
+                                           UV + vec2(dx/w, 0.0),
+                                           UV + 2.0*vec2(dx/w, 0.0));
+    complex phaseR1 = getXTranslationPhase(UV, UV + vec2(dx/w, 0.0));
+    complex phaseL1 = conj(getXTranslationPhase(UV, UV - vec2(dx/w, 0.0)));
+    complex phaseL2 = conj(getXTranslationPhase(UV, UV - vec2(dx/w, 0.0),
+                                                UV - 2.0*vec2(dx/w, 0.0)));
     return (-(mul(psiL2, phaseL2) + mul(psiR2, phaseR2))/12.0
             +4.0*(mul(psiL1, phaseL1) + mul(psiR1, phaseR1))/3.0
             -5.0*psiC0/2.0)/(dx*dx);
-}*/
+}
 
 complex yKinetic2ndOrder(sampler2D tex) {
     complex psiC = texture2D(tex, UV).zw;
@@ -130,31 +181,25 @@ complex yKinetic2ndOrder(sampler2D tex) {
     return (mul(psiD, phaseD) - 2.0*psiC + mul(psiU, phaseU))/(dy*dy);
 }
 
-/* complex yKinetic4thOrder(sampler2D tex) {
+complex yKinetic4thOrder(sampler2D tex) {
     complex psiD2 = texture2D(tex, UV - 2.0*vec2(0.0, dy/h)).zw;
     complex psiD1 = texture2D(tex, UV - vec2(0.0, dy/h)).zw;
     complex psiC0 = texture2D(tex, UV).zw;
     complex psiU1 = texture2D(tex, UV + vec2(0.0, dy/h)).zw;
     complex psiU2 = texture2D(tex, UV + 2.0*vec2(0.0, dy/h)).zw;
-    complex phaseU2 = phaseAdjust2;
-    complex phaseU1 = phaseAdjust1;
-    complex phaseD1 = conj(phaseU1);
-    complex phaseD2 = conj(phaseU2);
+    complex phaseU2 = getYTranslationPhase(UV,
+                                           UV + vec2(0.0, dy/h),
+                                           UV + 2.0*vec2(0.0, dy/h));
+    complex phaseU1 = getYTranslationPhase(UV, UV + vec2(0.0, dy/h));
+    complex phaseD1 = conj(getYTranslationPhase(UV, UV - vec2(0.0, dy/h)));
+    complex phaseD2 = conj(getYTranslationPhase(UV, UV - vec2(0.0, dy/h),
+                                                UV - 2.0*vec2(0.0, dy/h)));
     return (-(mul(psiD2, phaseD2) + mul(psiU2, phaseU2))/12.0
             +4.0*(mul(psiD1, phaseD1) + mul(psiU1, phaseU1))/3.0
             -5.0*psiC0/2.0)/(dy*dy);
-}*/
+}
 
 void main() {
-    /* vec2 theta = computePhaseArg2ndOrder(UV + vec2(dx/w, 0.0),
-                                         UV + vec2(0.0, dy/h),
-                                         UV - vec2(dx/w, 0.0),
-                                         UV - vec2(0.0, dy/h));
-    complex phaseX = complex(cos(theta.x), sin(theta.x));
-    complex phaseY = complex(cos(theta.y), sin(theta.y));
     fragColor = vec4(vec2(0.0, 0.0),
-                     xKinetic2ndOrder(tex, phaseX)
-                     + yKinetic2ndOrder(tex, phaseY));*/
-    fragColor = vec4(vec2(0.0, 0.0),
-                     xKinetic2ndOrder(tex) + yKinetic2ndOrder(tex));
+                     xKinetic4thOrder(tex) + yKinetic4thOrder(tex));
 }
