@@ -54,8 +54,8 @@ void init_potential_psi(SimFrames *frames, SimPrograms *programs,
         bind_quad(frames->potential_psi[0], programs->init);
         set_float_uniform("amplitude", 5.0);
         set_float_uniform("sigma", 0.05);
-        set_vec2_uniform("r0", 0.5, 0.25);
-        set_ivec2_uniform("wavenumber", -10, 0);
+        set_vec2_uniform("r0", 0.35, 0.35);
+        set_ivec2_uniform("wavenumber", 0, 10);
         draw_unbind_quad();
     }
 }
@@ -81,7 +81,7 @@ void timestep_schrod(SimFrames *frames, SimPrograms *programs,
     set_vec2_uniform("offsetA", 0.0, 0.0);
     draw_unbind_quad();
     bind_quad(frame2, programs->complex_add2);
-    set_vec4_uniform("scale1", 0.0, 0.0, 0.0, 0.5*dt);
+    set_vec4_uniform("scale1", 0.0, 0.0, 0.0, -0.5*dt);
     set_sampler2D_uniform("tex1", frames->temps[0]);
     set_vec4_uniform("scale2", 1.0, 0.0, 1.0, 0.0);
     set_sampler2D_uniform("tex2", frame0);

@@ -228,11 +228,52 @@ vec2 yGradAAt(sampler2D tex, vec2 loc) {
      return ((vecD2 - vecU2)/12.0 + 2.0*(vecU1 - vecD1)/3.0)/dy;
 }
 
+vec2 vectorPotentialStuff(sampler2D tex) {
+    // Sample vector potential
+    vec2 A = texture2D(tex, UV + offsetA).xy;
+    vec2 vecC0 = A;
+    vec2 vecL2 = texture2D(tex, UV - 2.0*vec2(dx/w, 0.0)).xy;
+    vec2 vecL1 = texture2D(tex, UV - vec2(dx/w, 0.0)).xy;
+    vec2 vecR1 = texture2D(tex, UV + vec2(dx/w, 0.0)).xy;
+    vec2 vecR2 = texture2D(tex, UV + 2.0*vec2(dx/w, 0.0)).xy;
+    vec2 vecD2 = texture2D(tex, UV - 2.0*vec2(0.0, dy/h)).xy;
+    vec2 vecD1 = texture2D(tex, UV - vec2(0.0, dy/h)).xy;
+    vec2 vecU1 = texture2D(tex, UV + vec2(0.0, dy/h)).xy;
+    vec2 vecU2 = texture2D(tex, UV + 2.0*vec2(0.0, dy/h)).xy;
+    // Sample wave function
+    complex psiC0 = texture2D(tex, UV).zw;
+    complex psiL2 = texture2D(tex, UV - 2.0*vec2(dx/w, 0.0)).zw;
+    complex psiL1 = texture2D(tex, UV - vec2(dx/w, 0.0)).zw;
+    complex psiR1 = texture2D(tex, UV + vec2(dx/w, 0.0)).zw;
+    complex psiR2 = texture2D(tex, UV + 2.0*vec2(dx/w, 0.0)).zw;
+    complex psiD2 = texture2D(tex, UV - 2.0*vec2(0.0, dy/h)).zw;
+    complex psiD1 = texture2D(tex, UV - vec2(0.0, dy/h)).zw;
+    complex psiU1 = texture2D(tex, UV + vec2(0.0, dy/h)).zw;
+    complex psiU2 = texture2D(tex, UV + 2.0*vec2(0.0, dy/h)).zw;
+    // Compute the current
+    complex xGradPsi = ((psiL2 - psiR2)/12.0 + 2.0*(psiR1 - psiL1)/3.0)/dx;
+    complex yGradPsi = ((psiD2 - psiU2)/12.0 + 2.0*(psiU1 - psiD1)/3.0)/dy;
+    vec2 current = vec2((mul(conj(psiC0), mul(IMAG_UNIT, xGradPsi))
+                         + A.x*mul(conj(psiC0), psiC0)).x,
+                        (mul(conj(psiC0), mul(IMAG_UNIT, yGradPsi))
+                         + A.y*mul(conj(psiC0), psiC0)).x);
+    vec2 d2Adx2 = (-(vecR2 + vecL2)/12.0 + 4.0*(vecR1 + vecL1)/3.0
+                   - 5.0*vecC0/2.0)/(dx*dx);
+    vec2 d2Ady2 = (-(vecU2 + vecD2)/12.0 + 4.0*(vecU1 + vecD1)/3.0
+                   - 5.0*vecC0/2.0)/(dy*dy);
+    vec2 d2Adxdy = (  (yGradAAt(tex, UV - 2.0*vec2(dx/w, 0.0))
+                        - yGradAAt(tex, UV + 2.0*vec2(dx/w, 0.0)))/12.0
+                    + 2.0*(yGradAAt(tex, UV + vec2(dx/w, 0.0))
+                            - yGradAAt(tex, UV - vec2(dx/w, 0.0)))/3.0
+                   )/dx;
+    return vec2(d2Adx2.x - d2Adxdy.y, d2Adx2.y - d2Adxdy.x) - current;
+
+}
+
 void main() {
-    fragColor = vec4(vec2(0.0, 0.0),
-                    // kinetic2ndOrderNoSubstitution(tex)
+    fragColor = vec4(vectorPotentialStuff(tex),
                      // kinetic4thOrderNoSubstitution(tex)
-                    xKinetic4thOrder(tex) + yKinetic4thOrder(tex)
+                     xKinetic4thOrder(tex) + yKinetic4thOrder(tex)
                      // + nonlinear(3.0, tex)
                      );
 }

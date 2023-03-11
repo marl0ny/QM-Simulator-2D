@@ -98,6 +98,7 @@ void compile_shader(GLuint shader_ref, const char *shader_source) {
     }
     for ( ; shader_source[m] != '\n'; m++) {
         if (!shader_source[m] || shader_source[m] != ' ') {
+
             fprintf(stderr, "Shader invalid");
             return;
         }
@@ -298,6 +299,53 @@ GLuint make_quad_program_from_string_source(const char *src) {
     return program;
 }
 
+static GLuint sized_to_base(int format) {
+    /* This is basically following table 2 from here:
+    https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+    */
+    switch(format) {
+    case GL_R8: case GL_R16F: case GL_R32F:
+    case GL_R8I: case GL_R8UI: case GL_R16I: case GL_R16UI:
+    case GL_R32I: case GL_R32UI:
+        return GL_RED;
+    case GL_RG8: case GL_RG16F: case GL_RG32F:
+    case GL_RG8I: case GL_RG8UI: case GL_RG16I: case GL_RG16UI:
+    case GL_RG32I: case GL_RG32UI:
+        return GL_RG;
+    case GL_RGB8: case GL_RGB16F: case GL_RGB32F:
+    case GL_RGB8I: case GL_RGB8UI: case GL_RGB16I: case GL_RGB16UI:
+    case GL_RGB32I: case GL_RGB32UI:
+        return GL_RGB;
+    case GL_RGBA8: case GL_RGBA16F: case GL_RGBA32F:
+    case GL_RGBA8I: case GL_RGBA8UI: case GL_RGBA16I: case GL_RGBA16UI:
+    case GL_RGBA32I: case GL_RGBA32UI:
+        return GL_RGBA;
+    }
+    return -1;
+}
+
+static GLuint sized_to_type(int format) {
+    switch(format) {
+    case GL_R32F: case GL_RG32F: case GL_RGB32F: case GL_RGBA32F:
+        return GL_FLOAT;
+    case GL_R16F: case GL_RG16F: case GL_RGB16F: case GL_RGBA16F:
+        return GL_HALF_FLOAT;
+    case GL_R8: case GL_RG8: case GL_RGB8: case GL_RGBA8:
+        return GL_BYTE;
+    case GL_R8UI: case GL_RG8UI: case GL_RGB8UI: case GL_RGBA8UI:
+        return GL_UNSIGNED_BYTE;
+    case GL_R16I: case GL_RG16I: case GL_RGB16I: case GL_RGBA16I:
+        return GL_SHORT;
+    case GL_R16UI: case GL_RG16UI: case GL_RGB16UI: case GL_RGBA16UI:
+        return GL_UNSIGNED_SHORT;
+    case GL_R32I: case GL_RG32I: case GL_RGB32I: case GL_RGBA32I:
+        return GL_INT;
+    case GL_R32UI: case GL_RG32UI: case GL_RGB32UI: case GL_RGBA32UI:
+        return GL_UNSIGNED_INT;
+    }
+    return -1;
+}
+
 void quad_init_texture(const struct TextureParams *params) {
     if (s_current_frame_id <= 0) {
         glActiveTexture(GL_TEXTURE0);
@@ -312,40 +360,17 @@ void quad_init_texture(const struct TextureParams *params) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     s_current_frame->texture = texture;
-    if (params->type == GL_UNSIGNED_BYTE) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
-                     params->width, params->height, 0, GL_RGB,
-                     GL_UNSIGNED_BYTE, NULL);
-        if (params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params->wrap_s);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params->wrap_t);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        params->min_filter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                        params->mag_filter);
-    } else if (params->type == GL_FLOAT) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
-                     params->width, params->height, 0, GL_RGBA,
-                     GL_FLOAT, NULL);
-        if (params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params->wrap_s);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params->wrap_t);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        params->min_filter);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                        params->mag_filter);
-    } else if (params->type == GL_HALF_FLOAT) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
-                     params->width, params->height, 0, GL_RGBA,
-                     GL_HALF_FLOAT, NULL);
-        if (params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params->wrap_s);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params->wrap_t);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        params->min_filter);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                        params->mag_filter);
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, params->format,
+                 params->width, params->height, 0,
+                 sized_to_base(params->format),
+                 sized_to_type(params->format), NULL);
+    if (params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params->wrap_s);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params->wrap_t);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    params->min_filter);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    params->mag_filter);
 }
 
 
@@ -395,33 +420,18 @@ int new_frame(const struct TextureParams *texture_params,
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     s_current_frame->texture = texture;
-    if (texture_params->type == GL_UNSIGNED_BYTE) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
-                     texture_params->width, texture_params->height, 0, GL_RGB,
-                     GL_UNSIGNED_BYTE, NULL);
-        if (texture_params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                        texture_params->wrap_s);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-                        texture_params->wrap_t);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        texture_params->min_filter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                        texture_params->mag_filter);
-    } else if (texture_params->type == GL_FLOAT) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
-                     texture_params->width, texture_params->height, 0, GL_RGBA,
-                     GL_FLOAT, NULL);
-        if (texture_params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                        texture_params->wrap_s);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-                        texture_params->wrap_t);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        texture_params->min_filter);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                        texture_params->mag_filter);
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, texture_params->format,
+                 texture_params->width, texture_params->height, 0, GL_RGBA,
+                 GL_FLOAT, NULL);
+    if (texture_params->generate_mipmap) glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    texture_params->wrap_s);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+                    texture_params->wrap_t);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    texture_params->min_filter);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    texture_params->mag_filter);
     // init objects
     GLuint *vao_ptr = &s_current_frame->vao;
     GLuint *vbo_ptr = &s_current_frame->vbo;

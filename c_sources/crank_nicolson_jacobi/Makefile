@@ -23,9 +23,12 @@ LIBS = -ldl -L/opt/homebrew/lib -L/usr/local/include -lglfw\
 endif
 
 TARGET = ${PWD}/program
-SOURCES = ${PWD}/gl_wrappers/gl_wrappers.c simulation.c init_render.c\
-           main.c
-OBJECTS = gl_wrappers.o simulation.o init_render.o main.o
+
+WEB_TARGET = main.js
+
+SOURCES = ${PWD}/gl_wrappers/gl_wrappers.c summation_gl.c simulation.c\
+	init_render.c  main.c
+OBJECTS = gl_wrappers.o summation_gl.o simulation.o init_render.o main.o
 
 
 all: ${TARGET}
@@ -33,8 +36,13 @@ all: ${TARGET}
 ${TARGET}: ${OBJECTS}
 	${COMPILE} ${FLAGS} -o $@ $^ ${LIBS}
 
+${WEB_TARGET}: ${SOURCES}
+	EMCC_DEBUG=1
+	emcc -o $@ $^ ${INCLUDE} -v -s WASM=1 -s USE_GLFW=3 -s FULL_ES3=1 \
+		-s TOTAL_MEMORY=100MB --embed-file shaders
+
 ${OBJECTS}: ${SOURCES}
 	${COMPILE} ${FLAGS} -c $^ ${INCLUDE}
 
 clean:
-	rm -f *.o ${TARGET}
+	rm -f *.o *.wasm *.js ${TARGET}
