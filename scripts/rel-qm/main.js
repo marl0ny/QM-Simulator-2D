@@ -14,7 +14,7 @@ function initializePotential(type) {
         guiData.potentialType = 1;
         newDataVals = {bx: 0.30, by: 0.30, 
                        px: -10.0, py: 10.0, mouseAction: true,
-                       mouseSelect: 'New ψ(x, y)'};
+                       mouseSelect: 'New Ψ(x, y)'};
     } else if (type == 'Double Slit') {
         guiData.potentialType = 2;
         guiData.presetPotentialSettings.x1 = 0.43;
@@ -23,7 +23,7 @@ function initializePotential(type) {
         guiData.presetPotentialSettings.spacing = 0.03;
         newDataVals = {bx: 0.5, by: 0.20, 
                        px: 0.0, py: 30.0, mouseAction: true, 
-                       mouseSelect: 'New ψ(x, y)'};
+                       mouseSelect: 'New Ψ(x, y)'};
     } else if (type == 'Single Slit') {
         guiData.potentialType = 3;
         guiData.presetPotentialSettings.x1 = 0.5;
@@ -31,19 +31,19 @@ function initializePotential(type) {
         guiData.presetPotentialSettings.spacing = 0.01;
         newDataVals = {bx: 0.5, by: 0.20, 
                        px: 0.0, py: 30.0, mouseAction: true,
-                       mouseSelect: 'New ψ(x, y)'};
+                       mouseSelect: 'New Ψ(x, y)'};
     } else if (type == 'Step') {
         guiData.potentialType = 4;
         guiData.presetPotentialSettings.a = 5000/guiData.c
         newDataVals = {bx: 0.5, by: 0.20, 
                        px: 0.0, py: 30.0, mouseAction: true,
-                       mouseSelect: 'New ψ(x, y)'};
+                       mouseSelect: 'New Ψ(x, y)'};
     } else if (type == 'Coulomb') {
         guiData.potentialType = 7;
         guiData.presetPotentialSettings.a = 0.5;
         newDataVals = {bx: 0.5, by: 0.20, 
                        px: 0.0, py: 30.0, mouseAction: true,
-                       mouseSelect: 'New ψ(x, y)'};
+                       mouseSelect: 'New Ψ(x, y)'};
     } else {
         guiData.potentialType = 0;
     }
@@ -241,7 +241,7 @@ initWavefunc();
 function animation() {
     if (stats) stats.begin();
     if (guiData.mouseAction) {
-        if (guiData.mouseSelect === 'New ψ(x, y)') 
+        if (guiData.mouseSelect === 'New Ψ(x, y)') 
             initWavefunc();
         else if (guiData.mouseSelect === 'Draw Barrier')
             reshapePotential(0, guiData);

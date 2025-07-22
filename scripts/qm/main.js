@@ -35,7 +35,7 @@ function main() {
             numberOfFrames = defaultNumberOfFrames;
             disableNonPowerTwo = false;
             addLaplacianControls(['5 pt. 2nd or.', '9 pt. 2nd or.']);
-        } if (e === 'Leapfrog 2') {
+        } if (e ==='Centred 2nd Or.') {
             SimManager = Leapfrog2SimulationManager;
             guiData.dtMax = 0.01;
             guiControls.dtSlider.max(guiData.dtMax);
@@ -106,7 +106,7 @@ function main() {
             guiControls.textEditNonlinearEntry.onChange(() => {
                 textEditNonlinearFuncSplitOperator(sim);
             });*/
-        } else if (e === 'Leapfrog Nonlinear') {
+        } else if (e === 'Centred Nonlinear') {
             SimManager = LeapfrogNonlinearSimulationManager;
             guiData.dtMax = 0.01;
             guiControls.dtSlider.max(guiData.dtMax);
@@ -439,7 +439,7 @@ function main() {
             guiData.py = 0.0;
             guiData.px = ((Math.random() > 0.5)? -1.0: 1.0)*
                           (pxMax*0.75)/guiData.scaleP;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         } else if (type === 'Double Slit') {
             let doubleSlitUniforms = {y0: 0.45, w: 0.01, x1: 0.46, x2: 0.54,
@@ -474,7 +474,7 @@ function main() {
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
 
         } else if (type === 'Single Slit') {
@@ -511,7 +511,7 @@ function main() {
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         } else if (type === 'Step') {
             let stepUniforms = {y0: 0.5, a: 4.0};
@@ -537,7 +537,7 @@ function main() {
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         } else if (type === 'Circle'){
             let circleUniforms = {a: 20.0, spacing: 0.45};
@@ -563,7 +563,7 @@ function main() {
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         }  else if (type === 'Coulomb') {
             let coulombUniforms = {a: 0.05};
@@ -589,7 +589,7 @@ function main() {
             guiData.by = canvas.height*0.75;
             guiData.py = pyMax/guiData.scaleP;
             guiData.px = 0.0;
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         } else {
             guiData.bx = canvas.width/2;
@@ -614,11 +614,11 @@ function main() {
                 guiData.px = -((Math.random() > 0.5)? -1.0: 1.0)*
                                 (0.75*pxMax)/guiData.scaleP;
             }
-            guiData.mouseMode = 'new ψ(x, y)';
+            guiData.mouseMode = 'New Ψ(x, y)';
             guiControls.mouseMode.updateDisplay();
         }
         guiControls.mouseControls.close();
-        mouseControlsCallback('new ψ(x, y)');
+        mouseControlsCallback('New Ψ(x, y)');
         // guiControls.mouseControls.updateDisplay();
     }
 
@@ -694,7 +694,8 @@ function main() {
         if (disableNonPowerTwo) return;
         let sims = [sim];
         loadBinaryDataToSim({sims: sims, file: file,
-                             setFrameDimensions: setFrameDimensions});
+                             setFrameDimensions: setFrameDimensions,
+                             boundaryType: guiData.boundaryType});
     }
     guiControls.loadBinaryData.addEventListener(
         "change", onLoadBinaryData, false);
@@ -718,7 +719,7 @@ function main() {
     }
 
     function display() {
-        const MOUSE_MODE_PROB_IN_BOX = 'p';
+        const MOUSE_MODE_PROB_IN_BOX = 'P';
         const DISPLAY_ONLY_PROB_DENSITY = 0;
         const DISPLAY_PHASE = 1;
         const DISPLAY_PROB_DENSITY_HEIGHT_MAP = 2;
@@ -929,7 +930,7 @@ function main() {
         if (stats) stats.begin();
         onPotentialChange();
         if (guiData.mouseData.mouseAction) {
-            if (guiData.mouseMode[0] === 'n') {
+            if (guiData.mouseMode[0] === 'N') {
                 createNewWave();
             } else if ((guiData.mouseMode[0]
                          === guiData.mouseData.SKETCH_BARRIER ||

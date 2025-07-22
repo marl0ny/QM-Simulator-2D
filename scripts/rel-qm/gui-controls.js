@@ -27,7 +27,7 @@ let potSelect = gui.add(guiData, 'presetPotentials',
                          // 'Coulomb'
                         ]
                         ).name('Preset Potential');
-let mouseSelect = gui.add(guiData, 'mouseSelect', ['New ψ(x, y)', 
+let mouseSelect = gui.add(guiData, 'mouseSelect', ['New Ψ(x, y)', 
                                                     'Draw Barrier', 
                                                     'Erase Barrier',
                                                     'Prob. in Box']
@@ -48,7 +48,7 @@ additions.push(presetPotOptions.add(guiData.presetPotentialSettings,
                                     'x2', 0.5, 0.65));
 presetPotOptions.additions = additions;
 let mouseOptions = gui.addFolder('Mouse Select Options')
-let newWavefuncOptions = mouseOptions.addFolder('New ψ(x, y)');
+let newWavefuncOptions = mouseOptions.addFolder('New Ψ(x, y)');
 newWavefuncOptions.add(guiData, 'sigma', 0.01, 0.1);
 let initPByMouse = newWavefuncOptions.add(guiData, 
                                           'initMomentumByPxPySliders'
@@ -173,7 +173,7 @@ let startSpeed = screenshotsOptions.add(
     guiData, 'startSpeed', 0, 20, 1).name('Start Speed');
 let pauseOnFinish = screenshotsOptions.add(
     guiData, 'pauseOnFinish', false
-).name('Pause On Finish');
+).name('Pause on Finish');
 
 
 function downloadScreenshotsZip(screenshots, screenshotNames) {

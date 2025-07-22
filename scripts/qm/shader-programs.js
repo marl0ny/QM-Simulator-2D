@@ -22,6 +22,8 @@ let expPotentialProgram;
 let imagePotentialProgram;
 let rearrangeProgram;
 let fftIterProgram;
+let fftIterSquareProgram;
+let revBitSort2Program;
 let initVectorPotentialProgram;
 let dist2Program;
 let copyScaleFlipProgram;
@@ -97,6 +99,12 @@ function initPrograms() {
     let fftIterShader = makeShader(gl.FRAGMENT_SHADER, 
                                    fftIterFragmentSource);
     fftIterProgram = makeProgram(vShader, fftIterShader);
+    let fftIterSquareShader = makeShader(gl.FRAGMENT_SHADER, 
+                                         fftIterSquareFragmentSource);
+    fftIterSquareProgram = makeProgram(vShader, fftIterSquareShader);
+    let revBitSort2Shader = makeShader(gl.FRAGMENT_SHADER, 
+                                       revBitSort2FragmentSource);
+    revBitSort2Program = makeProgram(vShader, revBitSort2Shader);
     let rearrangeShader = makeShader(gl.FRAGMENT_SHADER, 
                                      rearrangeFragmentSource);
     rearrangeProgram = makeProgram(vShader, rearrangeShader);
@@ -138,6 +146,8 @@ function initPrograms() {
     gl.deleteShader(expPotentialShader);
     gl.deleteShader(complexMultiplyShader);
     gl.deleteShader(fftIterShader);
+    gl.deleteShader(fftIterSquareShader);
+    gl.deleteShader(revBitSort2Shader);
     gl.deleteShader(rearrangeShader);
     gl.deleteShader(initVectorPotentialShader);
     gl.deleteShader(dist2Shader);

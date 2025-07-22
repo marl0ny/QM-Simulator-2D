@@ -7,23 +7,34 @@ function mouseControlsCallback(e) {
         }
         mouseControls.widgets = [];
         let items = guiData.mouseData;
-        let name = mouseControls.add(items, 'name').name(`${e} guiData`);
-        let fixInitialP = mouseControls.add(items,
-                                            'fixInitialP'
-                                           ).name('Fix Init. Mom.');
-        
+        let name = mouseControls.add(items, 'name').name(
+            `${e}`);
+        //  = exp(p\u2080\u22C5r-|r-r\u2080|\u00B2/4\u03C3\u00B2)
         let sigma = mouseControls.add(items, 'sigma', 
-                                      10.0/512.0, 40.0/512.0).name('sigma');
+                                      10.0/512.0, 40.0/512.0).name('\u03C3');
         let pxVal = parseInt(40.0*canvas.width/512.0);
         let pyVal = parseInt(40.0*canvas.height/512.0);
-        let px0 = mouseControls.add(items, 'px0', -pxVal, pxVal).name('kx');
-        let py0 = mouseControls.add(items, 'py0', -pyVal, pyVal).name('ky');
+        let fixInitialP = mouseControls.add(items,
+            'fixInitialP'
+           ).name('nx/ny sets p\u2080');
+        let px0 = mouseControls.add(items, 'px0', -pxVal, pxVal).name('nx');
+        let py0 = mouseControls.add(items, 'py0', -pyVal, pyVal).name('ny');
+        let holdRelease 
+            = mouseControls.add(items, 'holdRelease').name('Hold/release');
         mouseControls.widgets.push(name);
+        mouseControls.widgets.push(holdRelease);
         mouseControls.widgets.push(fixInitialP);
         mouseControls.widgets.push(sigma);
         mouseControls.widgets.push(px0);
         mouseControls.widgets.push(py0);
-
+        guiControls.mouseControls.widgets[2].onChange(() => {
+            guiData.mouseData.holdRelease = false;
+            guiControls.mouseControls.widgets[1].updateDisplay();
+        });
+        guiControls.mouseControls.widgets[1].onChange(() => {
+            guiData.mouseData.fixInitialP = false;
+            guiControls.mouseControls.widgets[2].updateDisplay();
+        });
     } else if (e[0] === guiData.mouseData.SKETCH_BARRIER || 
               e[0] === guiData.mouseData.ERASE_BARRIER) {
         for (let w of mouseControls.widgets) {
@@ -32,9 +43,9 @@ function mouseControlsCallback(e) {
         mouseControls.widgets = [];
         let items = guiData.mouseData;
         let name = mouseControls.add(items, 'name').name(`${e} Controls`);
-        let stencilTypesList = ['square', 'circle'];
+        let stencilTypesList = ['Square', 'Circle'];
         // if (e[0] === SKETCH_BARRIER) {
-            stencilTypesList.push('gaussian');
+            stencilTypesList.push('Gaussian');
         // }
         let stencilTypes = mouseControls.add(items, 'stencilTypes',
                                              stencilTypesList
@@ -46,7 +57,7 @@ function mouseControlsCallback(e) {
             guiData.mouseData.erase = false;
             guiData.mouseData.v2 = 10.0;
             vControl = mouseControls.add(items, 'v2', 
-                                         0.0, 10.0).name('E');
+                                         0.0, 10.0).name('Barrier Height');
         } else {
             guiData.mouseData.v2 = 0.0;
             guiData.mouseData.erase = true;
@@ -56,11 +67,11 @@ function mouseControlsCallback(e) {
                 let DRAW_SQUARE = 0;
                 let DRAW_CIRCLE = 1;
                 let DRAW_GAUSS = 2;
-                if (e === 'square') {
+                if (e === 'Square') {
                     guiData.mouseData.stencilType = DRAW_SQUARE;
-                } else if (e === 'circle') {
+                } else if (e === 'Circle') {
                     guiData.mouseData.stencilType = DRAW_CIRCLE;
-                } else if (e === 'gaussian') {
+                } else if (e === 'Gaussian') {
                     guiData.mouseData.stencilType = DRAW_GAUSS;
                 }
             }
@@ -315,19 +326,44 @@ function handleRecording(canvas) {
 }
 
 let mousePos = function(ev, mode) {
+    console.log(mode);
+    if (mode == 'down') {
+        if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
+            && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
+        ) {
+            guiData.bx = Math.floor((ev.clientX 
+                                    - canvas.offsetLeft))/scale.w;
+            guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+        }
+    }
     if (mode == 'move') {
+        // console.log(ev.clientX, ev.clientY);
+        // console.log(guiData.bx, guiData.by);
         guiData.mouseData.mouseCount++;
         let prevBx = guiData.bx;
         let prevBy = guiData.by;
-        guiData.bx = Math.floor((ev.clientX 
-                                  - canvas.offsetLeft))/scale.w;
-        guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-        guiData.px = parseInt(guiData.bx - prevBx);
+        if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
+            && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
+        ) {
+            let bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
+            let by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            guiData.px = parseInt(0.5*(bx - prevBx)
+                    // *((scale.w > scale.h)? scale.h/scale.w: scale.w/scale.h)
+                );
+            guiData.py = -parseInt(0.5*(by - prevBy)
+                    // *((scale.h > scale.w)? scale.w/scale.h: scale.h/scale.w)
+                );
+        } else {
+            guiData.bx = Math.floor((ev.clientX 
+                                      - canvas.offsetLeft))/scale.w;
+            guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            guiData.px = parseInt(guiData.bx - prevBx);
+            guiData.py = -parseInt(guiData.by - prevBy);
+        }
         if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
             guiData.px = Math.sign(guiData.px)*
                          50.0*(pixelWidth/512.0)/guiData.scaleP;
         }
-        guiData.py = -parseInt(guiData.by - prevBy);
         if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
             guiData.py = Math.sign(guiData.py)*
                          50.0*(pixelHeight/512.0)/guiData.scaleP;
@@ -351,6 +387,7 @@ function setMouseInput() {
                                           - canvas.offsetLeft))/scale.w;
         guiData.drawRect.y = Math.floor((mouseEv.clientY
                                           - canvas.offsetTop))/scale.h;
+        mousePos(mouseEv, 'down');
         // mousePos(mouseEv, 'move');
     });
     canvas.addEventListener("touchmove", ev => {
@@ -378,8 +415,39 @@ function setMouseInput() {
                                            - canvas.offsetLeft))/scale.w;
         guiData.drawRect.y = Math.floor((ev.clientY
                                            - canvas.offsetTop))/scale.h;
+        mousePos(ev, 'down');
     });
     canvas.addEventListener("mousemove", ev => mousePos(ev, 'move'));
+    window.addEventListener("touchmove", ev => {
+        if (guiData.mouseData.mouseUse) {
+            let touches = ev.changedTouches;
+            let mouseEv = {clientX: touches[0].pageX, 
+                           clientY: touches[0].pageY};
+            let bx = Math.floor(
+                (mouseEv.clientX - canvas.offsetLeft))/scale.w;
+            let by = Math.floor((mouseEv.clientY - canvas.offsetTop))/scale.h;
+            if (!(bx < canvas.width && by < canvas.height &&
+                  bx >= 0 && 
+                  by >= 0)) {
+                guiData.mouseData.mouseUse = false;
+                guiData.mouseData.mouseAction = false;
+                guiData.mouseCount = 0;
+            }
+        }
+    });
+    window.addEventListener("mousemove", ev => {
+        if (guiData.mouseData.mouseUse) {
+            let bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
+            let by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            if (!(bx < canvas.width && by < canvas.height &&
+                  bx >= 0 && 
+                  by >= 0)) {
+                guiData.mouseData.mouseUse = false;
+                guiData.mouseData.mouseAction = false;
+                guiData.mouseCount = 0;
+            }
+        }
+    });
 }
 
 function addLaplacianControls(options) {
@@ -410,10 +478,10 @@ function removeLaplacianControls() {
 function addIterationsControls() {
     guiControls.iterations
         = guiControls.intMethod.add(
-            guiData, 'iterations', 3, 20, 1).name('Min. Iter.');
+            guiData, 'iterations', 3, 20, 1).name('Min. iter.');
     guiControls.assessConvergence = guiControls.intMethod.add(
         guiData, 'assessConvergence'
-    ).name('Check Conv.');
+    ).name('Check conv.');
     guiControls.setTol = guiControls.intMethod.add(
         guiData, 'toleranceString').name('Tolerance');
     guiControls.setTol.onChange(e => {
@@ -711,6 +779,7 @@ function loadBinaryDataToSim(params) {
             for (k = 0; k < n; k++) {
                 let arr = new Float32Array(4*wh);
                 for (let i = 0; i < w*h; i++) {
+                    let x_i = i % w, y_i = Math.floor(i/w);
                     let re = view.getFloat32(headerLength
                                             + sizeofFloat*(2*(k*wh + i)),
                                             endian);
@@ -720,7 +789,9 @@ function loadBinaryDataToSim(params) {
                     arr[4*i] = re;
                     arr[4*i + 1] = im;
                     arr[4*i + 2] = 0.0;
-                    arr[4*i + 3] = 1.0;
+                    arr[4*i + 3] = (params.boundaryType === 'Dirichlet' && 
+                                    (x_i === 0 || x_i === w - 1 || 
+                                     y_i === 0 || y_i === h - 1))? 0.0: 1.0;
                 }
                 arrays.push(arr);
             }
@@ -731,7 +802,7 @@ function loadBinaryDataToSim(params) {
             } else {
                 sim.substituteWavefunctionArrays(arrays);
             }
-        } else if (headerData.type === 'p') {
+        } else if (headerData.type === 'P') {
             let arr = new Float32Array(4*pixelHeight*pixelWidth);
             for (let i = 0; i < w*h; i++) {
                 arr[4*i] = view.getFloat32(
@@ -755,6 +826,7 @@ function loadBinaryDataToSim(params) {
             for (k = 0; k < n; k++) {
                 let arr = new Float32Array(4*wh);
                 for (let i = 0; i < w*h; i++) {
+                    let x_i = i % w, y_i = Math.floor(i/w);
                     let re = view.getFloat32(headerLength + sizeofFloat*wh
                                             + sizeofFloat*(2*(k*wh + i)),
                                             endian);
@@ -764,7 +836,9 @@ function loadBinaryDataToSim(params) {
                     arr[4*i] = re;
                     arr[4*i + 1] = im;
                     arr[4*i + 2] = 0.0;
-                    arr[4*i + 3] = 1.0;
+                    arr[4*i + 3] = (params.boundaryType === 'Dirichlet' && 
+                                    (x_i === 0 || x_i === w - 1 || 
+                                     y_i === 0 || y_i === h - 1))? 0.0: 1.0;
                 }
                 arrays.push(arr);
             }

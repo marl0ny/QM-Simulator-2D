@@ -118,10 +118,10 @@ guiControls.colourPhase
 // Answer (https://stackoverflow.com/a/31000465)
 // by Djuro Mirkovic (https://stackoverflow.com/users/4972372/djuro-mirkovic)
 guiControls.mouseMode = gui.add(guiData, 'mouseMode',
-                        ['new ψ(x, y)', 
-                         'sketch barrier',
-                         'erase barrier',
-                         'prob. in box']).name('Mouse Usage');
+                        ['New Ψ(x, y)', 
+                         'Sketch barrier',
+                         'Erase barrier',
+                         'Prob. in box']).name('Mouse Usage');
 // gui.add(guiData, 'changeDimensions', ['400x400', '512x512',
 //         '640x640', '800x800']).name('Grid Size');
 guiControls.presetPotentialSelect = gui.add(guiData, 'presetPotential',
@@ -146,10 +146,10 @@ guiControls.visualizationOptionsFolder.add(guiData, 'brightness2',
         0.0, guiData.maxBrightness2).name('Pot. brightness');
 guiControls.potColourController
     = guiControls.visualizationOptionsFolder.addColor(
-        {colour: [255.0, 255.0, 255.0]}, 'colour').name('Pot. Colour');
+        {colour: [255.0, 255.0, 255.0]}, 'colour').name('Pot. colour');
 guiControls.showPotHeightMap
     = guiControls.visualizationOptionsFolder.add(
-        guiData, 'showPotHeightMap', false).name('Pot. Height Map');
+        guiData, 'showPotHeightMap', false).name('Pot. height map');
 guiControls.potColourController.onChange(e => {
     guiData.potColour[0] = e[0]/255.0;
     guiData.potColour[1] = e[1]/255.0;
@@ -158,10 +158,10 @@ guiControls.potColourController.onChange(e => {
     guiControls.showPotHeightMap.updateDisplay(); 
 });
 guiControls.visualizationOptionsFolder.add(guiData, 'viewProbCurrent', 
-                                           false).name('Prob. Current');
+                                           false).name('Prob. current');
 guiControls.probColourController
      = guiControls.visualizationOptionsFolder.addColor(
-         {colour: [255.0, 255.0, 255.0]}, 'colour').name('Prob. Colour');
+         {colour: [255.0, 255.0, 255.0]}, 'colour').name('Prob. colour');
 guiControls.probColourController.onChange(e => {
     guiData.probColour[0] = e[0]/255.0;
     guiData.probColour[1] = e[1]/255.0;
@@ -173,7 +173,7 @@ guiControls.probColourController.onChange(e => {
 });
 guiControls.showProbHeightMap
         = guiControls.visualizationOptionsFolder.add(
-            guiData, 'showProbHeightMap', false).name('Prob. Height Map');
+            guiData, 'showProbHeightMap', false).name('Prob. height map');
 guiControls.showProbHeightMap.onChange(e => {
     guiData.colourPhase = false;
     guiControls.colourPhase.updateDisplay();
@@ -183,10 +183,10 @@ guiControls.showFolder
     = guiControls.moreControlsFolder.addFolder('Show Dimensions');
 guiControls.boxW = guiControls.showFolder.add(guiData.showValues, 
                                               'w', `${width}`
-                                              ).name('Box Width');
+                                              ).name('Box width');
 guiControls.boxH = guiControls.showFolder.add(guiData.showValues, 
                                               'h', `${height}`
-                                             ).name('Box Height');
+                                             ).name('Box height');
 guiControls.changeDimensionsFolder
      = guiControls.moreControlsFolder.addFolder('Change Grid Size');
 let screenFitW = parseInt(3.0*window.innerWidth*windowScale/5.0);
@@ -194,7 +194,7 @@ let screenFitH = parseInt(3.0*window.innerHeight*windowScale/5.0);
 let screenFitWLarge = parseInt(window.innerWidth*windowScale);
 let screenFitHLarge = parseInt(window.innerHeight*windowScale);
 let aspectRatiosWidths = {'1:1': [256, 400, 512, 640, 800, 1024, 2048],
-                          '16:9': [683, 1024, 1280, 1366, 1920]};
+                          '16:9': [683, 1024, 1280, 1366, 1920, 3840]};
 let gridSizes = [`${screenFitW}x${screenFitH}`,
                  `${screenFitWLarge}x${screenFitHLarge}`];
 for (let k of Object.keys(aspectRatiosWidths)) {
@@ -211,14 +211,14 @@ for (let k of Object.keys(aspectRatiosWidths)) {
 guiControls.gridSelect
     = guiControls.changeDimensionsFolder.add(guiData, 'changeDimensions',
                                              gridSizes
-                                             ).name('Grid Size');
+                                             ).name('Grid size');
 guiControls.textEditPotential
     = guiControls.moreControlsFolder.addFolder('Text Edit Potential');
 guiControls.useTex = guiControls.textEditPotential.add(guiData,
                                    'useTextureCoordinates'
-                                  ).name('Use Tex Coordinates');
+                                  ).name('Texture coord.');
 guiControls.textEditPotentialEntry = guiControls.textEditPotential.add(guiData,
-    'enterPotential').name('Enter Potential V(x, y)');
+    'enterPotential').name('Enter potential V(x, y)');
 guiControls.textEditSubFolder
     = guiControls.textEditPotential.addFolder('Edit variables');
 guiControls.textEditSubFolder.controls = [];
@@ -261,12 +261,12 @@ guiControls.imageNameWidget = guiControls.imagePotentialFolder.add(guiData,
 
 guiControls.invertImageControl
     = guiControls.imagePotentialFolder.add(guiData, 
-        'invertImage', false).name('invert');
+        'invertImage', false).name('Invert');
 guiControls.imagePotentialFolder.add({'useImageDimensions': 
                           () => guiData.setToImageDimensions()}, 
-                          'useImageDimensions').name('Use Dim.');
+                          'useImageDimensions').name('Use aspect ratio');
 guiControls.imagePotentialFolder.add({'submit': () => guiData.imageFunc()},
-                         'submit').name('Use for Pot.');
+                         'submit').name('Set as V(x,y)');
 // guiControls.imagePotentialFolder.add({submit2: () =>
 //                                       guiData.imageBackgroundFunc()}, 
 //                                       'submit2'
@@ -309,13 +309,13 @@ guiControls.screenshotProgress
                                         ).name('Progress');
 guiControls.setStartSpeed = guiControls.screenshotsFolder.add(
     guiData, 'setStartSpeed', false
-).name('Set Start Speed');
+).name('Set start speed');
 guiControls.startSpeed = guiControls.screenshotsFolder.add(
     guiData, 'startSpeed', 0, guiData.maxSpeed, 1
-).name('Start Speed');
+).name('Start speed');
 guiControls.pauseOnFinish = guiControls.screenshotsFolder.add(
     guiData, 'pauseOnFinish', false
-).name('Pause On Finish');
+).name('Pause on finish');
 guiControls.recordVideoFolder.add({'func': () => {
     guiData.recordVideo = true;
 }}, 'func').name('Start');
@@ -326,13 +326,13 @@ guiControls.saveLoad = guiControls.moreControlsFolder.addFolder(
 guiControls.save = guiControls.saveLoad.addFolder('Save');
 guiControls.saveWavefunc = guiControls.save.add(guiData, 
                                                 'serializeWavefunc'
-                                                ).name('wavefunction');
+                                                ).name('Wave function');
 guiControls.savePotential = guiControls.save.add(guiData, 
                                                 'serializePotential'
-                                                ).name('potential');
+                                                ).name('Potential');
 guiControls.saveWavefuncPotential = 
     guiControls.save.add(guiData, 'serializePotentialAndWavefunction'
-                         ).name('both');
+                         ).name('Both');
 guiControls.load = guiControls.saveLoad.addFolder('Load');
 guiControls.loadBinaryDataButton
     = guiControls.load.add({'loadBinaryData': () => {}}, 
@@ -350,7 +350,7 @@ guiControls.loadBinaryData = document.getElementById('loadBinaryData');
 guiControls.intMethod
      = guiControls.moreControlsFolder.addFolder('Integration Method');
 guiControls.methodControl = guiControls.intMethod.add(guiData, 'method', 
-                                  ['Leapfrog', 'Leapfrog 2', 
+                                  ['Leapfrog', 'Centred 2nd Or.', 
                                    // 'Leapfrog 3',
                                    'CN w/ Jacobi', 
                                    // 'CNJ w/ B-Field',
@@ -358,7 +358,7 @@ guiControls.methodControl = guiControls.intMethod.add(guiData, 'method',
                                    'Split-Op. (GPU FFT)',
                                    'Time Split CN-J',
                                    'Split-Op. Nonlinear',
-                                   'Leapfrog Nonlinear'
+                                   'Centred Nonlinear'
                                   ]
                                  ).name('Methods');
 

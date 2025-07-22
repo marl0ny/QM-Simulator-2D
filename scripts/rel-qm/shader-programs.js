@@ -31,11 +31,15 @@ let initVectorPotentialShader = makeShader(gl.FRAGMENT_SHADER,
 let complexMultiplyShader = makeShader(gl.FRAGMENT_SHADER,
                                        complexMultiplyFragmentSource);
 let fftIterShader = makeShader(gl.FRAGMENT_SHADER,
-                               fftIterFragmentSource);
+                               fftIterSquareFragmentSource);
+let fftIterSquareShader = makeShader(gl.FRAGMENT_SHADER,
+                               fftIterSquareFragmentSource);
 let splitStepKineticShader = makeShader(gl.FRAGMENT_SHADER,
                                         diracSplitStepKineticFragmentSource);
 let splitStepPotentialShader = makeShader(gl.FRAGMENT_SHADER,
     diracSplitStepPotentialFragmentSource);
+let revBitSort2Shader = makeShader(gl.FRAGMENT_SHADER, 
+                                   revBitSort2FragmentSource);
 let rearrangeShader = makeShader(gl.FRAGMENT_SHADER,
                                  rearrangeFragmentSource);
 
@@ -59,9 +63,11 @@ let initVectorPotentialProgram = makeProgram(vShader,
                                              initVectorPotentialShader);
 let complexMultiplyProgram = makeProgram(vShader, complexMultiplyShader);
 let fftIterProgram = makeProgram(vShader, fftIterShader);
+let fftIterSquareProgram = makeProgram(vShader, fftIterSquareShader);
 let expKineticProgram = makeProgram(vShader, splitStepKineticShader);
 let expPotentialProgram = makeProgram(vShader, splitStepPotentialShader);
 let rearrangeProgram = makeProgram(vShader, rearrangeShader);
+let revBitSort2Program = makeProgram(vShader, revBitSort2Shader);
 
 gl.deleteShader(vShader);
 gl.deleteShader(initWaveShader);
@@ -82,7 +88,8 @@ gl.deleteShader(imagePotentialShader);
 gl.deleteShader(initVectorPotentialShader);
 gl.deleteShader(complexMultiplyShader);
 gl.deleteShader(fftIterShader);
+gl.deleteShader(fftIterSquareShader);
 gl.deleteShader(splitStepKineticShader);
 gl.deleteShader(splitStepPotentialShader);
 gl.deleteShader(rearrangeShader);
-
+gl.deleteShader(revBitSort2Shader);

@@ -15,7 +15,7 @@ let guiData = {
     drawShape: 'circle',
     drawSize: 0.01,
     drawValue: 10000/137.036,
-    mouseSelect: 'New ψ(x, y)',
+    mouseSelect: 'New Ψ(x, y)',
     presetPotentials: 'Free (Periodic)',
     useVectorPotential: false,
     presetVectorPotentials: 'None',

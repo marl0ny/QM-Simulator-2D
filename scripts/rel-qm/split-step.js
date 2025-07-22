@@ -49,7 +49,7 @@ class SplitStepSimulationManager {
         this._hbar = 1.0;
         this._c = 0.0;
         // this.initMomentumFrame();
-        this.initRevBitSort2LookupFrame();
+        // this.initRevBitSort2LookupFrame();
     }
     setFrameDimensions(newWidth, newHeight) {
         gl.viewport(0, 0, newWidth, newHeight);
@@ -151,22 +151,48 @@ class SplitStepSimulationManager {
             unbind();
         }
     }
-    revBitSort2(dest, src, revBitSortFrame) {
-        dest.useProgram(rearrangeProgram);
+    // revBitSort2(dest, src, revBitSortFrame) {
+    //     dest.useProgram(rearrangeProgram);
+    //     dest.bind();
+    //     dest.setFloatUniforms({width: pixelWidth, height: pixelHeight});
+    //     dest.setIntUniforms({tex: src.frameNumber, 
+    //                          lookupTex: revBitSortFrame.frameNumber});
+    //     draw();
+    //     unbind();
+    // }
+    revBitSort2(dest, src) {
+        dest.useProgram(revBitSort2Program);
         dest.bind();
-        dest.setFloatUniforms({width: pixelWidth, height: pixelHeight});
-        dest.setIntUniforms({tex: src.frameNumber, 
-                             lookupTex: revBitSortFrame.frameNumber});
+        dest.setIntUniforms({width: pixelWidth, height: pixelHeight, 
+                            tex: src.frameNumber});
         draw();
         unbind();
     }
-    fftIters(frames, size, isVert, isInv) {
+    // fftIters(frames, size, isVert, isInv) {
+    //     let prev = frames[0], next = frames[1];
+    //     for (let blockSize = 2; blockSize <= pixelWidth; blockSize *= 2) {
+    //         let scale = (isInv && blockSize === size)? 1.0/size: 1.0;
+    //         next.useProgram(fftIterProgram);
+    //         next.bind();
+    //         next.setIntUniforms({tex: prev.frameNumber, isVertical: isVert});
+    //         next.setFloatUniforms({blockSize: blockSize/size,
+    //                                angleSign: (isInv)? 1.0: -1.0, 
+    //                                size: size, scale: scale});
+    //         draw();
+    //         unbind();
+    //         let tmp = prev;
+    //         prev = next;
+    //         next = tmp;
+    //     }
+    //     return [prev, next];
+    // }
+    fftIters(frames, size, isInv) {
         let prev = frames[0], next = frames[1];
-        for (let blockSize = 2; blockSize <= pixelWidth; blockSize *= 2) {
+        for (let blockSize = 2; blockSize <= size; blockSize *=2) {
             let scale = (isInv && blockSize === size)? 1.0/size: 1.0;
-            next.useProgram(fftIterProgram);
+            next.useProgram(fftIterSquareProgram);
             next.bind();
-            next.setIntUniforms({tex: prev.frameNumber, isVertical: isVert});
+            next.setIntUniforms({tex: prev.frameNumber, useCosTable: 0});
             next.setFloatUniforms({blockSize: blockSize/size,
                                    angleSign: (isInv)? 1.0: -1.0, 
                                    size: size, scale: scale});
@@ -181,16 +207,15 @@ class SplitStepSimulationManager {
     momentumStep(uvFrames) {
         let uFrame = uvFrames[0];
         let vFrame = uvFrames[1];
-        let revBitSort2LookupFrame = this.revBitSort2LookupFrame;
+        // let revBitSort2LookupFrame = this.revBitSort2LookupFrame;
          let frames2 = [[this.extraFrame, uFrame], 
                         [this.extraFrame2, vFrame]];
-        let isVert = true, isInv = true;
+        // let isVert = true;
+        let isInv = true;
         for (let i in [0, 1]) {
             let frames = frames2[i];
-            this.revBitSort2(frames[0], frames[1], 
-                             revBitSort2LookupFrame);
-            frames = this.fftIters(frames, pixelWidth, !isVert, !isInv);
-            frames = this.fftIters(frames, pixelHeight, isVert, !isInv);
+            this.revBitSort2(frames[0], frames[1]);
+            frames = this.fftIters(frames, pixelWidth, !isInv);
             frames2[i] = frames;
         }
         // frames2 = [[uFrame, this.extraFrame], 
@@ -214,10 +239,9 @@ class SplitStepSimulationManager {
         // return [frames2[0][1], frames2[1][1]];
         for (let i in [0, 1]) {
             let frames = frames2[i];
-            let isVert = true, isInv = true;
-            this.revBitSort2(frames[0], frames[1], revBitSort2LookupFrame);
-            frames = this.fftIters(frames, pixelWidth, !isVert, isInv);
-            frames = this.fftIters(frames, pixelHeight, isVert, isInv);
+            let isInv = true;
+            this.revBitSort2(frames[0], frames[1]);
+            frames = this.fftIters(frames, pixelWidth, isInv);
             frames2[i] = frames;
         }
         return [frames2[0][0], frames2[1][0]];
