@@ -645,6 +645,8 @@ function main() {
                 reshapePotential(newControls);
             }
         }
+        // console.log(guiData.bx/canvas.width,
+        //             1.0 - guiData.by/canvas.height);
         sim.reshapePotential(bx=guiData.bx/canvas.width,
                               by=1.0 - guiData.by/canvas.height,
                               v2=guiData.mouseData.v2,
@@ -930,7 +932,7 @@ function main() {
         if (stats) stats.begin();
         onPotentialChange();
         if (guiData.mouseData.mouseAction) {
-            if (guiData.mouseMode[0] === 'N') {
+            if (guiData.mouseMode[0] === guiData.mouseData.NEW_PSI) {
                 createNewWave();
             } else if ((guiData.mouseMode[0]
                          === guiData.mouseData.SKETCH_BARRIER ||
@@ -943,7 +945,19 @@ function main() {
             }
             guiData.mouseData.mouseAction = false;
         }
+        /* If the mouse left button is held down, new wave function in
+        the mouse usage dropdown is selected, and hold/release is enabled,
+        but the mousemove event is not being triggered because the mouse
+        is not being moved, initialize a new wave function.*/
+        if (guiData.mouseData.mouseUse)
+            if (guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
+                && guiData.mouseData.holdRelease)
+                createNewWave();
         for (let i = 0; i < guiData.speed; i++) {
+            if (guiData.mouseData.mouseUse
+                && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
+                && guiData.mouseData.holdRelease && i > 0)
+                break;
             timeStepWave();
             sim.swap();
         }

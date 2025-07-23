@@ -326,7 +326,7 @@ function handleRecording(canvas) {
 }
 
 let mousePos = function(ev, mode) {
-    console.log(mode);
+    // console.log(mode);
     if (mode == 'down') {
         if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
             && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
@@ -334,6 +334,7 @@ let mousePos = function(ev, mode) {
             guiData.bx = Math.floor((ev.clientX 
                                     - canvas.offsetLeft))/scale.w;
             guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            // console.log(guiData.bx, guiData.by);
         }
     }
     if (mode == 'move') {
@@ -387,8 +388,12 @@ function setMouseInput() {
                                           - canvas.offsetLeft))/scale.w;
         guiData.drawRect.y = Math.floor((mouseEv.clientY
                                           - canvas.offsetTop))/scale.h;
+        // console.log(
+        //    guiData.drawRect.x, 
+        //    guiData.drawRect.y
+        // );
         mousePos(mouseEv, 'down');
-        // mousePos(mouseEv, 'move');
+        mousePos(mouseEv, 'move');
     });
     canvas.addEventListener("touchmove", ev => {
         let touches = ev.changedTouches;
