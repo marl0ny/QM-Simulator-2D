@@ -677,7 +677,8 @@ function main() {
                                    sigma: sigma*canvas.width/canvas.height,
                               bx: guiData.bx/canvas.width,
                               by: 1.0 - guiData.by/canvas.height,
-                              px: px, py: py};
+                              px: px,
+                              py: py};
         sim.initWavefunc(params, wavefuncParams);
     }
 

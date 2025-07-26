@@ -326,7 +326,6 @@ function handleRecording(canvas) {
 }
 
 let mousePos = function(ev, mode) {
-    // console.log(mode);
     if (mode == 'down') {
         if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
             && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
@@ -334,41 +333,45 @@ let mousePos = function(ev, mode) {
             guiData.bx = Math.floor((ev.clientX 
                                     - canvas.offsetLeft))/scale.w;
             guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            // console.log(guiData.bx, guiData.by);
         }
     }
     if (mode == 'move') {
-        // console.log(ev.clientX, ev.clientY);
-        // console.log(guiData.bx, guiData.by);
         guiData.mouseData.mouseCount++;
         let prevBx = guiData.bx;
         let prevBy = guiData.by;
+        let px, py;
         if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
             && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
         ) {
             let bx = Math.floor((ev.clientX - canvas.offsetLeft))/scale.w;
             let by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            guiData.px = parseInt(0.5*(bx - prevBx)
-                    // *((scale.w > scale.h)? scale.h/scale.w: scale.w/scale.h)
-                );
-            guiData.py = -parseInt(0.5*(by - prevBy)
-                    // *((scale.h > scale.w)? scale.w/scale.h: scale.h/scale.w)
-                );
+            px = 0.5*(bx - prevBx);
+            py = -0.5*(by - prevBy);
         } else {
             guiData.bx = Math.floor((ev.clientX 
                                       - canvas.offsetLeft))/scale.w;
             guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
-            guiData.px = parseInt(guiData.bx - prevBx);
-            guiData.py = -parseInt(guiData.by - prevBy);
+            px = guiData.bx - prevBx;
+            py = -(guiData.by - prevBy);
         }
-        if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
-            guiData.px = Math.sign(guiData.px)*
-                         50.0*(pixelWidth/512.0)/guiData.scaleP;
-        }
-        if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
-            guiData.py = Math.sign(guiData.py)*
-                         50.0*(pixelHeight/512.0)/guiData.scaleP;
-        }
+        if (pixelWidth > pixelHeight)
+            px *= pixelWidth/pixelHeight;
+        if (pixelHeight > pixelWidth)
+            py *= pixelHeight/pixelWidth;
+        if (Math.abs(px) > 50.0/guiData.scaleP ||
+            Math.abs(py) > 50.0/guiData.scaleP) {
+            let p = Math.sqrt(px*px + py*py);
+            let pXNorm = px/p, pYNorm = py/p;
+            if (Math.abs(px) > Math.abs(py)) {
+                px = Math.sign(px)*(50.0/guiData.scaleP)*(pixelWidth/512.0);
+                py = (pYNorm/pXNorm)*px;
+            } else {
+                py = Math.sign(py)*(50.0/guiData.scaleP)*(pixelHeight/512.0);
+                px = (pXNorm/pYNorm)*py;
+            }
+        } 
+        guiData.px = Number.parseInt(px);
+        guiData.py = Number.parseInt(py);
     }
     if (guiData.mouseData.mouseUse) {
         if (guiData.bx < canvas.width && guiData.by < canvas.height &&
