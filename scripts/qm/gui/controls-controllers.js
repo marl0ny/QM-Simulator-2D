@@ -326,6 +326,39 @@ function handleRecording(canvas) {
 }
 
 let mousePos = function(ev, mode) {
+    // This if statement and its body were introduced because
+    // a bug was encountered where when using non-square grid
+    // dimensions, sketching new potential barriers created additional
+    // unwanted barriers that did not match with mouse input.
+    // This just reverts to an older implementation found in previous commits.
+    if (guiData.mouseMode[0] === guiData.mouseData.SKETCH_BARRIER
+        || guiData.mouseMode[0] === guiData.mouseData.ERASE_BARRIER) {
+        if (mode === 'move') {
+            guiData.mouseData.mouseCount++;
+            let prevBx = guiData.bx;
+            let prevBy = guiData.by;
+            guiData.bx = Math.floor((ev.clientX 
+                                    - canvas.offsetLeft))/scale.w;
+            guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            guiData.px = parseInt(guiData.bx - prevBx);
+            if (Math.abs(guiData.px) > 50.0/guiData.scaleP) {
+                guiData.px = Math.sign(guiData.px)*
+                            50.0*(pixelWidth/512.0)/guiData.scaleP;
+            }
+            guiData.py = -parseInt(guiData.by - prevBy);
+            if (Math.abs(guiData.py) > 50.0/guiData.scaleP) {
+                guiData.py = Math.sign(guiData.py)*
+                            50.0*(pixelHeight/512.0)/guiData.scaleP;
+            }
+        }
+        if (guiData.mouseData.mouseUse) {
+            if (guiData.bx < canvas.width && guiData.by < canvas.height &&
+                guiData.bx >= 0 && 
+                guiData.by >= 0)
+                guiData.mouseData.mouseAction = true;
+        }
+        return;
+    }
     if (mode == 'down') {
         if (guiData.mouseData.holdRelease && !guiData.mouseData.fixInitialP
             && guiData.mouseMode[0] === guiData.mouseData.NEW_PSI
@@ -362,7 +395,7 @@ let mousePos = function(ev, mode) {
             Math.abs(py) > 50.0/guiData.scaleP) {
             let p = Math.sqrt(px*px + py*py);
             let pXNorm = px/p, pYNorm = py/p;
-            if (Math.abs(px) > Math.abs(py)) {
+            if (Math.abs(px/pixelWidth) > Math.abs(py/pixelHeight)) {
                 px = Math.sign(px)*(50.0/guiData.scaleP)*(pixelWidth/512.0);
                 py = (pYNorm/pXNorm)*px;
             } else {
@@ -370,6 +403,7 @@ let mousePos = function(ev, mode) {
                 px = (pXNorm/pYNorm)*py;
             }
         } 
+        // console.log(px, py, guiData.scaleP);
         guiData.px = Number.parseInt(px);
         guiData.py = Number.parseInt(py);
     }
@@ -409,6 +443,9 @@ function setMouseInput() {
         mousePos(mouseEv, 'up');
         guiData.mouseData.mouseCount = 0;
         guiData.mouseData.mouseUse = false;
+    });
+    canvas.addEventListener("dragstart", e => {
+        e.preventDefault();
     });
     canvas.addEventListener("mouseup", ev => {
         mousePos(ev, 'up');
