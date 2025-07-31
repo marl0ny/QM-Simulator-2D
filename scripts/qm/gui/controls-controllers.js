@@ -366,6 +366,8 @@ let mousePos = function(ev, mode) {
             guiData.bx = Math.floor((ev.clientX 
                                     - canvas.offsetLeft))/scale.w;
             guiData.by = Math.floor((ev.clientY - canvas.offsetTop))/scale.h;
+            guiData.px = 0;
+            guiData.py = 0;
         }
     }
     if (mode == 'move') {
